@@ -16,7 +16,15 @@ A browser arcade platformer for desktop keyboards and iPad, using the supplied L
 | Pause             | Escape                         | Pause button               |
 | Map               | M                              | Map button                 |
 
-Gentle mode is the default: seven hearts and longer protection after damage. Adventurer mode starts with five. Every two completed chapters adds a heart (up to two extra) and stronger attacks. Collected tokens survive falls and defeat. Each boss announces its shockwave; jump at the “ПРЫГАЙ!” cue. Find all five tokens and reach the far-right gate to unlock the next region. Landscape tablet use is recommended; narrow phone layouts intentionally show a device notice.
+Gentle mode is the default: seven hearts and longer protection after damage. Adventurer mode starts with five. Every two completed chapters adds a heart (up to two extra) and stronger attacks. Collected tokens survive falls and defeat. The forest guardian alternates marked root eruptions, arcing spores, burrowing and ground sweeps, then awakens at half health. The other guardians announce their shockwaves; jump at the “ПРЫГАЙ!” cue. Find all five tokens and reach the far-right gate to unlock the next region. Landscape tablet use is recommended; narrow phone layouts intentionally show a device notice.
+
+## Forest pilot
+
+The first chapter follows the supplied forest level board as a continuous 4550 × 1600 world: eight named areas, a lower root tunnel, an alternating wall-jump shaft, a breakable secret entrance, a return shortcut, a save-point hub and an ascent to the Forgotten Tree. A live minimap and the M / Map panel show the actual collision layout and token positions. Four names come directly from the world board; the connecting chamber names are new.
+
+The Spore Mother has four attack timelines, a half-health awakening, 24 additional painted animation poses and explicit warning/recovery windows. In the pause menu, «Снова сразиться со Споровой матерью» starts a rematch while preserving collected tokens and unlocked regions. Existing Neon saves remain compatible. Discovery tint and broken root walls last for the current visit.
+
+Three HD backdrop paintings, eight transparent ledge variants and a root/stone texture replace the first region's enlarged atlas tile. Sources, regional design study and exact generation prompts are in `art/forest/`; `scripts/prepare-forest.py` reproduces the optimized WebP assets. The other five regions retain their existing levels and encounters for subsequent pilots.
 
 ## Development
 
@@ -58,7 +66,7 @@ No Hollow Knight art, music, characters, or code is included. Exploration, close
 
 ## Rendering and performance
 
-Vanilla ES modules and Canvas 2D; no UI framework or game engine runtime. Fixed 60 Hz simulation, bounded catch-up time, cached background and platform textures, camera culling, at most 100 particles, capped device pixel ratio (1.6) and 1.5-million-pixel canvas budget, event-driven HUD changes, and WebP textures. Painted scenery is cached. Common assets decode before play; creature sheets load by region with a bounded recent-region cache. The render loop suspends simulation on pause or when hidden. Audio is procedural and opt-in. Fonts are self-hosted.
+Vanilla ES modules and Canvas 2D; no UI framework or game engine runtime. Fixed 60 Hz simulation, bounded catch-up time, cached background and platform textures, camera culling, at most 100 particles, capped device pixel ratio (1.6) and 1.5-million-pixel canvas budget, event-driven HUD changes, and WebP textures. Older regions cache their scenery; the taller forest draws only visible terrain tiles and never allocates a full-world scenery canvas. Common assets decode before play; creature sheets load by region with a bounded recent-region cache. The render loop suspends simulation on pause or when hidden. Audio is procedural and opt-in. Fonts are self-hosted.
 
 Measured desktop Chromium rendering was approximately 60 fps during the smoke test; this is not a guarantee for every device. iPad layout, touch controls, and WebKit are covered by browser checks; physical iPad hardware has not been tested.
 
@@ -72,9 +80,10 @@ node scripts/browser-qa.mjs
 node scripts/webkit-qa.mjs
 node scripts/hero-qa.mjs
 node scripts/creature-qa.mjs
+node scripts/forest-qa.mjs
 ```
 
-Run the dev server first. Set `QA_URL` to test another deployment. Optional `PLAYWRIGHT_CHROMIUM_EXECUTABLE` / `PLAYWRIGHT_WEBKIT_EXECUTABLE` variables reuse an existing browser installation. QA screenshots are written to the system temporary directory.
+Run the dev server first. `forest-qa.mjs` imports production modules into an isolated local test fixture for full traversal screenshots and all boss timelines; run it against the dev server. The other browser scripts also support deployed builds. Set `QA_URL` to test another deployment. Optional `PLAYWRIGHT_CHROMIUM_EXECUTABLE` / `PLAYWRIGHT_WEBKIT_EXECUTABLE` variables reuse an existing browser installation. QA screenshots are written to the system temporary directory.
 
 ## Deployment
 

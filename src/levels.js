@@ -1,3 +1,4 @@
+import { buildForest } from "./forest.js";
 // Authored routes: canopy, stepping stones, mountain terraces, belfry, caverns, lake.
 const layouts = [
   {
@@ -170,6 +171,7 @@ const layouts = [
   },
 ];
 export function buildLevel(region) {
+  if (region === 0) return buildForest();
   const l = layouts[region];
   const platforms = [
     ...l.ground.map(([x, w]) => ({

@@ -81,7 +81,14 @@ export function createWorld(region = 0, progress = {}) {
   const roster = REGION_CREATURES[region];
   const enemies = [];
   for (const platform of platforms) {
-    if (platform.wall || platform.x > 3500 || platform.w < 140) continue;
+    if (
+      platform.wall ||
+      platform.ceiling ||
+      platform.x > 3500 ||
+      (region === 0 && platform.x >= 3430) ||
+      platform.w < 140
+    )
+      continue;
     const positions = platform.ground
       ? Array.from(
           { length: Math.max(1, Math.floor(platform.w / 330)) },
@@ -121,12 +128,19 @@ export function createWorld(region = 0, progress = {}) {
   const cleared = progress.cleared?.includes(region) || false;
   return {
     region,
+    width: level.width || WORLD_WIDTH,
+    height: level.height || 690,
+    rooms: level.rooms,
+    signs: level.signs || [],
+    spawn: level.spawn || { x: 110, y: 410 },
+    discovered: new Set(),
+    hazards: [],
     shaft: level.shaft,
     title: level.title,
     platforms,
     tokens,
     enemies,
-    checkpoint: { x: 2240, y: 450 },
+    checkpoint: level.checkpoint || { x: 2240, y: 450 },
     elder: { x: 240, y: 446 },
     boss: {
       key: BOSSES[region],
@@ -136,8 +150,8 @@ export function createWorld(region = 0, progress = {}) {
       y: 380,
       w: 125,
       h: 120,
-      hp: 12 + region * 2,
-      maxHp: 12 + region * 2,
+      hp: region === 0 ? 24 : 12 + region * 2,
+      maxHp: region === 0 ? 24 : 12 + region * 2,
       phase: 0,
       timer: 2.4,
       hit: 0,
@@ -149,10 +163,10 @@ export function createWorld(region = 0, progress = {}) {
     cleared,
   };
 }
-export function movePlayer(p, platforms, dt) {
+export function movePlayer(p, platforms, dt, width = WORLD_WIDTH) {
   const oldX = p.x,
     oldY = p.y;
-  p.x = clamp(p.x + p.vx * dt, 0, WORLD_WIDTH - p.w);
+  p.x = clamp(p.x + p.vx * dt, 0, width - p.w);
   p.wall = 0;
   for (const s of platforms) {
     if (!(s.solid || s.ground) || !overlaps(p, s)) continue;

@@ -42,7 +42,10 @@ test("double jump can reach every required platform from its predecessor", () =>
   const ascent =
     (PHYSICS.jump ** 2 + PHYSICS.doubleJump ** 2) / (2 * PHYSICS.gravity);
   assert.ok(ascent > 180);
-  for (const { platforms } of REGIONS.map((_, i) => createWorld(i))) {
+  // The 2D forest is verified by a full input replay; these five routes share one ground plane.
+  for (const { platforms } of REGIONS.slice(1).map((_, i) =>
+    createWorld(i + 1),
+  )) {
     const ground = platforms.filter((p) => p.ground);
     for (let i = 1; i < ground.length; i++) {
       const gap = ground[i].x - (ground[i - 1].x + ground[i - 1].w);

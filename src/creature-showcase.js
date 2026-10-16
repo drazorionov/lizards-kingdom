@@ -34,6 +34,35 @@ export class CreatureShowcase {
         e.hp = 0;
         e.deathTime = phase < 0.4 ? 0.1 : 0.4;
       }
+      const mother = this.assets["forest-mother-attacks-atlas"];
+      if (
+        this.keys[i] === "spore-mother" &&
+        mother &&
+        ["attack", "hit", "defeat"].includes(this.mode)
+      ) {
+        const frame =
+          this.mode === "attack"
+            ? Math.floor(t / 350) % 20
+            : this.mode === "hit"
+              ? phase < 1
+                ? 20
+                : 21
+              : phase < 0.4
+                ? 22
+                : 23;
+        ctx.drawImage(
+          mother,
+          (frame % 4) * 320,
+          Math.floor(frame / 4) * 320,
+          320,
+          320,
+          17.5,
+          165 - (165 * 304) / 320,
+          165,
+          165,
+        );
+        return;
+      }
       drawCreature(ctx, this.assets, this.keys[i], e, t / 1000, {
         x: 100,
         y: 165,

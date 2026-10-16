@@ -1,0 +1,88 @@
+{
+  "scope": "First-area pilot only. Other five regions keep their existing authored levels and fights for later region-specific expansion.",
+  "sourceBoards": {
+    "world": "inputs/324fc2de-2007-4797-a14b-db1b1566edc1.JPG",
+    "forestLevel": "inputs/7a06ef01-a2cc-4817-9f2a-afeae65be50d.JPG",
+    "bosses": "inputs/fd9ea6c3-900a-469a-a810-347b983d8304.JPG"
+  },
+  "regionalStudy": [
+    {
+      "name": "Дремучий грибной лес",
+      "sourceLandmarks": [
+        "Споровые поля",
+        "Светящиеся корни",
+        "Грибная чаща",
+        "Забытое дерево"
+      ],
+      "visualLanguage": "Teal bioluminescent roots, violet umbrella mushrooms, dark forest silhouettes, hanging platforms, cyan waterfalls.",
+      "mapReading": "Multiple loops, vertical shafts and upper/lower passages; warm-stone save points and blue recovery springs. Detailed level board places tokens on main route, difficult platforming, secret room and beyond a guardian."
+    },
+    {
+      "name": "Топи",
+      "sourceLandmarks": [
+        "Затопленные руины",
+        "Гнилая заводь",
+        "Болотный шпиль"
+      ],
+      "visualLanguage": "Sickly green mist, submerged ruins, drooping vegetation and low bridges.",
+      "mapReading": "Descent from forest into broken horizontal causeways and a winding low route, with a tall spire at the edge."
+    },
+    {
+      "name": "Гора Гроз",
+      "sourceLandmarks": ["Грозовой перевал", "Храм ветров", "Вершина гроз"],
+      "visualLanguage": "Cold blue lightning, pale clouds, jagged mountains and narrow gothic towers.",
+      "mapReading": "Long upward climb with switchbacks, suspended links and a summit guardian; several side loops return to the ascent."
+    },
+    {
+      "name": "Колокольня Пустоши",
+      "sourceLandmarks": [
+        "Звон забытых",
+        "Пустошь",
+        "Нижние ярусы",
+        "Вершина пустоши"
+      ],
+      "visualLanguage": "Burnished amber sky, black bell towers, hanging chains, broken stone silhouettes.",
+      "mapReading": "Broad lower circuit feeding a vertical belfry with bridges and a high boss chamber."
+    },
+    {
+      "name": "Забытые глубины",
+      "sourceLandmarks": [],
+      "visualLanguage": "Cobalt and icy cyan caverns, pointed rock formations and buried cathedral architecture.",
+      "mapReading": "Deep central descent with interlocking chambers, long vertical connections and routes toward the lake and bell tower."
+    },
+    {
+      "name": "Аметистовое озеро",
+      "sourceLandmarks": ["Кристальные гроты", "Глубинные родники"],
+      "visualLanguage": "Violet crystals, mirrored water, luminous pink edges and dark cavern islands.",
+      "mapReading": "Low looping circuit around water and crystal grottos; upper ledges branch above the main lake path."
+    }
+  ],
+  "pilotInterpretation": {
+    "dimensions": [4550, 1600],
+    "rooms": 8,
+    "topology": "Entry descends into roots. A gap leads to the underground stream and token 2. The root shaft climbs to token 3 and a breakable entrance to token 4. Dropping from the secret returns to the hearth. A stepped canopy ascent reaches the Forgotten Tree arena. The lower stream connects back to the hearth through a breakable root shortcut.",
+    "newRoomNames": [
+      "Подземный ручей",
+      "Колодец корней",
+      "Тайная грибница",
+      "Тёплый камень"
+    ],
+    "boss": "Споровая мать follows the named boss board; the level board calls its example mini-boss Грибной великан. This pilot retains the established Spore Mother character.",
+    "attacks": [
+      "Locked ground markers then root eruptions",
+      "Five arcing spores, seven in phase two",
+      "Burrow with a locked emergence warning and relocation",
+      "Two low waves from a root sweep"
+    ],
+    "secondPhase": "At half health, a harmless two-second four-pose awakening; then shorter recoveries, wider root patterns and denser spores. Warning duration remains intact.",
+    "saveCompatibility": "Existing five token IDs, defeated/cleared flags and Neon schema retained. Checkpoint resolves to new hearth. Rematch preserves earned progress. Broken roots and discovered-room tint are per visit."
+  },
+  "artProduction": {
+    "method": "Built-in image_gen; PNG sources retained in art/forest. Exact requests in generate-prompts.json and ledge-prompt.txt. Pillow only converts and packs existing pixels, without drawing replacement illustrations.",
+    "backgroundSourceResolution": [1672, 941],
+    "terrainSourceResolution": [1536, 1024],
+    "motherAtlasResolution": [1280, 1920],
+    "motherAdditionalPoses": 24,
+    "runtime": "Six WebP assets, about 2.5 MiB combined; loaded with the forest and evicted outside the recent-region cache. Terrain is culled in both axes and drawn in visible tiles; no 4550x1600 scenery canvas. 60 Hz fixed simulation and 1.5 million output pixel cap retained."
+  }
+}

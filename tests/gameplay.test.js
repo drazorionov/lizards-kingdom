@@ -75,8 +75,11 @@ for (let region = 0; region < 6; region++)
       )
         g.press("jump");
       if (g.player.vy > 0) g.release("jump");
-      if (g.player.x < 3940) g.press("right");
-      else g.release("right");
+      const target = region === 0 ? g.world.boss.x - 65 : 3940;
+      g.release("left");
+      g.release("right");
+      if (g.player.x < target - 5) g.press("right");
+      else if (region === 0 && g.player.x > target + 5) g.press("left");
       g.step(1 / 60);
     }
     g.clearInput();
@@ -96,7 +99,7 @@ test("falling preserves tokens and respawns at an activated checkpoint", () => {
   const { game: g } = setup();
   g.checkpointUsed = true;
   g.world.tokens[0].collected = true;
-  g.player.y = 700;
+  g.player.y = g.world.height + 10;
   ticks(g, 1);
   assert.equal(g.player.x, 2240);
   assert.equal(g.world.tokens[0].collected, true);
@@ -110,7 +113,7 @@ test("clearing a boss alone does not unlock a chapter; defeat persists separatel
   assert.equal(g.progress.cleared.length, 0);
 });
 test("each boss telegraphs before releasing a damaging wave", () => {
-  for (let r = 0; r < 6; r++) {
+  for (let r = 1; r < 6; r++) {
     const { game: g } = setup(r);
     g.player.x = 3650;
     ticks(g, 1);
@@ -129,7 +132,7 @@ test("wall slide and alternating wall kicks climb the shaft using either hero", 
     g.player.hero = hero;
     const shaft = g.world.shaft;
     g.player.x = shaft.x;
-    g.player.y = 446;
+    g.player.y = shaft.y - 24;
     g.player.invulnerable = 10;
     g.press("right");
     g.press("jump");

@@ -1,3 +1,11 @@
+import {
+  drawForestBackground,
+  drawForestTerrain,
+  drawForestDetails,
+  drawMother,
+  drawForestBossTell,
+  drawForestMinimap,
+} from "./forest-renderer.js";
 import { drawCreature } from "./creatures.js";
 import { REGIONS, WORLD_WIDTH, clamp } from "./world.js";
 import { drawHero } from "./hero-animation.js";
@@ -43,9 +51,9 @@ export class Renderer {
   prepare(region, world) {
     this.regionIndex = region;
     this.region = REGIONS[region];
-    this.background = this.makeBackground(region);
+    this.background = region === 0 ? null : this.makeBackground(region);
     this.platformTextures = new Map();
-    this.scenery = this.makeScenery(world);
+    this.scenery = region === 0 ? null : this.makeScenery(world);
     this.resize();
   }
   makeBackground(region) {
@@ -235,10 +243,13 @@ export class Renderer {
     g.setTransform(this.scale, 0, 0, this.scale, 0, 0);
     g.fillStyle = "#050e17";
     g.fillRect(0, 0, view, 620);
-    const bgOffset = (camera * 0.13) % 1600;
-    g.drawImage(this.background, -bgOffset, 0);
-    if (bgOffset + view > 1600)
-      g.drawImage(this.background, 1600 - bgOffset, 0);
+    if (w.region === 0) drawForestBackground(this, game);
+    else {
+      const bgOffset = (camera * 0.13) % 1600;
+      g.drawImage(this.background, -bgOffset, 0);
+      if (bgOffset + view > 1600)
+        g.drawImage(this.background, 1600 - bgOffset, 0);
+    }
     // Distant drifting motes, capped and independent of simulation objects.
     for (let i = 0; i < 35; i++) {
       const x =
@@ -257,13 +268,20 @@ export class Renderer {
     }
     g.globalAlpha = 1;
     g.save();
-    g.translate(-camera, 0);
+    g.translate(-camera, -(game.cameraY || 0));
     for (const s of w.platforms) {
       if (s.x + s.w < camera - 30 || s.x > camera + view + 30) continue;
-      g.drawImage(this.platform(s), s.x - 10, s.y - 12);
+      if (
+        s.y + s.h < (game.cameraY || 0) - 40 ||
+        s.y > (game.cameraY || 0) + 650
+      )
+        continue;
+      if (w.region === 0) drawForestTerrain(this, s, game);
+      else g.drawImage(this.platform(s), s.x - 10, s.y - 12);
     }
     if (this.scenery)
       g.drawImage(this.scenery, camera, 0, view, 620, camera, 0, view, 620);
+    if (w.region === 0) drawForestDetails(this, game);
     // The Elder shares the painted art style and responds with talking poses.
     if (camera < 420) {
       const talking = Math.abs(p.x - w.elder.x) < 100 && p.attack > 0;
@@ -298,7 +316,7 @@ export class Renderer {
       g.font = "11px Georgia";
       g.fillText("→", 184, 456);
     }
-    this.beacon(w.checkpoint.x, 500, t, game.checkpointUsed);
+    this.beacon(w.checkpoint.x, w.checkpoint.y + 50, t, game.checkpointUsed);
     for (const token of w.tokens) {
       if (
         token.collected ||
@@ -319,7 +337,8 @@ export class Renderer {
       if (
         (e.hp <= 0 && e.deathTime > 1.2) ||
         e.x < camera - 120 ||
-        e.x > camera + view + 120
+        e.x > camera + view + 120 ||
+        Math.abs(e.y - (game.cameraY || 0) - 310) > 460
       )
         continue;
       drawCreature(g, this.assets, e.key, e, t);
@@ -333,7 +352,8 @@ export class Renderer {
     const b = w.boss;
     if ((!b.dead || b.deathTime < 1.2) && b.x < camera + view + 160) {
       this.glow(b.x + 62, b.y + 65, 110, r.glow, b.phase === 1 ? 0.4 : 0.16);
-      if (b.phase === 1) {
+      if (w.region === 0) drawForestBossTell(this, game);
+      if (b.phase === 1 && w.region !== 0) {
         g.strokeStyle = "#efc47e";
         g.lineWidth = 2;
         g.beginPath();
@@ -349,7 +369,10 @@ export class Renderer {
         );
       }
       b.dir = p.x < b.x ? -1 : 1;
-      drawCreature(g, this.assets, b.key, b, t, { size: 195 });
+      if (w.region !== 0 || !drawMother(this, game))
+        drawCreature(g, this.assets, b.key, b, t, {
+          size: w.region === 0 ? 235 : 195,
+        });
     }
 
     for (const a of w.projectiles) {
@@ -426,6 +449,7 @@ export class Renderer {
     shade.addColorStop(1, "#030b1600");
     g.fillStyle = shade;
     g.fillRect(0, 0, view, 170);
+    if (w.region === 0) drawForestMinimap(this, game);
     this.frameCount++;
     const now = performance.now();
     if (now - this.lastFps >= 1000) {

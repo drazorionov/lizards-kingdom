@@ -1,3 +1,5 @@
+import { forestRoom } from "./forest.js";
+import { stepMother, resetMother, stepForestHazards } from "./forest-boss.js";
 import { stepCreature } from "./creatures.js";
 import { createHeroAnimation, updateHeroAnimation } from "./hero-animation.js";
 import {
@@ -96,8 +98,10 @@ export class Game {
       lastWall: 0,
       wallKick: 0,
       animation: createHeroAnimation(),
-      x: this.checkpointUsed ? 2220 : 110,
-      y: 410,
+      x: this.checkpointUsed ? this.world.checkpoint.x : this.world.spawn.x,
+      y: this.checkpointUsed
+        ? this.world.checkpoint.y - 54
+        : this.world.spawn.y,
       w: 31,
       h: 54,
       vx: 0,
@@ -115,6 +119,10 @@ export class Game {
       dashCooldown: 0,
     };
     this.particles = [];
+    this.cameraY =
+      region === 0
+        ? Math.max(0, Math.min(this.world.height - 620, this.player.y - 350))
+        : 0;
     this.camera = Math.max(0, this.player.x - 300);
     this.running = true;
     this.paused = false;
@@ -248,15 +256,41 @@ export class Game {
           "Старейшина: Найди пять светлячков. Последнего охраняет страж. Прыгай дважды и отталкивайся от стен!",
         );
     }
-    movePlayer(p, w.platforms, dt);
-    if (p.y > 690) this.damage(true);
+    movePlayer(p, w.platforms, dt, w.width);
+    if (p.y > w.height) this.damage(true);
     const attack = {
       x: p.hero === 0 ? p.x - 58 : p.dir > 0 ? p.x + 10 : p.x - 86,
       y: p.y - 10,
       w: p.hero === 0 ? 147 : 108,
       h: 80,
     };
+    if (w.region === 0) {
+      const room = forestRoom(p);
+      w.discovered.add(room.id);
+      if (w.roomId !== room.id) {
+        w.roomId = room.id;
+        this.cb.toast(room.name);
+      }
+      for (const s of w.platforms) {
+        if (s.breakable && p.attack > 0 && overlaps(attack, s)) {
+          s.broken = true;
+          this.emit(s.x + s.w / 2, s.y + s.h / 2, "#9bcaba", 24);
+          this.cb.toast(
+            s.secret
+              ? "Тайная грибница! В трещинах скрывался путь."
+              : "Корни расступились. Короткий путь открыт.",
+          );
+          this.cb.sound("checkpoint");
+        }
+      }
+      w.platforms = w.platforms.filter((s) => !s.broken);
+    }
     for (const e of w.enemies) {
+      if (
+        w.region === 0 &&
+        (Math.abs(e.x - p.x) > 1100 || Math.abs(e.y - p.y) > 700)
+      )
+        continue;
       stepCreature(e, p, w, dt, this.time);
       if (e.hp <= 0) continue;
       if (
@@ -291,7 +325,7 @@ export class Game {
     if (
       !this.checkpointUsed &&
       Math.abs(p.x - w.checkpoint.x) < 70 &&
-      p.y > 390
+      Math.abs(p.y + p.h - (w.checkpoint.y + 50)) < 85
     ) {
       this.checkpointUsed = true;
       p.health = this.maxHealth();
@@ -301,17 +335,22 @@ export class Game {
       this.persist();
     }
     this.stepBoss(dt, attack);
+    if (w.region === 0) stepForestHazards(this, dt);
     for (let i = w.projectiles.length - 1; i >= 0; i--) {
       const a = w.projectiles[i];
       if (!a) break; // A respawn clears the projectile list during collision handling.
       a.x += a.vx * dt;
-      a.y += (a.vy || 0) * dt;
+      a.vy = (a.vy || 0) + (a.gravity || 0) * dt;
+      a.y += a.vy * dt;
       a.life -= dt;
       if (overlaps(p, a)) {
         this.damage();
         a.life = 0;
       }
-      if (a.life <= 0 || w.platforms.some((s) => s.wall && overlaps(a, s)))
+      if (
+        a.life <= 0 ||
+        w.platforms.some((s) => (s.solid || s.wall) && overlaps(a, s))
+      )
         w.projectiles.splice(i, 1);
     }
     const all = w.tokens.every((t) => t.collected);
@@ -342,8 +381,10 @@ export class Game {
       a.vy += 210 * dt;
     }
     const view = this.renderer.viewWidth;
-    const target = clamp(p.x - view * 0.36, 0, WORLD_WIDTH - view);
+    const target = clamp(p.x - view * 0.36, 0, Math.max(0, w.width - view));
     this.camera += (target - this.camera) * Math.min(1, dt * 6);
+    const targetY = w.region === 0 ? clamp(p.y - 330, 0, w.height - 620) : 0;
+    this.cameraY += (targetY - this.cameraY) * Math.min(1, dt * 7);
     updateHeroAnimation(p, dt);
     this.pressed.clear();
     this.updateHud();
@@ -356,14 +397,18 @@ export class Game {
       b.deathTime += dt;
       return;
     }
-    if (p.x > 3600 && !b.active) {
+    if (p.x > (w.region === 0 ? 3500 : 3600) && p.y < 560 && !b.active) {
       b.active = true;
       b.timer = 2.1;
-      this.cb.toast(`${this.region.boss} · Перепрыгивай светящиеся волны!`);
+      this.cb.toast(
+        w.region === 0
+          ? "Споровая мать · Следи за корнями и светящимися спорами!"
+          : `${this.region.boss} · Перепрыгивай светящиеся волны!`,
+      );
     }
     if (!b.active) return;
     b.hit = Math.max(0, b.hit - dt);
-    b.timer -= dt;
+    if (w.region !== 0) b.timer -= dt;
     if (
       p.attack > 0 &&
       overlaps(attack, b) &&
@@ -377,6 +422,7 @@ export class Game {
         b.dead = true;
         b.active = false;
         w.projectiles = [];
+        w.hazards = [];
         this.emit(b.x + 60, b.y + 50, this.region.glow, 40);
         this.cb.sound("win");
         this.cb.toast("Страж успокоился! Забери последнего светлячка.");
@@ -388,6 +434,13 @@ export class Game {
       }
     }
     if (overlaps(p, b)) this.damage();
+    if (w.region === 0) {
+      if (!b.active) return;
+      stepMother(this, dt);
+      // A living-root seal keeps the encounter inside the broad arena.
+      p.x = clamp(p.x, 3480, 4400 - p.w);
+      return;
+    }
     // A long, visible wind-up before every shockwave. Gentle mode sends one wave.
     if (b.timer <= 0) {
       b.phase = (b.phase + 1) % 3;
@@ -421,6 +474,42 @@ export class Game {
     }
   }
 
+  rematchMother() {
+    const w = this.world;
+    if (w.region !== 0) return;
+    resetMother(w.boss);
+    w.boss.dead = false;
+    w.boss.deathTime = 0;
+    w.projectiles = [];
+    w.hazards = [];
+    this.finished = false;
+    this.player.x = 3560;
+    this.player.y = 446;
+    this.player.vx = 0;
+    this.player.vy = 0;
+    for (const key of [
+      "jumps",
+      "wall",
+      "wallKick",
+      "wallCoyote",
+      "dash",
+      "dashCooldown",
+      "attack",
+      "attackCooldown",
+      "jumpBuffer",
+      "coyote",
+    ])
+      this.player[key] = 0;
+    this.player.animation = createHeroAnimation();
+    this.clearInput();
+    this.player.health = this.maxHealth();
+    this.player.invulnerable = 2;
+    this.camera = clamp(3260, 0, w.width - this.renderer.viewWidth);
+    this.cameraY = 0;
+    this.cb.toast(
+      "Повторный бой. Найденные светлячки и открытые земли сохранены.",
+    );
+  }
   damage(fall = false) {
     const p = this.player;
     if (!fall && p.invulnerable > 0) return;
@@ -433,8 +522,10 @@ export class Game {
         p.health = this.maxHealth();
         this.cb.toast("Герои пробуют снова. Все светлячки с тобой.");
       } else this.cb.toast("Возвращаемся к последнему тёплому огоньку.");
-      p.x = this.checkpointUsed ? 2240 : 110;
-      p.y = 400;
+      p.x = this.checkpointUsed ? this.world.checkpoint.x : this.world.spawn.x;
+      p.y = this.checkpointUsed
+        ? this.world.checkpoint.y - 54
+        : this.world.spawn.y;
       p.vx = 0;
       p.vy = 0;
       p.jumps = 0;
@@ -443,6 +534,13 @@ export class Game {
       p.wallCoyote = 0;
       this.camera = Math.max(0, p.x - 300);
       this.world.projectiles = [];
+      this.world.hazards = [];
+      if (this.world.region === 0 && !this.world.boss.dead)
+        resetMother(this.world.boss);
+      this.cameraY =
+        this.world.region === 0
+          ? clamp(p.y - 330, 0, Math.max(0, this.world.height - 620))
+          : 0;
       this.world.boss.active = false;
       this.world.boss.phase = 0;
       this.world.boss.timer = 2.1;
@@ -498,6 +596,9 @@ export class Game {
       enemies: this.world?.enemies.map((e) => ({ ...e })),
       platforms: this.world?.platforms.map((e) => ({ ...e })),
       camera: this.camera,
+      cameraY: this.cameraY,
+      room: this.world?.roomId,
+      hazards: this.world?.hazards.map((a) => ({ ...a })),
     };
   }
 }

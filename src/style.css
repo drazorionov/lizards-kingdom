@@ -1048,3 +1048,26 @@ canvas {
     font-size: 10px;
   }
 }
+
+.forest-map {
+  margin: 20px 0;
+  border: 1px solid #46706677;
+  background: #06131d;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.forest-map svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.forest-map p {
+  padding: 0 18px 12px;
+  font-size: 13px;
+  color: #b9cbbf;
+}
+summary {
+  cursor: pointer;
+  padding: 12px 0;
+  color: #dbcfad;
+}

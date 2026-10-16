@@ -1,3 +1,4 @@
+import { forestMapMarkup } from "./forest-renderer.js";
 import { CreatureShowcase } from "./creature-showcase.js";
 import { CREATURES, REGION_CREATURES, BOSSES } from "./creatures.js";
 import { HeroShowcase } from "./hero-showcase.js";
@@ -113,6 +114,32 @@ async function loadCreatureAssets(region) {
       await creatureLoads.get(key);
     }),
   );
+  if (region === 0) {
+    await Promise.all(
+      [
+        "canopy",
+        "roots",
+        "sanctum",
+        "terrain",
+        "ledges",
+        "mother-attacks-atlas",
+      ].map(async (name) => {
+        const key = "forest-" + name;
+        if (assets[key]) return;
+        if (!creatureLoads.has(key))
+          creatureLoads.set(
+            key,
+            (async () => {
+              const im = new Image();
+              im.src = "/assets/" + key + ".webp";
+              await im.decode();
+              assets[key] = im;
+            })().finally(() => creatureLoads.delete(key)),
+          );
+        await creatureLoads.get(key);
+      }),
+    );
+  }
   const old = loadedRegions.indexOf(region);
   if (old >= 0) loadedRegions.splice(old, 1);
   loadedRegions.push(region);
@@ -127,6 +154,9 @@ async function loadCreatureAssets(region) {
   for (const key of Object.keys(assets))
     if (key.startsWith("creature-") && !keep.has(key.slice(9)))
       delete assets[key];
+  if (!keepRegions.has(0))
+    for (const key of Object.keys(assets))
+      if (key.startsWith("forest-")) delete assets[key];
   return assets;
 }
 function toast(message) {
@@ -246,9 +276,15 @@ function showPause() {
   if (!game?.running) return;
   showModal(
     "pause",
-    `<div class="eyebrow">ПЕРЕДОХНИ, МАЛЕНЬКИЙ СТРАННИК</div><h2 id="modal-title">Королевство подождёт.</h2><p>Все найденные светлячки сохранены. Возвращайся, когда захочешь.</p>${modeSetting()}<div class="modal-actions"><button id="resume" class="primary-button">Вернуться в приключение <b>→</b></button><button id="help-pause" class="secondary-button">Как играть</button><button id="home" class="secondary-button">В лагерь</button></div>`,
+    `<div class="eyebrow">ПЕРЕДОХНИ, МАЛЕНЬКИЙ СТРАННИК</div><h2 id="modal-title">Королевство подождёт.</h2><p>Все найденные светлячки сохранены. Возвращайся, когда захочешь.</p>${modeSetting()}<div class="modal-actions"><button id="resume" class="primary-button">Вернуться в приключение <b>→</b></button>${game.world.region === 0 ? '<button id="forest-rematch" class="secondary-button">Снова сразиться со Споровой матерью</button>' : ""}<button id="help-pause" class="secondary-button">Как играть</button><button id="home" class="secondary-button">В лагерь</button></div>`,
   );
   $("#resume").onclick = () => closeModal();
+  const rematch = $("#forest-rematch");
+  if (rematch)
+    rematch.onclick = () => {
+      game.rematchMother();
+      closeModal();
+    };
   $("#home").onclick = goHome;
   $("#help-pause").onclick = showHelp;
   bindMode();
@@ -350,7 +386,7 @@ function showHelp() {
 function showMap() {
   showModal(
     "map",
-    `<div class="eyebrow">РАЗНЫЕ ЗЕМЛИ. ОДНО КОРОЛЕВСТВО.</div><h2 id="modal-title">Атлас странника</h2><p>Чтобы открыть следующий путь, найди пять светлячков и дойди до врат. В открытые земли можно вернуться.</p><img class="map-image" src="/assets/world-map.webp" alt="Карта королевства с шестью землями"><div class="map-regions">${REGIONS.map((r, i) => `<button data-travel="${i}" ${unlocked(i) ? "" : "disabled"}>${progress.cleared.includes(i) ? "✓" : unlocked(i) ? "✦" : "◇"} ${r.name}</button>`).join("")}</div>`,
+    `<div class="eyebrow">РАЗНЫЕ ЗЕМЛИ. ОДНО КОРОЛЕВСТВО.</div><h2 id="modal-title">Атлас странника</h2><p>Чтобы открыть следующий путь, найди пять светлячков и дойди до врат. В открытые земли можно вернуться.</p>${game?.running && game.world.region === 0 ? forestMapMarkup(game) : ""}<details ${game?.running && game.world.region === 0 ? "" : "open"}><summary>Карта всего королевства</summary><img class="map-image" src="/assets/world-map.webp" alt="Карта королевства с шестью землями"></details><div class="map-regions">${REGIONS.map((r, i) => `<button data-travel="${i}" ${unlocked(i) ? "" : "disabled"}>${progress.cleared.includes(i) ? "✓" : unlocked(i) ? "✦" : "◇"} ${r.name}</button>`).join("")}</div>`,
   );
   document.querySelectorAll("[data-travel]").forEach(
     (b) =>
