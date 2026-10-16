@@ -1,3 +1,5 @@
+import { CreatureShowcase } from "./creature-showcase.js";
+import { CREATURES, REGION_CREATURES, BOSSES } from "./creatures.js";
 import { HeroShowcase } from "./hero-showcase.js";
 import { REGIONS, sanitizeProgress } from "./world.js";
 import { SaveStore } from "./save.js";
@@ -10,6 +12,8 @@ const store = new SaveStore(
   (message) => ($("#save-status").textContent = message),
 );
 let heroShowcase,
+  creatureShowcase,
+  startSerial = 0,
   progress = store.value,
   game,
   assetsPromise,
@@ -25,18 +29,16 @@ function save(p = progress) {
 function updateMenu() {
   $("#region-cards").innerHTML = REGIONS.map(
     (r, i) =>
-      `<button class="region-card ${i === progress.region ? "active" : ""}" data-region="${i}" aria-label="${r.name}${unlocked(i) ? "" : " — locked"}"><img src="/assets/region-${i}.webp" alt="${r.name} landscape"><span class="card-state">${progress.cleared.includes(i) ? "✓" : unlocked(i) ? "✦" : "◇"}</span><span class="card-text"><small>CHAPTER ${r.chapter}</small>${r.name}</span></button>`,
+      `<button class="region-card ${i === progress.region ? "active" : ""}" data-region="${i}" aria-label="${r.name}${unlocked(i) ? "" : " — закрыто"}"><img src="/assets/region-${i}.webp" alt="${r.name} — пейзаж"><span class="card-state">${progress.cleared.includes(i) ? "✓" : unlocked(i) ? "✦" : "◇"}</span><span class="card-text"><small>ГЛАВА ${r.chapter}</small>${r.name}</span></button>`,
   ).join("");
   const started =
     Object.values(progress.tokens).some((t) => t.length) ||
     progress.checkpoint ||
     progress.cleared.length;
-  $("#start span").textContent = started
-    ? "Continue your journey"
-    : "Begin your journey";
+  $("#start span").textContent = started ? "Продолжить путь" : "Начать путь";
   $("#journey-note").textContent = started
-    ? `Chapter ${REGIONS[progress.region].chapter} · ${REGIONS[progress.region].name}`
-    : "Your first chapter starts in the Mushroom Forest";
+    ? `Глава ${REGIONS[progress.region].chapter} · ${REGIONS[progress.region].name}`
+    : "Первая глава — Дремучий грибной лес";
   document.querySelectorAll(".hero-choice").forEach((b) => {
     const yes = Number(b.dataset.hero) === selectedHero;
     b.classList.toggle("selected", yes);
@@ -60,11 +62,18 @@ async function loadAssets() {
     });
     const assets = {};
     await Promise.all(
-      [...Object.keys(manifest), "hero-quirel-atlas-v2", "hero-urmasa-atlas-v2"]
-        .filter((k) => !k.startsWith("hero-") || k.endsWith("atlas-v2"))
+      [
+        ...Object.keys(manifest),
+        "hero-quirel-painted-atlas",
+        "hero-urmasa-painted-atlas",
+        "elder-atlas",
+      ]
+        .filter((k) => !k.startsWith("hero-") || k.endsWith("painted-atlas"))
+        .filter((k) => !k.startsWith("enemy-") && !k.startsWith("boss-"))
         .filter(
           (k) =>
             ![
+              "elder",
               "cover",
               "world-map",
               "castle",
@@ -83,6 +92,43 @@ async function loadAssets() {
   })();
   return assetsPromise;
 }
+const creatureLoads = new Map();
+const loadedRegions = [];
+async function loadCreatureAssets(region) {
+  const assets = await loadAssets();
+  const keys = [...REGION_CREATURES[region], BOSSES[region]];
+  await Promise.all(
+    keys.map(async (key) => {
+      if (assets[`creature-${key}`]) return;
+      if (!creatureLoads.has(key))
+        creatureLoads.set(
+          key,
+          (async () => {
+            const im = new Image();
+            im.src = `/assets/${key}-atlas.webp`;
+            await im.decode();
+            assets[`creature-${key}`] = im;
+          })().finally(() => creatureLoads.delete(key)),
+        );
+      await creatureLoads.get(key);
+    }),
+  );
+  const old = loadedRegions.indexOf(region);
+  if (old >= 0) loadedRegions.splice(old, 1);
+  loadedRegions.push(region);
+  while (loadedRegions.length > 2) loadedRegions.shift();
+  const keepRegions = new Set([
+    ...loadedRegions,
+    ...(game?.running ? [game.world.region] : []),
+  ]);
+  const keep = new Set(
+    [...keepRegions].flatMap((r) => [...REGION_CREATURES[r], BOSSES[r]]),
+  );
+  for (const key of Object.keys(assets))
+    if (key.startsWith("creature-") && !keep.has(key.slice(9)))
+      delete assets[key];
+  return assets;
+}
 function toast(message) {
   $("#toast").textContent = message;
   $("#toast").classList.add("visible");
@@ -91,10 +137,12 @@ function toast(message) {
 }
 async function start(region = progress.region) {
   if (!unlocked(region)) region = 0;
+  const serial = ++startSerial;
   $("#start").disabled = true;
-  $("#start span").textContent = "Opening the kingdom…";
+  $("#start span").textContent = "Открываем королевство…";
   try {
-    const assets = await loadAssets();
+    const assets = await loadCreatureAssets(region);
+    if (serial !== startSerial) return;
     if (!game) {
       const renderer = new Renderer($("#canvas"), assets);
       game = new Game($("#canvas"), assets, renderer, {
@@ -119,7 +167,7 @@ async function start(region = progress.region) {
     console.error(e);
     showModal(
       "error",
-      `<div class="eyebrow">A LITTLE PAUSE</div><h2 id="modal-title">The forest is still waking up.</h2><p>The artwork could not load. Check your connection and try again.</p><button class="primary-button" id="retry">Try again →</button>`,
+      `<div class="eyebrow">НЕБОЛЬШАЯ ПАУЗА</div><h2 id="modal-title">Лес ещё просыпается.</h2><p>Не удалось загрузить рисунки. Проверь соединение и попробуй ещё раз.</p><button class="primary-button" id="retry">Попробовать снова →</button>`,
     );
     assetsPromise = null;
     $("#retry").onclick = () => start(region);
@@ -130,30 +178,35 @@ async function start(region = progress.region) {
 }
 function updateHud({ health, maxHealth, tokens, boss, region }) {
   $("#chapter-label").textContent =
-    `CHAPTER ${REGIONS[region].chapter} · ${selectedHero === 0 ? "QUIREL" : "URMASA"}`;
+    `ГЛАВА ${REGIONS[region].chapter} · ${selectedHero === 0 ? "КВИРЕЛ" : "УРМАСА"}`;
   $("#region-name").textContent = REGIONS[region].name;
   $("#hearts").innerHTML = Array.from(
     { length: maxHealth },
     (_, i) =>
       `<span class="${i < health ? "" : "heart-empty"}">${i < health ? "♥" : "♡"}</span>`,
   ).join("");
-  $("#hearts").setAttribute("aria-label", `${health} of ${maxHealth} health`);
+  $("#hearts").setAttribute(
+    "aria-label",
+    `Здоровье: ${health} из ${maxHealth}`,
+  );
   $("#token-count").innerHTML = tokens
     .map(
       (t) =>
-        `<span class="token-pip ${t.collected ? "found" : ""}" aria-label="Token ${t.id + 1}: ${t.collected ? "found" : "missing"}">✧</span>`,
+        `<span class="token-pip ${t.collected ? "found" : ""}" aria-label="Светлячок ${t.id + 1}: ${t.collected ? "найден" : "не найден"}">✧</span>`,
     )
     .join("");
   $("#boss-hud").classList.toggle("hidden", !boss.active || boss.dead);
   $("#boss-name").textContent = REGIONS[region].boss;
   $("#boss-health").style.width = `${(boss.hp / boss.maxHp) * 100}%`;
   $("#objective").textContent = tokens.every((t) => t.collected)
-    ? "Five lights found. Head to the gate →"
+    ? "Пять огоньков найдены. К вратам →"
     : boss.dead
-      ? "The guardian rests. Find the remaining firefly tokens."
-      : "Explore the paths. Find all five firefly tokens.";
+      ? "Страж отдыхает. Найди остальных светлячков."
+      : "Исследуй тропы. Найди всех пятерых светлячков.";
 }
 function showModal(kind, html) {
+  creatureShowcase?.stop();
+  creatureShowcase = null;
   heroShowcase?.stop();
   heroShowcase = null;
   if (game?.running) game.pause();
@@ -164,6 +217,8 @@ function showModal(kind, html) {
   requestAnimationFrame(() => $("#modal-close").focus());
 }
 function closeModal(resume = true) {
+  creatureShowcase?.stop();
+  creatureShowcase = null;
   heroShowcase?.stop();
   heroShowcase = null;
   $("#modal").classList.add("hidden");
@@ -172,7 +227,7 @@ function closeModal(resume = true) {
   else modalReturnFocus?.focus();
 }
 function modeSetting() {
-  return `<label class="setting-line">Adventure style <select id="mode"><option value="gentle" ${progress.mode === "gentle" ? "selected" : ""}>Gentle · extra hearts, more time</option><option value="adventure" ${progress.mode === "adventure" ? "selected" : ""}>Adventurer · a little more challenge</option></select></label>`;
+  return `<label class="setting-line">Сложность <select id="mode"><option value="gentle" ${progress.mode === "gentle" ? "selected" : ""}>Спокойно · больше сердец и времени</option><option value="adventure" ${progress.mode === "adventure" ? "selected" : ""}>Приключение · чуть сложнее</option></select></label>`;
 }
 function bindMode() {
   const mode = $("#mode");
@@ -191,7 +246,7 @@ function showPause() {
   if (!game?.running) return;
   showModal(
     "pause",
-    `<div class="eyebrow">TAKE A BREATH, LITTLE WANDERER</div><h2 id="modal-title">The kingdom can wait.</h2><p>Your collected tokens are safe. Come back when you’re ready.</p>${modeSetting()}<div class="modal-actions"><button id="resume" class="primary-button">Back to the adventure <b>→</b></button><button id="help-pause" class="secondary-button">How to play</button><button id="home" class="secondary-button">Return to camp</button></div>`,
+    `<div class="eyebrow">ПЕРЕДОХНИ, МАЛЕНЬКИЙ СТРАННИК</div><h2 id="modal-title">Королевство подождёт.</h2><p>Все найденные светлячки сохранены. Возвращайся, когда захочешь.</p>${modeSetting()}<div class="modal-actions"><button id="resume" class="primary-button">Вернуться в приключение <b>→</b></button><button id="help-pause" class="secondary-button">Как играть</button><button id="home" class="secondary-button">В лагерь</button></div>`,
   );
   $("#resume").onclick = () => closeModal();
   $("#home").onclick = goHome;
@@ -212,7 +267,7 @@ function goHome() {
 async function showHeroes() {
   showModal(
     "heroes",
-    `<div class="eyebrow">TWO WANDERERS. ONE GREAT ADVENTURE.</div><h2 id="modal-title">Meet your heroes</h2><div class="hero-gallery"><section><canvas width="480" height="420" aria-label="Animated Quirel preview"></canvas><h3>Quirel</h3><span>THE GOLDEN WANDERER</span><p>A steady heart, a weathered cloak, and a staff that has a few stories to tell.</p></section><section><canvas width="480" height="420" aria-label="Animated Urmasa preview"></canvas><h3>Urmasa</h3><span>THE CRIMSON SPARK</span><p>Quick on his feet, curious at heart. A flash of crimson on the path ahead.</p></section></div><div class="hero-preview-modes" role="group" aria-label="Preview hero movements"><button data-motion="idle" aria-pressed="true">Stand</button><button data-motion="walk" aria-pressed="false">Walk</button><button data-motion="jump" aria-pressed="false">Jump</button></div><p id="hero-preview-status" class="hero-preview-status">Waking up the wanderers…</p>`,
+    `<div class="eyebrow">ДВА СТРАННИКА. ОДНО БОЛЬШОЕ ПРИКЛЮЧЕНИЕ.</div><h2 id="modal-title">Знакомься с героями</h2><div class="hero-gallery"><section><canvas width="480" height="420" aria-label="Анимация Квирел"></canvas><h3>Квирел</h3><span>ЗОЛОТАЯ СТРАННИЦА</span><p>Спокойствие, точность, равновесие. Квирел сражается круговыми ударами посоха с двумя клинками и отталкивается от стен.</p></section><section><canvas width="480" height="420" aria-label="Анимация Урмасы"></canvas><h3>Урмаса</h3><span>АЛАЯ ИСКРА</span><p>Стремительные шаги и парные клинки. Алая искра на пути к новым открытиям.</p></section></div><div class="hero-preview-modes" role="group" aria-label="Движения героев"><button data-motion="idle" aria-pressed="true">Покой</button><button data-motion="walk" aria-pressed="false">Бег</button><button data-motion="jump" aria-pressed="false">Прыжок</button><button data-motion="attack" aria-pressed="false">Атака</button><button data-motion="wall" aria-pressed="false">На стене</button></div><p id="hero-preview-status" class="hero-preview-status">Будим странников…</p>`,
   );
   try {
     const assets = await loadAssets();
@@ -222,7 +277,7 @@ async function showHeroes() {
       assets,
     );
     $("#hero-preview-status").textContent =
-      "Choose a movement to see both heroes in action.";
+      "Выбери движение, чтобы увидеть героев в действии.";
     document.querySelectorAll("[data-motion]").forEach(
       (button) =>
         (button.onclick = () => {
@@ -237,13 +292,57 @@ async function showHeroes() {
   } catch {
     if (modalKind === "heroes")
       $("#hero-preview-status").textContent =
-        "The artwork could not load. Please reopen this preview to try again.";
+        "Рисунки не загрузились. Открой просмотр ещё раз.";
+  }
+}
+async function showBestiary(region = 0) {
+  showModal(
+    "bestiary",
+    `<div class="eyebrow">ОБИТАТЕЛИ КОРОЛЕВСТВА</div><h2 id="modal-title">Бестиарий</h2><div class="bestiary-regions">${REGIONS.map((r, i) => `<button data-beasts="${i}" aria-pressed="${i === region}">${r.name}</button>`).join("")}</div><div class="beast-gallery">${[...REGION_CREATURES[region], BOSSES[region]].map((key) => `<section><canvas width="400" height="360"></canvas><h3>${CREATURES[key]?.name || REGIONS[region].boss}</h3></section>`).join("")}</div><div class="hero-preview-modes">${[
+      ["idle", "Покой"],
+      ["move", "Движение"],
+      ["attack", "Атака"],
+      ["hit", "Ранение"],
+      ["defeat", "Отдых"],
+    ]
+      .map(
+        ([key, label]) =>
+          `<button data-beast-motion="${key}" aria-pressed="${key === "idle"}">${label}</button>`,
+      )
+      .join("")}</div><p id="beast-status">Загружаем рисунки…</p>`,
+  );
+  document
+    .querySelectorAll("[data-beasts]")
+    .forEach((b) => (b.onclick = () => showBestiary(Number(b.dataset.beasts))));
+  const panel = $("#beast-status");
+  try {
+    const assets = await loadCreatureAssets(region);
+    if (modalKind !== "bestiary" || $("#beast-status") !== panel) return;
+    creatureShowcase = new CreatureShowcase(
+      [...document.querySelectorAll(".beast-gallery canvas")],
+      assets,
+      [...REGION_CREATURES[region], BOSSES[region]],
+    );
+    panel.textContent = "Выбери движение. Те же рисунки используются в игре.";
+    document.querySelectorAll("[data-beast-motion]").forEach(
+      (b) =>
+        (b.onclick = () => {
+          creatureShowcase.mode = b.dataset.beastMotion;
+          document
+            .querySelectorAll("[data-beast-motion]")
+            .forEach((v) => v.setAttribute("aria-pressed", String(v === b)));
+        }),
+    );
+  } catch {
+    if (panel.isConnected)
+      panel.textContent =
+        "Не удалось загрузить рисунки. Открой бестиарий ещё раз.";
   }
 }
 function showHelp() {
   showModal(
     "help",
-    `<div class="eyebrow">A FEW THINGS BEFORE YOU WANDER</div><h2 id="modal-title">Small steps. Brave adventures.</h2><div class="help-grid"><div><strong>← → Move · ↑ Jump</strong><p>Press up again in the air for a double jump. Hold a little longer to jump higher.</p></div><div><strong>SPACE Attack · ↓ Dash</strong><p>Face a creature and swing your weapon. Dash through danger. Space also talks to the Elder.</p></div><div><strong>Five firefly tokens</strong><p>Explore the high paths. Calm each guardian to reveal the last token, then reach the gate.</p></div><div><strong>Warm lights keep you safe</strong><p>Rest at the glowing light halfway through each land. Falling returns you there. You never lose tokens.</p></div><div><strong>Made for iPad, too</strong><p>Use the on-screen arrows, jump, dash, and sword buttons. Hold a direction while tapping jump or attack.</p></div><div><strong>Your adventure, your pace</strong><p>Gentle mode gives extra hearts and more time between hits. Escape pauses. M opens the map.</p></div></div>${modeSetting()}<div class="modal-actions"><button id="help-done" class="primary-button">I’m ready <b>→</b></button></div>`,
+    `<div class="eyebrow">ПЕРЕД НАЧАЛОМ ПУТИ</div><h2 id="modal-title">Маленькие шаги. Смелые приключения.</h2><div class="help-grid"><div><strong>← → Движение · ↑ Прыжок</strong><p>Нажми ↑ ещё раз в воздухе для второго прыжка. Удерживай кнопку, чтобы прыгнуть выше. Коснись стены и нажми ↑: герой оттолкнётся. Чередуй стены, чтобы забраться наверх.</p></div><div><strong>ПРОБЕЛ — атака · ↓ Рывок</strong><p>Квирел бьёт посохом по кругу, Урмаса — клинками перед собой. Рывок помогает пройти сквозь опасность. Пробел рядом со Старейшиной начинает разговор.</p></div><div><strong>Пять светлячков</strong><p>Исследуй верхние тропы. Успокой стража, забери последнего светлячка и дойди до врат.</p></div><div><strong>Тёплые огоньки сохраняют путь</strong><p>Отдохни у огонька в середине уровня. После падения ты вернёшься к нему. Светлячки всегда остаются с тобой.</p></div><div><strong>Можно играть на iPad</strong><p>Используй экранные стрелки, прыжок, рывок и меч. Удерживай направление и нажимай прыжок или атаку другим пальцем. От стен можно прыгать той же кнопкой ↑.</p></div><div><strong>Твоё приключение, твой темп</strong><p>Спокойный режим даёт больше сердец и времени между ранениями. Escape — пауза. M — карта.</p></div></div>${modeSetting()}<div class="modal-actions"><button id="help-done" class="primary-button">Я готов <b>→</b></button></div>`,
   );
   $("#help-done").onclick = () => closeModal();
   bindMode();
@@ -251,7 +350,7 @@ function showHelp() {
 function showMap() {
   showModal(
     "map",
-    `<div class="eyebrow">DIFFERENT LANDS. ONE KINGDOM.</div><h2 id="modal-title">The wanderer’s atlas</h2><p>Open each path by finding its five tokens and reaching the gate. Revisit any unlocked land.</p><img class="map-image" src="/assets/world-map.webp" alt="Original illustrated kingdom map with six connected regions"><div class="map-regions">${REGIONS.map((r, i) => `<button data-travel="${i}" ${unlocked(i) ? "" : "disabled"}>${progress.cleared.includes(i) ? "✓" : unlocked(i) ? "✦" : "◇"} ${r.name}</button>`).join("")}</div>`,
+    `<div class="eyebrow">РАЗНЫЕ ЗЕМЛИ. ОДНО КОРОЛЕВСТВО.</div><h2 id="modal-title">Атлас странника</h2><p>Чтобы открыть следующий путь, найди пять светлячков и дойди до врат. В открытые земли можно вернуться.</p><img class="map-image" src="/assets/world-map.webp" alt="Карта королевства с шестью землями"><div class="map-regions">${REGIONS.map((r, i) => `<button data-travel="${i}" ${unlocked(i) ? "" : "disabled"}>${progress.cleared.includes(i) ? "✓" : unlocked(i) ? "✦" : "◇"} ${r.name}</button>`).join("")}</div>`,
   );
   document.querySelectorAll("[data-travel]").forEach(
     (b) =>
@@ -265,7 +364,7 @@ function regionPreview(i) {
   const r = REGIONS[i];
   showModal(
     "region",
-    `<div class="eyebrow">CHAPTER ${r.chapter}</div><h2 id="modal-title">${r.name}</h2><img class="map-image" style="max-height:250px;object-fit:cover" src="/assets/region-${i}.webp" alt="${r.name}"><p>${r.subtitle}. Finish ${REGIONS[i - 1].name} to open this path.</p><button id="preview-close" class="primary-button">The adventure awaits <b>→</b></button>`,
+    `<div class="eyebrow">ГЛАВА ${r.chapter}</div><h2 id="modal-title">${r.name}</h2><img class="map-image" style="max-height:250px;object-fit:cover" src="/assets/region-${i}.webp" alt="${r.name}"><p>${r.subtitle}. Пройди предыдущую главу «${REGIONS[i - 1].name}», чтобы открыть этот путь.</p><button id="preview-close" class="primary-button">Приключение ждёт <b>→</b></button>`,
   );
   $("#preview-close").onclick = () => closeModal();
 }
@@ -273,11 +372,12 @@ function showComplete(region) {
   const last = region === 5;
   showModal(
     "complete",
-    `<div class="eyebrow">${last ? "SIX LANDS. ONE BRAVE LITTLE HERO." : "A NEW PATH IS OPEN"}</div><h2 id="modal-title">${last ? "You brought the kingdom to life." : "A little braver. A little brighter."}</h2><p>${last ? "Every firefly found. Every guardian calmed. Your story is now part of the kingdom. Revisit your favorite lands whenever you like." : `Five lights shine in ${REGIONS[region].name}. Beyond the gate, ${REGIONS[region + 1].name} is waiting.`}</p><div style="color:var(--gold);font-size:35px;letter-spacing:15px;margin:24px 0">✧ ✧ ✧ ✧ ✧</div><div class="modal-actions"><button id="next-chapter" class="primary-button">${last ? "Explore your kingdom" : "Into " + REGIONS[region + 1].name}<b>→</b></button><button id="complete-home" class="secondary-button">Rest at camp</button></div>`,
+    `<div class="eyebrow">${last ? "ШЕСТЬ ЗЕМЕЛЬ. ОДИН СМЕЛЫЙ ГЕРОЙ." : "ОТКРЫТ НОВЫЙ ПУТЬ"}</div><h2 id="modal-title">${last ? "Ты вернул королевству жизнь." : "Чуть смелее. Чуть светлее."}</h2><p>${last ? "Все светлячки найдены. Все стражи успокоились. Твоя история стала частью королевства. Возвращайся в любимые земли, когда захочешь." : `Пять огоньков сияют в земле «${REGIONS[region].name}». За вратами ждёт следующая глава: ${REGIONS[region + 1].name}.`}</p><div style="color:var(--gold);font-size:35px;letter-spacing:15px;margin:24px 0">✧ ✧ ✧ ✧ ✧</div><div class="modal-actions"><button id="next-chapter" class="primary-button">${last ? "Исследовать королевство" : "Вперёд: " + REGIONS[region + 1].name}<b>→</b></button><button id="complete-home" class="secondary-button">Отдохнуть в лагере</button></div>`,
   );
   $("#next-chapter").onclick = () => (last ? showMap() : start(region + 1));
   $("#complete-home").onclick = goHome;
 }
+$("#bestiary-menu").onclick = () => showBestiary();
 $("#heroes-menu").onclick = showHeroes;
 $("#start").onclick = () => start();
 $("#help-menu").onclick = showHelp;
@@ -305,7 +405,7 @@ $("#sound").onclick = () => {
   $("#sound").classList.toggle("sound-on", enabled);
   $("#sound").setAttribute(
     "aria-label",
-    enabled ? "Turn sound off" : "Turn sound on",
+    enabled ? "Выключить звук" : "Включить звук",
   );
 };
 $("#fullscreen").onclick = async () => {
@@ -314,9 +414,9 @@ $("#fullscreen").onclick = async () => {
     else if (document.documentElement.requestFullscreen)
       await document.documentElement.requestFullscreen();
     else if (game?.running)
-      toast("Use Safari’s Hide Toolbar for a bigger view.");
+      toast("Скрой панель инструментов Safari, чтобы увеличить обзор.");
   } catch {
-    if (game?.running) toast("Fullscreen is unavailable in this browser.");
+    if (game?.running) toast("Полноэкранный режим недоступен в этом браузере.");
   }
 };
 window.addEventListener("keydown", (e) => {

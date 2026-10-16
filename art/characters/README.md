@@ -33,3 +33,23 @@ Both are transparent RGBA sheets with 16 detailed poses. Each character keeps a 
 Jump selection follows the actual vertical velocity; walking frames never play in the air. Double jumps restart the takeoff sequence. Attacks reuse a detailed stance with weapon-arc follow-through. Left-facing sprites mirror around the same registered feet position. All animation updates use the existing fixed simulation step and stop on pause. Collision dimensions, movement speeds, save data, enemies, and bosses are unchanged.
 
 The “Meet the wanderers” preview uses the same atlases, animation controller, and drawing function as the game. The old hero extracts remain as source-history assets but are no longer loaded for gameplay.
+
+## Painted reference update
+
+The active character assets now use `quirel-painted-source.png` and
+`urmasa-painted-source.png`, generated through the built-in image tool. Quirel's
+new identity reference is `quirel-reference.png`, supplied by the user. The exact
+24-pose generation prompt is `quirel-v3-prompt.txt`; the shared painted style
+transfer prompt and targets are in `../creatures/style-pass.json`.
+
+Quirel retains her lean golden reptile anatomy, dark scarf, leather harness, long
+tail, and a single staff with a curved blade at each end. Her first 16 frames cover
+idle, gait and jumps; frames 16–19 are a circular two-ended staff attack; 20–23
+are wall cling, wall kick, double-jump twist, and airborne attack. The staff sweep
+hits on both sides with a slower cadence than Urmasa's forward dagger attack.
+
+`prepare-creatures.py` packs both active heroes into padded 384px cells and writes
+`heroes-painted.json`. The older hero sheets and their original packer remain for
+provenance, but are no longer downloaded by the game. Both heroes can wall-slide
+and wall-jump, with the same physics and stable collision boxes. The gallery also
+previews attacks and wall poses.

@@ -1,3 +1,7 @@
+import { readFileSync } from "node:fs";
+const routes = JSON.parse(
+  readFileSync(new URL("./routes.json", import.meta.url)),
+);
 import test from "node:test";
 import assert from "node:assert/strict";
 import { Game } from "../src/engine.js";
@@ -39,49 +43,29 @@ function walk(g, x) {
   g.clearInput();
   assert.ok(i < 600, "walk reaches " + x);
 }
-function jumpTo(g, x) {
-  g.clearInput();
-  const dir = x > g.player.x ? "right" : "left";
-  g.press(dir);
-  g.press("jump");
-  let doubled = false;
-  let i = 0;
-  while (i++ < 140) {
-    if (i === 20 && !doubled) {
-      g.release("jump");
-      g.press("jump");
-      doubled = true;
-    }
-    if (Math.abs(g.player.x - x) < 5) g.release(dir);
-    g.step(1 / 60);
-    if (i > 22 && g.player.grounded) break;
-  }
-  g.clearInput();
-  return i;
-}
 for (let region = 0; region < 6; region++)
   test(`chapter ${region + 1} is traversable using movement, double jumps and attacks`, () => {
     const { game: g, completed } = setup(region);
     ticks(g, 30);
-    walk(g, 345);
-    jumpTo(g, 490);
-    assert.equal(g.world.tokens[0].collected, true, "first high token");
-    jumpTo(g, 730);
-    jumpTo(g, 1010);
-    assert.equal(g.world.tokens[1].collected, true, "second high token");
-    jumpTo(g, 1280);
-    jumpTo(g, 1570);
-    jumpTo(g, 1845);
-    assert.equal(g.world.tokens[2].collected, true, "third high token");
-    jumpTo(g, 2100);
-    jumpTo(g, 2360);
-    jumpTo(g, 2595);
-    assert.equal(g.world.tokens[3].collected, true, "fourth high token");
-    jumpTo(g, 2890);
-    jumpTo(g, 3150);
-    jumpTo(g, 3380);
-    jumpTo(g, 3630);
-    walk(g, 3930);
+    // Replay legal keyboard actions against the real production simulation.
+    // Fixtures cover each authored route, including gaps and wall-jump shafts.
+    for (const index of routes.regions[region]) {
+      const action = routes.actions[index];
+      g.release("left");
+      g.release("right");
+      if (action.dir) g.press(action.dir < 0 ? "left" : "right");
+      if (action.jump === "press") {
+        g.release("jump");
+        g.press("jump");
+      }
+      g.press("attack");
+      ticks(g, routes.framesPerAction);
+    }
+    assert.ok(
+      g.world.tokens.slice(0, 4).every((t) => t.collected),
+      "all four exploration tokens",
+    );
+    g.clearInput();
     g.press("attack");
     for (let i = 0; i < 1200 && !g.world.boss.dead; i++) {
       if (
@@ -91,7 +75,7 @@ for (let region = 0; region < 6; region++)
       )
         g.press("jump");
       if (g.player.vy > 0) g.release("jump");
-      if (g.player.x < 3925) g.press("right");
+      if (g.player.x < 3940) g.press("right");
       else g.release("right");
       g.step(1 / 60);
     }
@@ -99,7 +83,7 @@ for (let region = 0; region < 6; region++)
     assert.equal(
       g.world.boss.dead,
       true,
-      "guardian can be defeated without contact damage",
+      `guardian defeat: x=${g.player.x}, y=${g.player.y}, hp=${g.world.boss.hp}, health=${g.player.health}`,
     );
     walk(g, 4190);
     ticks(g, 10);
@@ -138,4 +122,83 @@ test("each boss telegraphs before releasing a damaging wave", () => {
     ticks(g, 62);
     assert.ok(g.world.projectiles.length > 0);
   }
+});
+test("wall slide and alternating wall kicks climb the shaft using either hero", () => {
+  for (const hero of [0, 1]) {
+    const { game: g } = setup(0);
+    g.player.hero = hero;
+    const shaft = g.world.shaft;
+    g.player.x = shaft.x;
+    g.player.y = 446;
+    g.player.invulnerable = 10;
+    g.press("right");
+    g.press("jump");
+    const contacts = new Set();
+    let kicks = 0;
+    for (let i = 0; i < 240; i++) {
+      if (g.player.wall) {
+        contacts.add(g.player.wall);
+        g.release("jump");
+        g.press("jump");
+        g.release("left");
+        g.release("right");
+        g.press(g.player.wall > 0 ? "left" : "right");
+        kicks++;
+      }
+      g.step(1 / 60);
+      if (g.player.y + g.player.h < shaft.top + 30) break;
+    }
+    assert.ok(kicks >= 2);
+    assert.equal(contacts.size, 2, "touches both walls");
+    assert.ok(g.player.y + g.player.h < shaft.top + 30, "climbs above shaft");
+  }
+});
+test("Quirel sweeps both staff ends; Urmasa attacks forward", () => {
+  for (const hero of [0, 1]) {
+    const { game: g } = setup();
+    g.player.hero = hero;
+    g.player.x = 600;
+    g.player.y = 446;
+    g.player.dir = 1;
+    g.world.enemies = [
+      {
+        key: "mushroom-stomper",
+        behavior: "walker",
+        x: 565,
+        y: 460,
+        baseY: 460,
+        w: 20,
+        h: 40,
+        min: 565,
+        max: 565,
+        hp: 3,
+        dir: 1,
+        hit: 0,
+        state: "idle",
+        timer: 5,
+        id: 0,
+      },
+    ];
+    g.press("attack");
+    ticks(g, 1);
+    assert.equal(g.world.enemies[0].hp, hero === 0 ? 2 : 3);
+  }
+});
+test("a fatal projectile clears the volley without breaking the simulation", () => {
+  const { game: g } = setup();
+  g.player.x = 3500;
+  g.player.y = 446;
+  g.player.health = 1;
+  g.player.invulnerable = 0;
+  g.world.projectiles = [0, 1].map(() => ({
+    x: 3500,
+    y: 450,
+    w: 24,
+    h: 24,
+    vx: 0,
+    life: 2,
+  }));
+  assert.doesNotThrow(() => ticks(g, 1));
+  assert.equal(g.world.projectiles.length, 0);
+  assert.equal(g.player.x, 110);
 });

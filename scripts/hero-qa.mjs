@@ -19,9 +19,9 @@ for (const hero of [0, 1]) {
   await page.waitForFunction(() =>
     document
       .querySelector("#hero-preview-status")
-      .textContent.startsWith("Choose"),
+      .textContent.startsWith("Выбери"),
   );
-  for (const state of ["idle", "walk", "jump"]) {
+  for (const state of ["idle", "walk", "jump", "attack", "wall"]) {
     await page.click(`[data-motion="${state}"]`);
     await page.waitForTimeout(300);
     if (hero === 0)

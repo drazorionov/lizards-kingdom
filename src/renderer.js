@@ -1,3 +1,4 @@
+import { drawCreature } from "./creatures.js";
 import { REGIONS, WORLD_WIDTH, clamp } from "./world.js";
 import { drawHero } from "./hero-animation.js";
 const TAU = Math.PI * 2;
@@ -28,18 +29,23 @@ export class Renderer {
   resize() {
     const r = this.canvas.getBoundingClientRect();
     if (!r.width || !r.height) return;
-    const dpr = Math.min(window.devicePixelRatio || 1, 1.6);
+    const dpr = Math.min(
+      window.devicePixelRatio || 1,
+      1.6,
+      Math.sqrt(1500000 / (r.width * r.height)),
+    );
     this.canvas.width = Math.round(r.width * dpr);
     this.canvas.height = Math.round(r.height * dpr);
     this.viewWidth = clamp((r.width / r.height) * 620, 820, 1550);
     this.scale = this.canvas.height / 620;
     this.viewWidth = this.canvas.width / this.scale;
   }
-  prepare(region) {
+  prepare(region, world) {
     this.regionIndex = region;
     this.region = REGIONS[region];
     this.background = this.makeBackground(region);
     this.platformTextures = new Map();
+    this.scenery = this.makeScenery(world);
     this.resize();
   }
   makeBackground(region) {
@@ -59,6 +65,60 @@ export class Renderer {
     tint.addColorStop(1, "#040d17aa");
     g.fillStyle = tint;
     g.fillRect(0, 0, 1600, 620);
+    return c;
+  }
+  makeScenery(w) {
+    if (!w) return null;
+    const c = canvas(WORLD_WIDTH, 620),
+      previous = this.ctx;
+    this.ctx = c.getContext("2d");
+    const g = this.ctx,
+      r = this.region,
+      camera = 0,
+      view = WORLD_WIDTH;
+    // Small region-specific details populate the route without additional textures.
+    for (const s of w.platforms) {
+      if (s.x + s.w < camera - 100 || s.x > camera + view + 100) continue;
+      if (s.wall) {
+        g.strokeStyle = r.color + "88";
+        g.lineWidth = 2;
+        for (let y = s.y + 14; y < s.y + s.h - 10; y += 28) {
+          g.beginPath();
+          g.moveTo(s.x + 4, y + 5);
+          g.lineTo(s.x + 11, y);
+          g.lineTo(s.x + 17, y + 5);
+          g.stroke();
+          g.beginPath();
+          g.moveTo(s.x + s.w - 17, y + 5);
+          g.lineTo(s.x + s.w - 11, y);
+          g.lineTo(s.x + s.w - 4, y + 5);
+          g.stroke();
+        }
+      } else if (s.ground) {
+        for (let x = s.x + 35; x < s.x + s.w - 20; x += 155) {
+          if (x < camera - 70 || x > camera + view + 70) continue;
+          if (w.region < 2) this.mushroom(x, s.y, 25 + rand(x) * 30, r.glow, x);
+          else if (w.region > 3)
+            this.crystals(x, s.y, 22 + rand(x) * 40, r.glow, x);
+          else {
+            g.fillStyle = "#101922";
+            g.fillRect(x - 9, s.y - 55, 18, 55);
+            g.strokeStyle = "#60748a88";
+            g.lineWidth = 2;
+            g.strokeRect(x - 12, s.y - 58, 24, 7);
+            g.fillStyle = r.color + "aa";
+            g.fillRect(x - 2, s.y - 45, 4, 12);
+          }
+        }
+      }
+    }
+    if (w.shaft.x > camera - 100 && w.shaft.x < camera + view + 100) {
+      g.fillStyle = "#e8ddb4";
+      g.font = "11px Arial";
+      g.textAlign = "center";
+      g.fillText("↑ Отталкивайся от стен", w.shaft.x, 430);
+    }
+    this.ctx = previous;
     return c;
   }
   platform(s) {
@@ -202,13 +262,31 @@ export class Renderer {
       if (s.x + s.w < camera - 30 || s.x > camera + view + 30) continue;
       g.drawImage(this.platform(s), s.x - 10, s.y - 12);
     }
-    // The elder is an original NPC sprite, next to a signpost.
+    if (this.scenery)
+      g.drawImage(this.scenery, camera, 0, view, 620, camera, 0, view, 620);
+    // The Elder shares the painted art style and responds with talking poses.
     if (camera < 420) {
-      this.sprite("elder", w.elder.x - 7, 428, 48, 72);
+      const talking = Math.abs(p.x - w.elder.x) < 100 && p.attack > 0;
+      const frame = talking
+        ? 8 + (Math.floor(t * 5) % 4)
+        : Math.floor(t * 3) % 4;
+      const elder = this.assets["elder-atlas"];
+      if (elder)
+        g.drawImage(
+          elder,
+          (frame % 4) * 256,
+          Math.floor(frame / 4) * 256,
+          256,
+          256,
+          w.elder.x - 30,
+          420,
+          86,
+          86,
+        );
       g.fillStyle = "#d4c4a0";
       g.font = "10px Georgia";
       g.textAlign = "center";
-      g.fillText("THE ELDER", w.elder.x + 16, 413);
+      g.fillText("СТАРЕЙШИНА", w.elder.x + 16, 413);
       g.strokeStyle = "#9eaa8b66";
       g.beginPath();
       g.moveTo(170, 500);
@@ -238,20 +316,22 @@ export class Renderer {
       g.stroke();
     }
     for (const e of w.enemies) {
-      if (e.hp <= 0 || e.x < camera - 80 || e.x > camera + view + 80) continue;
-      const frame = Math.floor(t * 5 + e.id) % 2;
-      this.sprite(
-        `enemy-${w.region}-${frame}`,
-        e.x - 13,
-        e.y - 14 + Math.sin(t * 7 + e.id) * 1.5,
-        64,
-        56,
-        e.dir,
-        e.hit > 0 ? 0.5 : 1,
-      );
+      if (
+        (e.hp <= 0 && e.deathTime > 1.2) ||
+        e.x < camera - 120 ||
+        e.x > camera + view + 120
+      )
+        continue;
+      drawCreature(g, this.assets, e.key, e, t);
+      if (e.state === "windup" && e.hp > 0) {
+        g.font = "bold 17px Arial";
+        g.fillStyle = "#ffe1a0";
+        g.textAlign = "center";
+        g.fillText("!", e.x + e.w / 2, e.y - 25);
+      }
     }
     const b = w.boss;
-    if (!b.dead && b.x < camera + view + 160) {
+    if ((!b.dead || b.deathTime < 1.2) && b.x < camera + view + 160) {
       this.glow(b.x + 62, b.y + 65, 110, r.glow, b.phase === 1 ? 0.4 : 0.16);
       if (b.phase === 1) {
         g.strokeStyle = "#efc47e";
@@ -262,18 +342,16 @@ export class Renderer {
         g.font = "11px Manrope";
         g.textAlign = "center";
         g.fillStyle = "#f3d292";
-        g.fillText(b.timer < 0.35 ? "JUMP!" : "GET READY…", b.x + 65, b.y - 25);
+        g.fillText(
+          b.timer < 0.35 ? "ПРЫГАЙ!" : "ПРИГОТОВЬСЯ…",
+          b.x + 65,
+          b.y - 25,
+        );
       }
-      this.sprite(
-        `boss-${w.region}-${b.phase}`,
-        b.x - 25,
-        b.y - 20 + Math.sin(t * 2) * 4,
-        175,
-        145,
-        1,
-        b.hit > 0 ? 0.5 : 1,
-      );
+      b.dir = p.x < b.x ? -1 : 1;
+      drawCreature(g, this.assets, b.key, b, t, { size: 195 });
     }
+
     for (const a of w.projectiles) {
       this.glow(a.x + 16, a.y + 12, 30, r.glow, 0.6);
       g.fillStyle = r.color;
@@ -284,7 +362,7 @@ export class Renderer {
     const ready = w.tokens.every((a) => a.collected) && b.dead;
     this.gate(4415, 500, t, ready);
     const hero = game.progress.hero === 1 ? "urmasa" : "quirel";
-    const atlas = this.assets[`hero-${hero}-atlas-v2`];
+    const atlas = this.assets[`hero-${hero}-painted-atlas`];
     const alpha = p.invulnerable > 0 && Math.floor(t * 12) % 2 ? 0.48 : 1;
     if (p.dash > 0) {
       for (let i = 1; i < 4; i++)
@@ -305,14 +383,28 @@ export class Renderer {
       g.translate(p.x + 16, p.y + 24);
       g.scale(p.dir, 1);
       g.strokeStyle = "#fff4c9";
-      g.lineWidth = 4;
+      g.globalAlpha =
+        Math.sin((1 - p.attack / (p.attackDuration || 0.21)) * Math.PI) * 0.7;
+      g.lineWidth = 2;
       g.beginPath();
-      g.arc(5, 0, 64, -1.05, 1.05);
+      g.arc(
+        5,
+        0,
+        p.hero === 0 ? 72 : 64,
+        p.hero === 0 ? -Math.PI : -1.05,
+        p.hero === 0 ? Math.PI : 1.05,
+      );
       g.stroke();
       g.strokeStyle = "#e7c68466";
       g.lineWidth = 11;
       g.beginPath();
-      g.arc(5, 0, 62, -0.95, 1);
+      g.arc(
+        5,
+        0,
+        p.hero === 0 ? 70 : 62,
+        p.hero === 0 ? -Math.PI : -0.95,
+        p.hero === 0 ? Math.PI : 1,
+      );
       g.stroke();
       g.restore();
     }
@@ -409,7 +501,7 @@ export class Renderer {
     g.font = "9px Manrope";
     g.textAlign = "center";
     g.fillStyle = "#b9d0c7";
-    g.fillText(active ? "JOURNEY SAVED" : "WARM LIGHT", x, y - 84);
+    g.fillText(active ? "ПУТЬ СОХРАНЁН" : "ТЁПЛЫЙ СВЕТ", x, y - 84);
   }
   gate(x, y, t, ready) {
     const g = this.ctx;
@@ -429,7 +521,7 @@ export class Renderer {
     g.textAlign = "center";
     g.fillStyle = ready ? "#e4dfc0" : "#91a09d";
     g.fillText(
-      ready ? "THE PATH IS OPEN" : "FIVE LIGHTS OPEN THE WAY",
+      ready ? "ПУТЬ ОТКРЫТ" : "ПЯТЬ ОГОНЬКОВ ОТКРОЮТ ПУТЬ",
       x,
       y - 157,
     );

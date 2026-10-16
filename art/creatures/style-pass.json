@@ -1,0 +1,76 @@
+{
+  "prompt": "Use case: style-transfer. Image 1 is the EDIT TARGET sprite atlas. Image 2 is the PAINTED STYLE REFERENCE only. Redraw every sprite in Image 1 using the exact illustrative painted treatment of Image 2: visible dry-brush texture, clean graphic contours, broad matte color planes, soft economical highlights and readable shapes. Simplify tiny noisy metallic details. The result should feel hand-painted and illustrated, not a shiny realistic 3D render. IMPORTANT: preserve Image 1's exact creature identity, anatomy, original color palette, outfit, weapon, number of sprites, per-frame pose, facing direction, grid arrangement and complete limbs/tails/weapons. Do not change them into birds. Do not add or delete frames. Maintain genuine transparent alpha, isolated complete sprites with blank margins. No text, no background, no cast shadows. Keep all poses the same anatomical scale and maintain a stable floor baseline in each row.",
+  "reference": "art/creatures/paint-style-reference.png",
+  "targets": [
+    {
+      "key": "mushroom-stomper",
+      "input": "art/creatures/mushroom-stomper-v2-source.png",
+      "dest": "art/creatures/mushroom-stomper-painted-source.png"
+    },
+    {
+      "key": "mire-lizard",
+      "input": "art/creatures/mire-lizard-v2-source.png",
+      "dest": "art/creatures/mire-lizard-painted-source.png"
+    },
+    {
+      "key": "ashen-warrior",
+      "input": "art/creatures/ashen-warrior-v2-source.png",
+      "dest": "art/creatures/ashen-warrior-painted-source.png"
+    },
+    {
+      "key": "depth-crawler",
+      "input": "art/creatures/depth-crawler-v2-source.png",
+      "dest": "art/creatures/depth-crawler-painted-source.png"
+    },
+    {
+      "key": "crystal-guard",
+      "input": "art/creatures/crystal-guard-v2-source.png",
+      "dest": "art/creatures/crystal-guard-painted-source.png"
+    },
+    {
+      "key": "spore-mother",
+      "input": "art/creatures/spore-mother-v2-source.png",
+      "dest": "art/creatures/spore-mother-painted-source.png"
+    },
+    {
+      "key": "mire-guardian",
+      "input": "art/creatures/mire-guardian-v2-source.png",
+      "dest": "art/creatures/mire-guardian-painted-source.png"
+    },
+    {
+      "key": "storm-beast",
+      "input": "art/creatures/storm-beast-v2-source.png",
+      "dest": "art/creatures/storm-beast-painted-source.png"
+    },
+    {
+      "key": "bell-keeper",
+      "input": "art/creatures/bell-keeper-v2-source.png",
+      "dest": "art/creatures/bell-keeper-painted-source.png"
+    },
+    {
+      "key": "shadow-warden",
+      "input": "art/creatures/shadow-warden-v2-source.png",
+      "dest": "art/creatures/shadow-warden-painted-source.png"
+    },
+    {
+      "key": "lake-lady",
+      "input": "art/creatures/lake-lady-v2-source.png",
+      "dest": "art/creatures/lake-lady-painted-source.png"
+    },
+    {
+      "key": "quirel",
+      "input": "art/characters/quirel-v3-source.png",
+      "dest": "art/characters/quirel-painted-source.png"
+    },
+    {
+      "key": "urmasa",
+      "input": "art/characters/urmasa-v2-source.png",
+      "dest": "art/characters/urmasa-painted-source.png"
+    },
+    {
+      "key": "flying-spore",
+      "input": "art/creatures/flying-spore-v2-source.png",
+      "dest": "art/creatures/flying-spore-painted-source.png"
+    }
+  ]
+}

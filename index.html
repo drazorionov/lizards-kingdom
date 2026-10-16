@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="ru">
   <head>
     <meta charset="UTF-8" />
     <meta
@@ -9,9 +9,9 @@
     <meta name="theme-color" content="#090f17" />
     <meta
       name="description"
-      content="A little lizard. A very big adventure. Explore six enchanted lands in this illustrated arcade platformer."
+      content="Маленькая ящерица. Большое приключение. Исследуй шесть волшебных земель в рисованном платформере."
     />
-    <title>Lizards Kingdom — A little hero. A great adventure.</title>
+    <title>Королевство ящериц — Большое приключение</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="preload" as="image" href="/assets/cover.webp" />
     <link rel="stylesheet" href="/src/style.css" />
@@ -19,24 +19,25 @@
   <body>
     <div id="app">
       <header class="topbar">
-        <a class="wordmark" href="#" aria-label="Lizards Kingdom home"
+        <a class="wordmark" href="#" aria-label="Королевство ящериц — главная"
           ><span class="crest">♜</span
-          ><span>LIZARDS <small>KINGDOM</small></span></a
-        ><span class="top-label">A LITTLE HERO. A GREAT ADVENTURE.</span>
+          ><span>КОРОЛЕВСТВО <small>ЯЩЕРИЦ</small></span></a
+        ><span class="top-label">МАЛЕНЬКИЙ ГЕРОЙ. БОЛЬШОЕ ПРИКЛЮЧЕНИЕ.</span>
         <div class="header-actions">
-          <span class="save-status" id="save-status">Saved on this device</span
+          <span class="save-status" id="save-status"
+            >Сохранено на устройстве</span
           ><button
             id="sound"
             class="icon-button"
-            aria-label="Turn sound on"
-            title="Sound"
+            aria-label="Включить звук"
+            title="Звук"
           >
             ♫<span class="sound-dot"></span></button
           ><button
             id="fullscreen"
             class="icon-button"
-            aria-label="Enter fullscreen"
-            title="Fullscreen"
+            aria-label="На весь экран"
+            title="На весь экран"
           >
             ⛶
           </button>
@@ -47,85 +48,90 @@
         <div class="hero-shade" aria-hidden="true"></div>
         <div class="embers" aria-hidden="true"></div>
         <section class="hero-copy">
-          <div class="eyebrow"><span></span> THE KINGDOM IS CALLING</div>
-          <h1>A little hero.<br />A <em>great</em> adventure.</h1>
+          <div class="eyebrow"><span></span> КОРОЛЕВСТВО ЗОВЁТ</div>
+          <h1>Маленький герой.<br /><em>Большое</em> приключение.</h1>
           <p>
-            Beyond the glowing forest, a forgotten kingdom awaits.<br />Find
-            your courage. Follow the fireflies. Make your own story.
+            За светящимся лесом ждёт забытое королевство.<br />Следуй за
+            светлячками. Найди смелость. Создай свою историю.
           </p>
-          <div class="hero-select" role="group" aria-label="Choose your hero">
+          <div class="hero-select" role="group" aria-label="Выбери героя">
             <button
               class="hero-choice selected"
               data-hero="0"
               aria-pressed="true"
             >
-              <img src="/assets/hero-quirel-portrait-v2.webp" alt="" /><span
-                >QUIREL<small>The golden wanderer</small></span
+              <img
+                src="/assets/hero-quirel-painted-portrait.webp"
+                alt=""
+              /><span>КВИРЕЛ<small>Золотая странница</small></span
               ><i>✓</i></button
             ><button class="hero-choice" data-hero="1" aria-pressed="false">
-              <img src="/assets/hero-urmasa-portrait-v2.webp" alt="" /><span
-                >URMASA<small>The crimson spark</small></span
+              <img
+                src="/assets/hero-urmasa-painted-portrait.webp"
+                alt=""
+              /><span>УРМАСА<small>Алая искра</small></span
               ><i>✓</i>
             </button>
           </div>
           <button id="heroes-menu" class="text-button heroes-link">
-            Meet the wanderers <span>↗</span>
+            Познакомиться с героями <span>↗</span>
+          </button>
+          <button id="bestiary-menu" class="text-button heroes-link">
+            Бестиарий <span>↗</span>
           </button>
           <button id="start" class="primary-button">
-            <span>Begin your journey</span><b>→</b>
+            <span>Начать путь</span><b>→</b>
           </button>
           <div class="menu-meta">
             <span class="little-star">✦</span>
-            <span id="journey-note"
-              >Your first chapter starts in the Mushroom Forest</span
-            >
+            <span id="journey-note">Первая глава — Дремучий грибной лес</span>
           </div>
           <div class="intro-controls">
-            <span><kbd>←</kbd><kbd>→</kbd> Move</span
-            ><span><kbd>↑</kbd> Jump</span><span><kbd>SPACE</kbd> Attack</span
-            ><span class="touch-note">✧ iPad touch controls</span>
+            <span><kbd>←</kbd><kbd>→</kbd> Движение</span
+            ><span><kbd>↑</kbd> Прыжок</span><span><kbd>ПРОБЕЛ</kbd> Атака</span
+            ><span class="touch-note">✧ Управление на iPad</span>
           </div>
         </section>
         <section class="chapters">
           <div class="section-label">
-            <span>SIX LANDS. ONE KINGDOM.</span
+            <span>ШЕСТЬ ЗЕМЕЛЬ. ОДНО КОРОЛЕВСТВО.</span
             ><button id="map-menu" class="text-button">
-              Explore the map <span>↗</span>
+              Открыть карту <span>↗</span>
             </button>
           </div>
           <div id="region-cards" class="region-cards"></div>
         </section>
         <footer class="menu-footer">
-          <span>EXPLORE · COLLECT · BECOME BRAVE</span
+          <span>ИССЛЕДУЙ · СОБИРАЙ · СТАНОВИСЬ СМЕЛЕЕ</span
           ><button id="help-menu" class="text-button">
-            How to play <span>?</span></button
-          ><span class="footer-end">A world worth getting lost in.</span>
+            Как играть <span>?</span></button
+          ><span class="footer-end">Мир, полный открытий.</span>
         </footer>
       </main>
-      <section id="game" class="hidden" aria-label="Game">
+      <section id="game" class="hidden" aria-label="Игра">
         <canvas
           id="canvas"
           tabindex="0"
-          aria-label="Lizards Kingdom platformer. Arrow keys move and jump; Space attacks; Down dashes; Escape pauses."
+          aria-label="Королевство ящериц. Стрелки — движение и прыжок; пробел — атака; вниз — рывок; Escape — пауза."
         ></canvas>
         <div class="game-hud">
           <div class="hud-left">
-            <span class="hud-eyebrow" id="chapter-label">CHAPTER I</span>
-            <h2 id="region-name">Mushroom Forest</h2>
-            <div id="hearts" aria-label="Health"></div>
+            <span class="hud-eyebrow" id="chapter-label">ГЛАВА I</span>
+            <h2 id="region-name">Дремучий грибной лес</h2>
+            <div id="hearts" aria-label="Здоровье"></div>
           </div>
           <div class="hud-center">
-            <span class="hud-eyebrow">FIREFLY TOKENS</span>
+            <span class="hud-eyebrow">СВЕТЛЯЧКИ</span>
             <div id="token-count"></div>
           </div>
           <div class="hud-right">
             <button
               id="map-game"
               class="game-button"
-              aria-label="Open world map"
+              aria-label="Открыть карту мира"
             >
-              ♧ <span>Map</span></button
-            ><button id="pause" class="game-button" aria-label="Pause game">
+              ♧ <span>Карта</span></button
+            ><button id="pause" class="game-button" aria-label="Пауза">
               Ⅱ
             </button>
           </div>
@@ -136,24 +142,24 @@
         </div>
         <div id="toast" class="toast" role="status"></div>
         <div class="game-bottom">
-          <span id="objective">Follow the fireflies. Find all five tokens.</span
+          <span id="objective">Следуй за светлячками. Найди всех пятерых.</span
           ><span id="keyboard-hint"
-            >← → Move · ↑ Double jump · ↓ Dash · SPACE Attack</span
+            >← → Движение · ↑ Прыжок / от стены · ↓ Рывок · ПРОБЕЛ Атака</span
           >
         </div>
         <div id="touch-controls" class="touch-controls">
           <div class="touch-move">
-            <button data-control="left" aria-label="Move left">◀</button
-            ><button data-control="right" aria-label="Move right">▶</button>
+            <button data-control="left" aria-label="Влево">◀</button
+            ><button data-control="right" aria-label="Вправо">▶</button>
           </div>
           <div class="touch-actions">
-            <button data-control="dash" class="touch-dash" aria-label="Dash">
+            <button data-control="dash" class="touch-dash" aria-label="Рывок">
               ➟</button
-            ><button data-control="jump" aria-label="Jump">↑</button
+            ><button data-control="jump" aria-label="Прыжок">↑</button
             ><button
               data-control="attack"
               class="touch-attack"
-              aria-label="Attack or interact"
+              aria-label="Атака или действие"
             >
               ⚔
             </button>
@@ -171,7 +177,7 @@
           <button
             id="modal-close"
             class="modal-close"
-            aria-label="Close dialog"
+            aria-label="Закрыть окно"
           >
             ×
           </button>
@@ -180,10 +186,10 @@
       </div>
       <div id="phone-notice">
         <span>♜</span>
-        <h2>A kingdom needs a little room.</h2>
+        <h2>Королевству нужен простор.</h2>
         <p>
-          Play on an iPad, tablet, or computer.<br />On a tablet, turn to
-          landscape for the best view.
+          Играй на iPad, планшете или компьютере.<br />На планшете поверни экран
+          горизонтально.
         </p>
       </div>
     </div>

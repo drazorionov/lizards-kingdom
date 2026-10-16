@@ -974,3 +974,77 @@ canvas {
   text-align: center;
   font-size: 10px !important;
 }
+/* Cyrillic labels and the larger creature gallery remain readable on iPad. */
+.hero-copy h1 {
+  font-size: clamp(40px, 4.4vw, 68px);
+}
+.hero-preview-modes {
+  flex-wrap: wrap;
+}
+.bestiary-regions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 18px 0;
+}
+.bestiary-regions button {
+  border: 1px solid #536061;
+  background: #142127;
+  color: #d9d5c6;
+  border-radius: 8px;
+  padding: 9px 12px;
+  font: inherit;
+  cursor: pointer;
+}
+.bestiary-regions button[aria-pressed="true"] {
+  border-color: #d7b776;
+  color: #f5d99d;
+}
+.beast-gallery {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.beast-gallery section {
+  background: #0b161dcc;
+  border: 1px solid #374c4e;
+  border-radius: 12px;
+  text-align: center;
+  padding: 8px;
+}
+.beast-gallery canvas {
+  width: min(100%, 200px);
+  height: auto;
+}
+.beast-gallery h3 {
+  font:
+    15px Georgia,
+    serif;
+  margin: 0 0 10px;
+  color: #e9d8b5;
+}
+#beast-status {
+  font-size: 12px;
+}
+@media (min-width: 900px) {
+  .beast-gallery {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+@media (max-width: 1100px) {
+  .hero-copy h1 {
+    font-size: 42px;
+  }
+  .top-label {
+    display: none;
+  }
+  .hero-copy {
+    width: 62%;
+  }
+  .hero-choice small {
+    font-size: 9px;
+  }
+  .game-bottom {
+    font-size: 10px;
+  }
+}

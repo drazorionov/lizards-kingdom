@@ -1,9 +1,9 @@
-// Both heroes share a registered 4 × 4 atlas, so animation never changes hitboxes.
+// Both heroes use registered 384px cells; Quirel adds combat and wall-kick rows.
 export const HERO_ATLAS = Object.freeze({
   cell: 384,
   columns: 4,
-  anchorX: 260,
-  anchorY: 344,
+  anchorX: 192,
+  anchorY: 368,
   size: 114,
 });
 const IDLE = [0, 1, 2, 3, 2, 1];
@@ -35,19 +35,23 @@ export function updateHeroAnimation(player, dt) {
       ? "dash"
       : player.attack > 0
         ? "attack"
-        : !player.grounded
-          ? a.takeoff > 0
-            ? "takeoff"
-            : player.vy < -90
-              ? "rise"
-              : player.vy > 100
-                ? "fall"
-                : "apex"
-          : a.landing > 0
-            ? "land"
-            : Math.abs(player.vx) > 1
-              ? "walk"
-              : "idle";
+        : player.wall && !player.grounded && player.vy >= 0
+          ? "wall"
+          : player.wallKick > 0
+            ? "wallkick"
+            : !player.grounded
+              ? a.takeoff > 0
+                ? "takeoff"
+                : player.vy < -90
+                  ? "rise"
+                  : player.vy > 100
+                    ? "fall"
+                    : "apex"
+              : a.landing > 0
+                ? "land"
+                : Math.abs(player.vx) > 1
+                  ? "walk"
+                  : "idle";
   if (state !== a.state) {
     a.state = state;
     a.elapsed = 0;
@@ -73,6 +77,21 @@ export function updateHeroAnimation(player, dt) {
                     ? 13
                     : 15
                 : 15;
+  if (player.hero === 0) {
+    if (state === "attack")
+      a.frame = player.grounded
+        ? 16 +
+          Math.min(
+            3,
+            Math.floor(
+              (1 - player.attack / (player.attackDuration || 0.32)) * 4,
+            ),
+          )
+        : 23;
+    if (state === "wall") a.frame = 20;
+    if (state === "wallkick") a.frame = 21;
+    if (player.jumps === 2 && state === "rise") a.frame = 22;
+  }
   a.grounded = player.grounded;
   a.jumps = player.jumps;
   return a;
@@ -103,7 +122,7 @@ export function drawHero(
   ctx.translate(x, y);
   ctx.scale(player.dir, 1);
   // Subtle follow-through uses the same detailed sprite during combat and dash.
-  if (animation.state === "attack")
+  if (animation.state === "attack" && player.hero !== 0)
     ctx.rotate(Math.sin((1 - player.attack / 0.21) * Math.PI) * 0.12);
   if (animation.state === "dash") ctx.rotate(0.12);
   ctx.drawImage(
@@ -112,8 +131,8 @@ export function drawHero(
     sy,
     sw,
     sh,
-    (-HERO_ATLAS.anchorX / sw) * size,
-    (-HERO_ATLAS.anchorY / sh) * size,
+    -size / 2,
+    -(368 / sh) * size,
     size,
     size,
   );

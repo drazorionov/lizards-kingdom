@@ -1,3 +1,4 @@
+import { stepCreature } from "./creatures.js";
 import { createHeroAnimation, updateHeroAnimation } from "./hero-animation.js";
 import {
   REGIONS,
@@ -89,6 +90,11 @@ export class Game {
     this.region = REGIONS[region];
     this.checkpointUsed = progress.region === region && progress.checkpoint;
     this.player = {
+      hero: progress.hero,
+      wall: 0,
+      wallCoyote: 0,
+      lastWall: 0,
+      wallKick: 0,
       animation: createHeroAnimation(),
       x: this.checkpointUsed ? 2220 : 110,
       y: 410,
@@ -116,14 +122,14 @@ export class Game {
     this.gateHint = false;
     this.lastHud = "";
     this.clearInput();
-    this.renderer.prepare(region);
+    this.renderer.prepare(region, this.world);
     this.previous = 0;
     this.accumulator = 0;
     if (!this.raf) this.raf = requestAnimationFrame(this.loop);
     this.cb.toast(
       this.checkpointUsed
-        ? "Welcome back, little wanderer."
-        : `${this.region.name} · Your next adventure begins.`,
+        ? "С возвращением, маленький странник."
+        : `${this.region.name} · Приключение начинается.`,
     );
     this.updateHud();
   }
@@ -190,11 +196,25 @@ export class Game {
       "dashCooldown",
       "coyote",
       "jumpBuffer",
+      "wallCoyote",
+      "wallKick",
     ])
       p[key] = Math.max(0, p[key] - dt);
     if (p.grounded) p.coyote = 0.12;
     if (this.pressed.has("jump")) p.jumpBuffer = 0.14;
-    if (p.jumpBuffer > 0 && (p.coyote > 0 || p.jumps < 2)) {
+    if (p.jumpBuffer > 0 && p.wallCoyote > 0 && !p.grounded) {
+      p.vy = -570;
+      p.vx = -p.lastWall * 310;
+      p.dir = -p.lastWall;
+      p.wallKick = 0.18;
+      p.wallCoyote = 0;
+      p.wall = 0;
+      p.jumps = 1;
+      p.jumpBuffer = 0;
+      p.coyote = 0;
+      this.emit(p.x + p.w / 2, p.y + p.h, this.region.color, 5);
+      this.cb.sound("jump");
+    } else if (p.jumpBuffer > 0 && (p.coyote > 0 || p.jumps < 2)) {
       const first = p.coyote > 0 || p.jumps === 0;
       p.vy = first ? PHYSICS.jump : PHYSICS.doubleJump;
       p.jumps = first ? 1 : 2;
@@ -212,42 +232,33 @@ export class Game {
     }
     let direction =
       (this.keys.has("right") ? 1 : 0) - (this.keys.has("left") ? 1 : 0);
-    if (direction) p.dir = direction;
+    if (direction && p.wallKick === 0) p.dir = direction;
     if (p.dash > 0) {
       p.vx = p.dir * PHYSICS.dashSpeed;
       p.vy = -15;
-    } else p.vx = direction * PHYSICS.speed;
+    } else if (p.wallKick === 0) p.vx = direction * PHYSICS.speed;
     if (this.keys.has("attack") && p.attackCooldown === 0) {
-      p.attack = 0.21;
-      p.attackCooldown = 0.32;
+      p.attackDuration = p.hero === 0 ? 0.32 : 0.21;
+      p.attack = p.attackDuration;
+      p.attackCooldown = p.hero === 0 ? 0.42 : 0.32;
       this.attackSerial++;
       this.cb.sound("attack");
       if (Math.abs(p.x - w.elder.x) < 100)
         this.cb.toast(
-          "Elder: Five firefly tokens awaken each land. The last is guarded. You can jump twice!",
+          "Старейшина: Найди пять светлячков. Последнего охраняет страж. Прыгай дважды и отталкивайся от стен!",
         );
     }
     movePlayer(p, w.platforms, dt);
     if (p.y > 690) this.damage(true);
     const attack = {
-      x: p.dir > 0 ? p.x + 10 : p.x - 86,
+      x: p.hero === 0 ? p.x - 58 : p.dir > 0 ? p.x + 10 : p.x - 86,
       y: p.y - 10,
-      w: 108,
+      w: p.hero === 0 ? 147 : 108,
       h: 80,
     };
     for (const e of w.enemies) {
+      stepCreature(e, p, w, dt, this.time);
       if (e.hp <= 0) continue;
-      e.hit = Math.max(0, e.hit - dt);
-      e.cooldown = Math.max(0, e.cooldown - dt);
-      e.x += e.dir * (38 + w.region * 5) * dt;
-      if (e.x < e.min) {
-        e.x = e.min;
-        e.dir = 1;
-      }
-      if (e.x > e.max) {
-        e.x = e.max;
-        e.dir = -1;
-      }
       if (
         p.attack > 0 &&
         overlaps(attack, e) &&
@@ -271,8 +282,8 @@ export class Game {
         const count = w.tokens.filter((t) => t.collected).length;
         this.cb.toast(
           count === 5
-            ? "All five tokens found! The gate is open."
-            : `Firefly token found · ${count} / 5`,
+            ? "Все пять светлячков найдены! Врата открыты."
+            : `Найден светлячок · ${count} / 5`,
         );
         if (count === 5) p.health = this.maxHealth();
       }
@@ -286,10 +297,23 @@ export class Game {
       p.health = this.maxHealth();
       this.emit(p.x, p.y, this.region.color, 20);
       this.cb.sound("checkpoint");
-      this.cb.toast("A warm light. Health restored. Journey saved.");
+      this.cb.toast("Тёплый свет. Здоровье восстановлено. Путь сохранён.");
       this.persist();
     }
     this.stepBoss(dt, attack);
+    for (let i = w.projectiles.length - 1; i >= 0; i--) {
+      const a = w.projectiles[i];
+      if (!a) break; // A respawn clears the projectile list during collision handling.
+      a.x += a.vx * dt;
+      a.y += (a.vy || 0) * dt;
+      a.life -= dt;
+      if (overlaps(p, a)) {
+        this.damage();
+        a.life = 0;
+      }
+      if (a.life <= 0 || w.platforms.some((s) => s.wall && overlaps(a, s)))
+        w.projectiles.splice(i, 1);
+    }
     const all = w.tokens.every((t) => t.collected);
     if (p.x > 4370 && all && w.boss.dead && !this.finished) {
       this.finished = true;
@@ -303,7 +327,7 @@ export class Game {
     } else if (p.x > 4330 && !all && !this.gateHint) {
       this.gateHint = true;
       this.cb.toast(
-        "The gate needs five tokens. You can return along the path.",
+        "Для врат нужны пять светлячков. Вернись по тропе за остальными.",
       );
     }
     for (let i = this.particles.length - 1; i >= 0; i--) {
@@ -328,11 +352,14 @@ export class Game {
     const b = this.world.boss,
       p = this.player,
       w = this.world;
-    if (b.dead) return;
+    if (b.dead) {
+      b.deathTime += dt;
+      return;
+    }
     if (p.x > 3600 && !b.active) {
       b.active = true;
       b.timer = 2.1;
-      this.cb.toast(`${this.region.boss} · Jump over the glowing waves!`);
+      this.cb.toast(`${this.region.boss} · Перепрыгивай светящиеся волны!`);
     }
     if (!b.active) return;
     b.hit = Math.max(0, b.hit - dt);
@@ -352,7 +379,7 @@ export class Game {
         w.projectiles = [];
         this.emit(b.x + 60, b.y + 50, this.region.glow, 40);
         this.cb.sound("win");
-        this.cb.toast("Guardian calmed! Your final firefly token is waiting.");
+        this.cb.toast("Страж успокоился! Забери последнего светлячка.");
         this.progress.defeated = [
           ...new Set([...this.progress.defeated, w.region]),
         ];
@@ -392,17 +419,8 @@ export class Game {
         this.emit(b.x + 50, 492, this.region.glow, 15);
       }
     }
-    for (let i = w.projectiles.length - 1; i >= 0; i--) {
-      const a = w.projectiles[i];
-      a.x += a.vx * dt;
-      a.life -= dt;
-      if (overlaps(p, a)) {
-        this.damage();
-        a.life = 0;
-      }
-      if (a.life <= 0) w.projectiles.splice(i, 1);
-    }
   }
+
   damage(fall = false) {
     const p = this.player;
     if (!fall && p.invulnerable > 0) return;
@@ -413,13 +431,16 @@ export class Game {
     if (p.health <= 0 || fall) {
       if (p.health <= 0) {
         p.health = this.maxHealth();
-        this.cb.toast("Every hero tries again. Your tokens are safe.");
-      } else this.cb.toast("A soft landing at your last warm light.");
+        this.cb.toast("Герои пробуют снова. Все светлячки с тобой.");
+      } else this.cb.toast("Возвращаемся к последнему тёплому огоньку.");
       p.x = this.checkpointUsed ? 2240 : 110;
       p.y = 400;
       p.vx = 0;
       p.vy = 0;
       p.jumps = 0;
+      p.wall = 0;
+      p.wallKick = 0;
+      p.wallCoyote = 0;
       this.camera = Math.max(0, p.x - 300);
       this.world.projectiles = [];
       this.world.boss.active = false;
@@ -427,7 +448,13 @@ export class Game {
       this.world.boss.timer = 2.1;
     } else {
       p.vy = -220;
-      p.x = clamp(p.x - p.dir * 30, 0, WORLD_WIDTH - p.w);
+      const x = clamp(p.x - p.dir * 30, 0, WORLD_WIDTH - p.w);
+      if (
+        !this.world.platforms.some(
+          (s) => (s.solid || s.ground) && overlaps({ ...p, x }, s),
+        )
+      )
+        p.x = x;
     }
   }
   persist() {
@@ -468,6 +495,8 @@ export class Game {
         : null,
       tokens: this.world?.tokens.map((t) => ({ ...t })),
       boss: this.world ? { ...this.world.boss } : null,
+      enemies: this.world?.enemies.map((e) => ({ ...e })),
+      platforms: this.world?.platforms.map((e) => ({ ...e })),
       camera: this.camera,
     };
   }

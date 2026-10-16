@@ -120,3 +120,35 @@ test("drawing mirrors around the feet and keeps the registered atlas origin", ()
     (-HERO_ATLAS.anchorX / HERO_ATLAS.cell) * HERO_ATLAS.size,
   );
 });
+test("Quirel uses dedicated staff-sweep, wall-cling, wall-kick and double-jump poses", () => {
+  const p = player();
+  p.hero = 0;
+  p.attackDuration = 0.32;
+  const frames = [];
+  for (const attack of [0.32, 0.23, 0.15, 0.07]) {
+    p.attack = attack;
+    updateHeroAnimation(p, 0);
+    frames.push(p.animation.frame);
+  }
+  assert.deepEqual(frames, [16, 17, 18, 19]);
+  p.attack = 0;
+  p.grounded = false;
+  p.wall = 1;
+  p.vy = 105;
+  updateHeroAnimation(p, 0);
+  assert.equal(p.animation.frame, 20);
+  p.wall = 0;
+  p.wallKick = 0.1;
+  p.vy = -570;
+  updateHeroAnimation(p, 0);
+  assert.equal(p.animation.frame, 21);
+  p.wallKick = 0;
+  p.jumps = 2;
+  p.vy = -490;
+  updateHeroAnimation(p, 0.2);
+  updateHeroAnimation(p, 0.2);
+  assert.equal(p.animation.frame, 22);
+  p.attack = 0.2;
+  updateHeroAnimation(p, 0);
+  assert.equal(p.animation.frame, 23);
+});

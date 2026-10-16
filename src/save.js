@@ -24,10 +24,10 @@ export class SaveStore {
       this.cloud = true;
       this.value = mergeProgress(this.value, result.progress);
       this.persist();
-      this.onStatus("Cloud save connected");
+      this.onStatus("Облако подключено");
       await this.flush();
     } catch {
-      this.onStatus("Saved on this device");
+      this.onStatus("Сохранено на устройстве");
     }
     return this.value;
   }
@@ -35,7 +35,7 @@ export class SaveStore {
     try {
       localStorage.setItem(KEY, JSON.stringify(this.value));
     } catch {
-      this.onStatus("Device storage unavailable");
+      this.onStatus("Память устройства недоступна");
     }
   }
   update(value) {
@@ -59,10 +59,10 @@ export class SaveStore {
         signal: AbortSignal.timeout(8000),
       });
       if (!response.ok) throw new Error("offline");
-      this.onStatus("Saved to the cloud");
+      this.onStatus("Сохранено в облаке");
     } catch {
       this.pending = true;
-      this.onStatus("Saved on this device · cloud offline");
+      this.onStatus("Сохранено на устройстве · облако недоступно");
     } finally {
       this.saving = false;
       if (this.pending) {

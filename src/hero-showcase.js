@@ -8,7 +8,8 @@ export class HeroShowcase {
     this.canvases = canvases;
     this.assets = assets;
     this.mode = "idle";
-    this.players = [0, 1].map(() => ({
+    this.players = [0, 1].map((hero) => ({
+      hero,
       x: 0,
       y: 0,
       w: 31,
@@ -48,6 +49,13 @@ export class HeroShowcase {
         canvas = this.canvases[i],
         ctx = canvas.getContext("2d");
       p.vx = this.mode === "walk" ? 210 : 0;
+      p.attackDuration = 0.32;
+      p.attack = this.mode === "attack" ? 0.32 - ((time / 1000) % 0.8) : 0;
+      p.wall = this.mode === "wall" ? 1 : 0;
+      if (this.mode === "wall") {
+        p.grounded = false;
+        p.vy = 105;
+      }
       if (this.mode === "jump") {
         if (p.grounded && this.jumpWait <= 0) {
           p.vy = -370;
@@ -79,9 +87,9 @@ export class HeroShowcase {
       ctx.fill();
       drawHero(
         ctx,
-        this.assets[`hero-${i === 0 ? "quirel" : "urmasa"}-atlas-v2`],
+        this.assets[`hero-${i === 0 ? "quirel" : "urmasa"}-painted-atlas`],
         p,
-        { x: 143, y: 193 + p.y, size: 205 },
+        { x: 120, y: 193 + p.y, size: 205 },
       );
     }
     if (
