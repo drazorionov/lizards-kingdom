@@ -1,3 +1,4 @@
+import { createHeroAnimation, updateHeroAnimation } from "./hero-animation.js";
 import {
   REGIONS,
   PHYSICS,
@@ -88,6 +89,7 @@ export class Game {
     this.region = REGIONS[region];
     this.checkpointUsed = progress.region === region && progress.checkpoint;
     this.player = {
+      animation: createHeroAnimation(),
       x: this.checkpointUsed ? 2220 : 110,
       y: 410,
       w: 31,
@@ -318,6 +320,7 @@ export class Game {
     const view = this.renderer.viewWidth;
     const target = clamp(p.x - view * 0.36, 0, WORLD_WIDTH - view);
     this.camera += (target - this.camera) * Math.min(1, dt * 6);
+    updateHeroAnimation(p, dt);
     this.pressed.clear();
     this.updateHud();
   }
@@ -460,7 +463,9 @@ export class Game {
       running: this.running,
       paused: this.paused,
       region: this.world?.region,
-      player: this.player ? { ...this.player } : null,
+      player: this.player
+        ? { ...this.player, animation: { ...this.player.animation } }
+        : null,
       tokens: this.world?.tokens.map((t) => ({ ...t })),
       boss: this.world ? { ...this.world.boss } : null,
       camera: this.camera,

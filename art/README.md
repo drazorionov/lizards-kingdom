@@ -1,8 +1,8 @@
 # Environment art provenance
 
-The built-in image generation tool produced `environment-atlas.png` using the supplied world map (`324fc2de-2007-4797-a14b-db1b1566edc1.JPG`) and progression/forest board (`7a06ef01-a2cc-4817-9f2a-afeae65be50d.JPG`) as visual references. It extends the backgrounds for widescreen play; the supplied sprites, cover, and map are used directly.
+The built-in image generation tool produced `environment-atlas.png` using the supplied world map (`324fc2de-2007-4797-a14b-db1b1566edc1.JPG`) and progression/forest board (`7a06ef01-a2cc-4817-9f2a-afeae65be50d.JPG`) as visual references. It extends the backgrounds for widescreen play; the cover and map are used directly. Enemies and bosses retain the original extracted sprites; main-character art is documented separately below.
 
-The atlas is divided into six WebP background tiles by `scripts/prepare-assets.py`. These are the only generated illustrations in the game.
+The atlas is divided into six WebP background tiles by `scripts/prepare-assets.py`. Detailed main-character animation sheets were added in a later update; their sources, runtime assets, and prompts are documented in [characters/README.md](characters/README.md).
 
 ## Final prompt
 

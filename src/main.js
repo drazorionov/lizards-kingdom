@@ -1,3 +1,4 @@
+import { HeroShowcase } from "./hero-showcase.js";
 import { REGIONS, sanitizeProgress } from "./world.js";
 import { SaveStore } from "./save.js";
 import { Sound } from "./audio.js";
@@ -8,7 +9,8 @@ const $ = (s) => document.querySelector(s),
 const store = new SaveStore(
   (message) => ($("#save-status").textContent = message),
 );
-let progress = store.value,
+let heroShowcase,
+  progress = store.value,
   game,
   assetsPromise,
   toastTimer,
@@ -58,7 +60,8 @@ async function loadAssets() {
     });
     const assets = {};
     await Promise.all(
-      Object.keys(manifest)
+      [...Object.keys(manifest), "hero-quirel-atlas-v2", "hero-urmasa-atlas-v2"]
+        .filter((k) => !k.startsWith("hero-") || k.endsWith("atlas-v2"))
         .filter(
           (k) =>
             ![
@@ -151,6 +154,8 @@ function updateHud({ health, maxHealth, tokens, boss, region }) {
       : "Explore the paths. Find all five firefly tokens.";
 }
 function showModal(kind, html) {
+  heroShowcase?.stop();
+  heroShowcase = null;
   if (game?.running) game.pause();
   modalKind = kind;
   modalReturnFocus = document.activeElement;
@@ -159,6 +164,8 @@ function showModal(kind, html) {
   requestAnimationFrame(() => $("#modal-close").focus());
 }
 function closeModal(resume = true) {
+  heroShowcase?.stop();
+  heroShowcase = null;
   $("#modal").classList.add("hidden");
   modalKind = "";
   if (resume && game?.running) game.resume();
@@ -202,6 +209,37 @@ function goHome() {
   updateMenu();
   $("#start").focus();
 }
+async function showHeroes() {
+  showModal(
+    "heroes",
+    `<div class="eyebrow">TWO WANDERERS. ONE GREAT ADVENTURE.</div><h2 id="modal-title">Meet your heroes</h2><div class="hero-gallery"><section><canvas width="480" height="420" aria-label="Animated Quirel preview"></canvas><h3>Quirel</h3><span>THE GOLDEN WANDERER</span><p>A steady heart, a weathered cloak, and a staff that has a few stories to tell.</p></section><section><canvas width="480" height="420" aria-label="Animated Urmasa preview"></canvas><h3>Urmasa</h3><span>THE CRIMSON SPARK</span><p>Quick on his feet, curious at heart. A flash of crimson on the path ahead.</p></section></div><div class="hero-preview-modes" role="group" aria-label="Preview hero movements"><button data-motion="idle" aria-pressed="true">Stand</button><button data-motion="walk" aria-pressed="false">Walk</button><button data-motion="jump" aria-pressed="false">Jump</button></div><p id="hero-preview-status" class="hero-preview-status">Waking up the wanderers…</p>`,
+  );
+  try {
+    const assets = await loadAssets();
+    if (modalKind !== "heroes") return;
+    heroShowcase = new HeroShowcase(
+      [...document.querySelectorAll(".hero-gallery canvas")],
+      assets,
+    );
+    $("#hero-preview-status").textContent =
+      "Choose a movement to see both heroes in action.";
+    document.querySelectorAll("[data-motion]").forEach(
+      (button) =>
+        (button.onclick = () => {
+          heroShowcase.setMode(button.dataset.motion);
+          document
+            .querySelectorAll("[data-motion]")
+            .forEach((b) =>
+              b.setAttribute("aria-pressed", String(b === button)),
+            );
+        }),
+    );
+  } catch {
+    if (modalKind === "heroes")
+      $("#hero-preview-status").textContent =
+        "The artwork could not load. Please reopen this preview to try again.";
+  }
+}
 function showHelp() {
   showModal(
     "help",
@@ -240,6 +278,7 @@ function showComplete(region) {
   $("#next-chapter").onclick = () => (last ? showMap() : start(region + 1));
   $("#complete-home").onclick = goHome;
 }
+$("#heroes-menu").onclick = showHeroes;
 $("#start").onclick = () => start();
 $("#help-menu").onclick = showHelp;
 $("#map-menu").onclick = showMap;

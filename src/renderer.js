@@ -1,4 +1,5 @@
 import { REGIONS, WORLD_WIDTH, clamp } from "./world.js";
+import { drawHero } from "./hero-animation.js";
 const TAU = Math.PI * 2;
 function rand(n) {
   const x = Math.sin(n * 127.1 + 311.7) * 43758.5453;
@@ -282,46 +283,23 @@ export class Renderer {
     }
     const ready = w.tokens.every((a) => a.collected) && b.dead;
     this.gate(4415, 500, t, ready);
-    // The sprites retain the exact silhouettes, scales and costumes from the supplied boards.
-    const hero = game.progress.hero === 1 ? "red" : "gold";
-    let frame =
-      p.attack > 0
-        ? 3
-        : p.dash > 0
-          ? 4
-          : Math.abs(p.vx) > 0
-            ? Math.floor(t * 9) % 2
-            : 0;
-    const bob =
-      p.grounded && Math.abs(p.vx) > 0
-        ? Math.sin(t * 18) * 1.8
-        : Math.sin(t * 2) * 0.7;
+    const hero = game.progress.hero === 1 ? "urmasa" : "quirel";
+    const atlas = this.assets[`hero-${hero}-atlas-v2`];
     const alpha = p.invulnerable > 0 && Math.floor(t * 12) % 2 ? 0.48 : 1;
     if (p.dash > 0) {
       for (let i = 1; i < 4; i++)
-        this.sprite(
-          `hero-${hero}-4`,
-          p.x - 27 - p.dir * i * 20,
-          p.y - 14,
-          85,
-          69,
-          p.dir,
-          0.14,
-        );
+        drawHero(g, atlas, p, {
+          x: p.x + p.w / 2 - p.dir * i * 20,
+          alpha: 0.12,
+        });
     }
-    g.fillStyle = "#0006";
-    g.beginPath();
-    g.ellipse(p.x + 17, p.y + p.h + 2, 23, 5, 0, 0, TAU);
-    g.fill();
-    this.sprite(
-      `hero-${hero}-${frame}`,
-      p.x - 27,
-      p.y - 14 + bob,
-      85,
-      69,
-      p.dir,
-      alpha,
-    );
+    if (p.grounded) {
+      g.fillStyle = "#0006";
+      g.beginPath();
+      g.ellipse(p.x + p.w / 2, p.y + p.h + 2, 22, 4, 0, 0, TAU);
+      g.fill();
+    }
+    drawHero(g, atlas, p, { alpha });
     if (p.attack > 0) {
       g.save();
       g.translate(p.x + 16, p.y + 24);

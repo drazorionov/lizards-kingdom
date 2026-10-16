@@ -1,6 +1,6 @@
 # Lizards Kingdom
 
-A browser arcade platformer for desktop keyboards and iPad, using the supplied Lizards Kingdom character, enemy, boss, token, map, and cover artwork. Six illustrated regions, two heroes, double jumps, dash, melee combat, five collectible tokens per chapter, warm-light checkpoints, and forgiving retries.
+A browser arcade platformer for desktop keyboards and iPad, using the supplied Lizards Kingdom visual designs, with detailed animated main characters and original enemy, boss, token, map, and cover artwork. Six illustrated regions, two heroes, double jumps, dash, melee combat, five collectible tokens per chapter, warm-light checkpoints, and forgiving retries.
 
 **Play:** https://lizards-game.vercel.app
 
@@ -49,7 +49,8 @@ Never commit `.env.local`, `.vercel/`, or database credentials.
 - `scripts/prepare-assets.py`: reproducible sprite-region extraction, edge-connected matte removal, and WebP optimization (Python + Pillow).
 - `public/assets/manifest.json`: exact source/crop provenance for every optimized asset.
 - `art/environment-atlas.png`: generated environment extension matching the supplied world map; see [art notes](art/README.md) for the exact prompt and method.
-- Heroes, enemies, bosses, tokens, and the world map use the original artwork. The source boards are compressed illustrations, so the small sprites retain their source resolution.
+- Main characters use detailed transparent 16-pose animation atlases derived from the original designs. Idle, walking, takeoff, rising, apex, falling, and landing are driven by the game state; see [character art notes](art/characters/README.md). Open “Meet the wanderers” from camp to preview both heroes.
+- Enemies, bosses, tokens, and the world map still use the original artwork. The source boards are compressed illustrations, so these small sprites retain their source resolution.
 
 No Hollow Knight art, music, characters, or code is included. Exploration, close-range combat, double jumps, checkpoints, and atmospheric regional progression are the mechanical inspiration.
 
@@ -67,6 +68,7 @@ Measured desktop Chromium rendering was approximately 60 fps during the smoke te
 npx playwright install chromium webkit
 node scripts/browser-qa.mjs
 node scripts/webkit-qa.mjs
+node scripts/hero-qa.mjs
 ```
 
 Run the dev server first. Set `QA_URL` to test another deployment. Optional `PLAYWRIGHT_CHROMIUM_EXECUTABLE` / `PLAYWRIGHT_WEBKIT_EXECUTABLE` variables reuse an existing browser installation. QA screenshots are written to the system temporary directory.
