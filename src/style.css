@@ -1,0 +1,910 @@
+@import "./fonts.css";
+:root {
+  color-scheme: dark;
+  --gold: #e4bc79;
+  --paper: #f2e9d7;
+  --muted: #a6adae;
+  --line: rgba(228, 188, 121, 0.22);
+  font-family: Manrope, Arial, sans-serif;
+  background: #080e15;
+  color: var(--paper);
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 5px;
+}
+button {
+  border: 0;
+}
+button:disabled {
+  cursor: wait;
+}
+button:hover {
+  filter: brightness(1.13);
+}
+.hidden {
+  display: none !important;
+}
+.topbar {
+  height: 88px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4.7%;
+  position: relative;
+  z-index: 5;
+  background: #090f16;
+  border-bottom: 1px solid var(--line);
+}
+.wordmark {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: var(--gold);
+  font-family: Georgia, serif;
+  font-size: 23px;
+  letter-spacing: 2px;
+  line-height: 1;
+}
+.wordmark small {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 7px;
+  margin-top: 7px;
+}
+.crest {
+  font-size: 38px;
+}
+.top-label {
+  font-size: 9px;
+  letter-spacing: 3.4px;
+  color: #818d95;
+}
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 17px;
+}
+.icon-button {
+  width: 35px;
+  height: 35px;
+  background: transparent;
+  border: 1px solid #31404a;
+  border-radius: 50%;
+  font-size: 20px;
+  color: #c8c8bf;
+  position: relative;
+}
+.save-status {
+  font-size: 10px;
+  color: #899a9c;
+}
+.save-status::before {
+  content: "";
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  background: #95b2a0;
+  border-radius: 50%;
+  margin-right: 7px;
+}
+.sound-dot {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  background: #6e7374;
+  right: 0;
+  top: 0;
+  border-radius: 50%;
+}
+.sound-on .sound-dot {
+  background: var(--gold);
+}
+#menu {
+  position: relative;
+  overflow: hidden;
+  min-height: calc(100svh - 88px);
+}
+.hero-art {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 68%;
+  height: 740px;
+  background: url("/assets/cover.webp") 50% 61% / cover no-repeat;
+  opacity: 0.93;
+}
+.hero-shade {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      90deg,
+      #080e15 2%,
+      rgba(8, 14, 21, 0.98) 20%,
+      rgba(8, 14, 21, 0.86) 34%,
+      rgba(8, 14, 21, 0.24) 62%,
+      rgba(8, 14, 21, 0.04)
+    ),
+    linear-gradient(0deg, #080e15 8%, transparent 55%);
+  pointer-events: none;
+}
+.hero-copy {
+  position: relative;
+  z-index: 1;
+  padding: 72px 4.7% 58px;
+  max-width: 1000px;
+}
+.eyebrow {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 3.6px;
+  color: var(--gold);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.eyebrow > span {
+  width: 29px;
+  height: 1px;
+  background: var(--gold);
+}
+h1 {
+  font:
+    500 clamp(55px, 5.6vw, 84px) / 0.99 "Cormorant Garamond",
+    Georgia,
+    serif;
+  letter-spacing: -2px;
+  margin: 26px 0 24px;
+}
+h1 em {
+  font-weight: 400;
+  color: var(--gold);
+}
+.hero-copy > p {
+  color: #aab1b6;
+  font-size: 12px;
+  line-height: 1.9;
+  letter-spacing: 0.1px;
+}
+.hero-select {
+  display: flex;
+  gap: 12px;
+  margin: 30px 0 23px;
+}
+.hero-choice {
+  display: flex;
+  align-items: center;
+  position: relative;
+  gap: 12px;
+  width: 211px;
+  height: 72px;
+  padding: 8px 14px 8px 7px;
+  background: rgba(12, 23, 31, 0.82);
+  border: 1px solid #2a333a;
+  border-radius: 3px;
+  text-align: left;
+}
+.hero-choice.selected {
+  border-color: #b69257;
+  background: linear-gradient(
+    100deg,
+    rgba(179, 134, 65, 0.13),
+    rgba(15, 25, 33, 0.85)
+  );
+}
+.hero-choice img {
+  width: 54px;
+  height: 55px;
+  object-fit: contain;
+}
+.hero-choice span {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.6px;
+}
+.hero-choice small {
+  display: block;
+  color: #939ca1;
+  letter-spacing: 0;
+  font-weight: 400;
+  font-size: 9px;
+  margin-top: 6px;
+}
+.hero-choice i {
+  display: none;
+  position: absolute;
+  right: 8px;
+  top: 7px;
+  color: var(--gold);
+  font-size: 10px;
+}
+.hero-choice.selected i {
+  display: block;
+}
+.primary-button {
+  height: 54px;
+  min-width: 270px;
+  display: inline-flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 38px;
+  background: linear-gradient(105deg, #f0d19a, #bf9455);
+  border-radius: 3px;
+  color: #211b13;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 0 23px;
+  box-shadow: 0 4px 30px #e6b25a16;
+}
+.primary-button b {
+  font-size: 23px;
+  font-weight: 400;
+}
+.menu-meta {
+  font-size: 9px;
+  color: #8a979c;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+.little-star {
+  color: var(--gold);
+}
+.intro-controls {
+  display: flex;
+  gap: 19px;
+  margin-top: 36px;
+  font-size: 9px;
+  color: #8b969b;
+  align-items: center;
+}
+.intro-controls > span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.intro-controls kbd {
+  min-width: 20px;
+  height: 20px;
+  padding: 3px 5px;
+  border: 1px solid #3d454b;
+  border-bottom-width: 2px;
+  border-radius: 3px;
+  font:
+    9px Manrope,
+    Arial;
+  color: #bec4c6;
+}
+.touch-note {
+  margin-left: 12px;
+}
+.chapters {
+  position: relative;
+  padding: 0 4.7%;
+  z-index: 1;
+}
+.section-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 17px;
+}
+.section-label > span {
+  font-size: 9px;
+  letter-spacing: 2.8px;
+  color: #c9bea9;
+}
+.text-button {
+  font-size: 10px;
+  background: transparent;
+  color: #aaa99e;
+  padding: 7px 0;
+}
+.text-button span {
+  color: var(--gold);
+  margin-left: 10px;
+}
+.region-cards {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 13px;
+}
+.region-card {
+  position: relative;
+  height: 126px;
+  background: #101c24;
+  border: 1px solid #303c41;
+  border-radius: 4px;
+  overflow: hidden;
+  text-align: left;
+  padding: 0;
+}
+.region-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.65;
+  transition:
+    transform 0.35s,
+    opacity 0.35s;
+}
+.region-card:hover img {
+  transform: scale(1.06);
+  opacity: 0.95;
+}
+.region-card:after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(transparent 10%, #060e16ee);
+}
+.region-card.active {
+  border-color: #b99a60;
+}
+.card-text {
+  position: absolute;
+  z-index: 1;
+  bottom: 14px;
+  left: 14px;
+  right: 9px;
+  font:
+    500 16px "Cormorant Garamond",
+    Georgia,
+    serif;
+}
+.card-text small {
+  display: block;
+  font: 8px Manrope;
+  letter-spacing: 1.7px;
+  color: #b5ae99;
+  margin-bottom: 6px;
+}
+.card-state {
+  position: absolute;
+  top: 12px;
+  right: 11px;
+  z-index: 1;
+  color: #eee2c2;
+  font-size: 12px;
+}
+.menu-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  padding: 28px 4.7% 22px;
+  color: #65767d;
+  font-size: 8px;
+  letter-spacing: 2px;
+}
+.menu-footer .text-button {
+  letter-spacing: 0;
+}
+.footer-end {
+  font-family: Georgia, serif;
+  font-style: italic;
+  letter-spacing: 0.4px;
+  font-size: 11px;
+}
+.embers {
+  position: absolute;
+  right: 18%;
+  top: 220px;
+  width: 3px;
+  height: 3px;
+  background: #eec580;
+  box-shadow:
+    90px -100px 4px #ffd78c,
+    -30px 120px 5px #eec580,
+    200px 90px 3px #ffd791,
+    130px 250px 4px #eec580;
+  animation: float 8s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes float {
+  50% {
+    transform: translate(-15px, -40px);
+    opacity: 0.4;
+  }
+}
+#game {
+  height: calc(100svh - 88px);
+  min-height: 440px;
+  position: relative;
+  background: #060e18;
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+}
+canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  outline: none;
+  touch-action: none;
+}
+.game-hud {
+  position: absolute;
+  top: 29px;
+  left: 34px;
+  right: 34px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  pointer-events: none;
+  text-shadow: 0 2px 8px #000;
+}
+.hud-eyebrow {
+  font-size: 8px;
+  letter-spacing: 3px;
+  color: #c7c7b3;
+}
+.hud-left h2 {
+  font:
+    500 27px "Cormorant Garamond",
+    Georgia,
+    serif;
+  margin: 5px 0 8px;
+}
+.hud-left #hearts {
+  font-size: 23px;
+  letter-spacing: 5px;
+  color: #e4bb79;
+}
+.heart-empty {
+  color: #5b6067;
+}
+.hud-center {
+  text-align: center;
+  padding-top: 6px;
+}
+.hud-center #token-count {
+  display: flex;
+  gap: 9px;
+  margin-top: 12px;
+}
+.token-pip {
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  border: 1px solid #c8a97155;
+  color: #74756d;
+  display: grid;
+  place-items: center;
+  font-size: 17px;
+  background: #081520a8;
+}
+.token-pip.found {
+  background: #d3aa5a;
+  color: #362a1b;
+  border-color: #fae1a8;
+  box-shadow: 0 0 20px #f6d18a45;
+}
+.hud-right {
+  display: flex;
+  gap: 10px;
+  pointer-events: auto;
+}
+.game-button {
+  background: #0a1724c2;
+  border: 1px solid #8c9e9b66;
+  min-width: 40px;
+  height: 38px;
+  border-radius: 4px;
+  font-size: 16px;
+}
+.game-button span {
+  font-size: 11px;
+  margin: 0 10px;
+}
+.game-bottom {
+  position: absolute;
+  bottom: 17px;
+  left: 34px;
+  right: 34px;
+  display: flex;
+  justify-content: space-between;
+  color: #b9cbc3;
+  font-size: 10px;
+  pointer-events: none;
+}
+#keyboard-hint {
+  color: #91a9a2;
+  font-size: 9px;
+}
+.toast {
+  position: absolute;
+  left: 50%;
+  top: 130px;
+  transform: translate(-50%, -12px);
+  background: #0b1929ed;
+  border: 1px solid #a1b1a655;
+  border-radius: 4px;
+  color: #ebdfbd;
+  font-size: 12px;
+  padding: 12px 23px;
+  max-width: 70%;
+  text-align: center;
+  opacity: 0;
+  transition:
+    opacity 0.25s,
+    transform 0.25s;
+  pointer-events: none;
+}
+.toast.visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+.boss-hud {
+  position: absolute;
+  bottom: 58px;
+  left: 35%;
+  width: 30%;
+  text-align: center;
+  font:
+    17px "Cormorant Garamond",
+    serif;
+  letter-spacing: 2px;
+}
+.boss-hud > div {
+  height: 6px;
+  background: #17171e;
+  border: 1px solid #b4896555;
+  margin-top: 8px;
+}
+.boss-hud i {
+  display: block;
+  height: 100%;
+  background: #d6ae6f;
+  transition: width 0.15s;
+}
+.touch-controls {
+  display: none;
+  position: absolute;
+  inset: auto 25px 45px;
+  justify-content: space-between;
+  pointer-events: none;
+}
+.touch-controls button {
+  width: 65px;
+  height: 65px;
+  border: 1px solid #e1d2ad66;
+  border-radius: 50%;
+  background: #132636ae;
+  backdrop-filter: blur(4px);
+  font-size: 23px;
+  pointer-events: auto;
+  touch-action: none;
+  -webkit-user-select: none;
+}
+.touch-controls button.pressed {
+  background: #c19b57a8;
+  border-color: #f6d99d;
+}
+.touch-move,
+.touch-actions {
+  display: flex;
+  gap: 14px;
+  align-items: flex-end;
+}
+.touch-actions .touch-attack {
+  width: 78px;
+  height: 78px;
+  background: #baa05b55;
+}
+.touch-actions .touch-dash {
+  width: 48px;
+  height: 48px;
+  font-size: 24px;
+  margin-right: 4px;
+}
+.modal {
+  position: fixed;
+  inset: 0;
+  background: #03090edb;
+  backdrop-filter: blur(12px);
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.modal-panel {
+  position: relative;
+  border: 1px solid #b2935960;
+  background: linear-gradient(145deg, #16232c, #0a111b);
+  border-radius: 6px;
+  padding: 46px;
+  max-width: 880px;
+  max-height: 90svh;
+  overflow: auto;
+  width: 100%;
+  box-shadow: 0 20px 100px #0008;
+}
+.modal-close {
+  position: absolute;
+  right: 16px;
+  top: 12px;
+  background: transparent;
+  color: #b8b8a8;
+  font-size: 30px;
+}
+.modal h2 {
+  font:
+    500 44px "Cormorant Garamond",
+    Georgia,
+    serif;
+  margin: 12px 0 20px;
+}
+.modal p {
+  color: #b0bbc0;
+  font-size: 13px;
+  line-height: 1.8;
+}
+.modal .eyebrow {
+  font-size: 9px;
+}
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 25px;
+}
+.secondary-button {
+  height: 54px;
+  padding: 0 22px;
+  background: #182a36;
+  border: 1px solid #526368;
+  border-radius: 3px;
+  font-size: 12px;
+}
+.map-image {
+  display: block;
+  width: 100%;
+  border-radius: 3px;
+  margin: 18px 0;
+}
+.map-regions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.map-regions button {
+  padding: 13px;
+  text-align: left;
+  background: #15242d;
+  border: 1px solid #3e4d50;
+  border-radius: 3px;
+  font-size: 11px;
+}
+.map-regions button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.help-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  margin: 25px 0;
+}
+.help-grid > div {
+  background: #0a1721;
+  border: 1px solid #30434a;
+  padding: 18px;
+  border-radius: 3px;
+}
+.help-grid strong {
+  font-size: 12px;
+  color: var(--gold);
+}
+.help-grid p {
+  font-size: 11px;
+  margin-bottom: 0;
+}
+.setting-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid var(--line);
+  margin-top: 20px;
+  padding-top: 20px;
+  font-size: 12px;
+}
+.setting-line select {
+  background: #13232d;
+  border: 1px solid #667570;
+  border-radius: 3px;
+  padding: 9px;
+  color: var(--paper);
+}
+#phone-notice {
+  display: none;
+}
+.loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+@media (pointer: coarse) {
+  .touch-controls {
+    display: flex;
+  }
+  #keyboard-hint {
+    display: none;
+  }
+  .game-bottom {
+    bottom: 12px;
+    font-size: 9px;
+  }
+  .boss-hud {
+    bottom: 35px;
+  }
+  .intro-controls .touch-note {
+    color: var(--gold);
+  }
+}
+@media (min-width: 1600px) {
+  .hero-copy {
+    padding-top: 100px;
+    padding-bottom: 80px;
+  }
+  .hero-art {
+    height: 850px;
+  }
+  .region-card {
+    height: 160px;
+  }
+}
+@media (max-width: 1100px) {
+  .top-label {
+    display: none;
+  }
+  .hero-copy {
+    padding-top: 48px;
+    padding-bottom: 42px;
+  }
+  .hero-art {
+    width: 75%;
+    height: 700px;
+  }
+  .hero-shade {
+    background:
+      linear-gradient(90deg, #080e15 0%, #080e15e8 36%, #080e1540 100%),
+      linear-gradient(0deg, #080e15 3%, transparent 70%);
+  }
+  .hero-copy h1 {
+    font-size: 67px;
+  }
+  .region-card {
+    height: 110px;
+  }
+  .region-cards {
+    gap: 8px;
+  }
+  .card-text {
+    font-size: 14px;
+    left: 9px;
+  }
+  .card-text small {
+    font-size: 7px;
+    letter-spacing: 1px;
+  }
+  .topbar {
+    height: 74px;
+  }
+  #menu {
+    min-height: calc(100svh - 74px);
+  }
+  #game {
+    height: calc(100svh - 74px);
+  }
+  .save-status {
+    font-size: 9px;
+  }
+  .game-hud {
+    top: 20px;
+    left: 22px;
+    right: 22px;
+  }
+  .hero-copy > p {
+    font-size: 11px;
+  }
+  .hud-left h2 {
+    font-size: 24px;
+  }
+}
+@media (max-height: 760px) and (min-width: 700px) {
+  .topbar {
+    height: 64px;
+  }
+  #menu {
+    min-height: calc(100svh - 64px);
+  }
+  .hero-copy {
+    padding-top: 34px;
+    padding-bottom: 32px;
+  }
+  .hero-copy h1 {
+    font-size: 61px;
+    margin: 20px 0;
+  }
+  .hero-select {
+    margin: 20px 0 17px;
+  }
+  .hero-choice {
+    height: 62px;
+  }
+  .hero-choice img {
+    height: 48px;
+  }
+  .intro-controls {
+    margin-top: 22px;
+  }
+  .region-card {
+    height: 100px;
+  }
+  .menu-footer {
+    padding-top: 19px;
+  }
+  #game {
+    height: calc(100svh - 64px);
+    min-height: 350px;
+  }
+}
+@media (max-width: 699px) {
+  #menu,
+  #game,
+  .topbar {
+    display: none !important;
+  }
+  #phone-notice {
+    min-height: 100svh;
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    background:
+      linear-gradient(#07111ad9, #07111af0),
+      url("/assets/cover.webp") center/cover;
+  }
+  #phone-notice > span {
+    font-size: 60px;
+    color: var(--gold);
+  }
+  #phone-notice h2 {
+    font:
+      36px "Cormorant Garamond",
+      Georgia;
+  }
+  #phone-notice p {
+    font-size: 13px;
+    line-height: 1.9;
+    color: #b2babc;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
