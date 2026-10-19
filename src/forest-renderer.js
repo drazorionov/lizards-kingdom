@@ -1,3 +1,4 @@
+import { drawCavernTerrain, cavernMapMarkup } from "./cavern-renderer.js";
 import { drawSolidTerrain, drawBreakableWall } from "./terrain.js";
 import { FOREST_ROOMS, forestRoom } from "./forest.js";
 import { MOTHER_LABELS } from "./forest-boss.js";
@@ -28,6 +29,11 @@ export function drawForestBackground(renderer, game) {
   g.globalAlpha = 1;
   g.fillStyle = "#03121b22";
   g.fillRect(0, 0, view, 620);
+}
+export function drawForestEarth(r, game) {
+  drawCavernTerrain(r, game, (x, y, w, id) =>
+    drawForestTerrain(r, { x, y, w, id, solid: false }, game),
+  );
 }
 export function drawForestTerrain(renderer, s, game) {
   const g = renderer.ctx,
@@ -220,6 +226,7 @@ export function drawForestMinimap(renderer, game) {
   g.fillText(forestRoom(game.player).name, x + sw / 2, y + sh + 17);
 }
 export function forestMapMarkup(game) {
+  if (game.world.caverns) return cavernMapMarkup(game);
   const w = game.world,
     p = game.player;
   return `<div class="forest-map"><svg viewBox="-80 -80 4710 1790" role="img" aria-label="Карта туннелей Дремучего грибного леса. Белая точка — герой.">

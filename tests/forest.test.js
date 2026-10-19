@@ -1,3 +1,4 @@
+import forestRoute from "./forest-route.json" with { type: "json" };
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -31,8 +32,8 @@ const tick = (g, n = 1) => {
 };
 function replay(g) {
   tick(g, 30);
-  for (const index of routes.regions[0]) {
-    const a = routes.actions[index];
+  for (const index of forestRoute.route) {
+    const a = forestRoute.actions[index];
     g.release("left");
     g.release("right");
     if (a.dir) g.press(a.dir < 0 ? "left" : "right");

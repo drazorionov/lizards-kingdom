@@ -75,7 +75,7 @@ export function overlaps(a, b) {
 export function createWorld(region = 0, progress = {}) {
   const level = buildLevel(region);
   const platforms = level.platforms.filter(
-    (s) => !(progress.broken?.[region] || []).includes(s.id),
+    (s) => !s.breakable || !(progress.broken?.[region] || []).includes(s.id),
   );
   const found = progress.tokens?.[region] || [];
   const tokens = [...level.tokens, { x: 4195, y: 445, boss: true }].map(
@@ -109,7 +109,16 @@ export function createWorld(region = 0, progress = {}) {
       if (
         x < 540 ||
         Math.abs(x - 2240) < 160 ||
-        platforms.some((s) => s.wall && x + 100 > s.x && x < s.x + s.w + 40)
+        platforms.some(
+          (s) => s.wall && !s.terrain && x + 100 > s.x && x < s.x + s.w + 40,
+        )
+      )
+        continue;
+      if (
+        platforms.some(
+          (s) =>
+            s.solid && overlaps({ x, y: platform.y - 40, w: 38, h: 40 }, s),
+        )
       )
         continue;
       const id = enemies.length,
@@ -141,6 +150,7 @@ export function createWorld(region = 0, progress = {}) {
     width: level.width || WORLD_WIDTH,
     height: level.height || 690,
     rooms: level.rooms,
+    caverns: level.caverns,
     signs: level.signs || [],
     spawn: level.spawn || { x: 110, y: 410 },
     discovered: new Set(progress.discovered?.[region] || []),

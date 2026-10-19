@@ -1,3 +1,4 @@
+import forestRoute from "./forest-route.json" with { type: "json" };
 import test from "node:test";
 import assert from "node:assert/strict";
 import { Game, clearSight } from "../src/engine.js";
@@ -216,8 +217,8 @@ for (let r = 0; r < 6; r++)
   test(`all five secrets in region ${r + 1} are reachable with legal keyboard actions`, () => {
     const g = game(r);
     tick(g, 30);
-    for (const index of secretRoutes.regions[r]) {
-      const a = secretRoutes.actions[index];
+    for (const index of r === 0 ? forestRoute.route : secretRoutes.regions[r]) {
+      const a = (r === 0 ? forestRoute.actions : secretRoutes.actions)[index];
       g.release("left");
       g.release("right");
       if (a.dir) g.press(a.dir < 0 ? "left" : "right");

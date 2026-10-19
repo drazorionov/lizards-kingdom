@@ -1,3 +1,4 @@
+import { drawCavernMinimap, cavernMapMarkup } from "./cavern-renderer.js";
 import { drawSolidTerrain, drawBreakableWall } from "./terrain.js";
 export { drawTown, townMapMarkup } from "./town-renderer.js";
 import { regionBossFrame } from "./region-boss.js";
@@ -171,6 +172,7 @@ function visibleRoom(w, s) {
   return room && w.discovered.has(room.id);
 }
 export function regionMinimap(r, game) {
+  if (game.world.caverns) return drawCavernMinimap(r, game);
   const g = r.ctx,
     w = game.world,
     sw = 170,
@@ -216,6 +218,7 @@ export function regionMinimap(r, game) {
   g.fillText(roomAt(w, game.player)?.name || "", x + sw / 2, y + 77);
 }
 export function regionMapMarkup(game) {
+  if (game.world.caverns) return cavernMapMarkup(game);
   const w = game.world,
     p = game.player,
     all = game.progress.quests?.includes("stranger"),

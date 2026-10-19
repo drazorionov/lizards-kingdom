@@ -13,7 +13,7 @@ test("every region has a distinct layout, three species, and dense encounters", 
     layouts.add(JSON.stringify(w.platforms));
     assert.equal(new Set(w.enemies.map((e) => e.key)).size, 3);
     assert.ok(w.enemies.length >= 10);
-    assert.equal(w.platforms.filter((p) => p.wall).length, 7);
+    assert.equal(w.platforms.filter((p) => p.wall && !p.terrain).length, 7);
   }
   assert.equal(layouts.size, 6);
   assert.equal(new Set(REGION_CREATURES.flat()).size, 12);

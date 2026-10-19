@@ -1,3 +1,4 @@
+import { carveCaverns } from "./caverns.js";
 // Forest pilot: the source board's upper route, root underpass, wall shaft,
 // secret chamber and guarded exit, authored in one continuous coordinate space.
 export const FOREST_ROOMS = [
@@ -14,9 +15,9 @@ export const FOREST_ROOMS = [
     id: "roots",
     name: "Светящиеся корни",
     x: 750,
-    y: 700,
+    y: 0,
     w: 800,
-    h: 420,
+    h: 1120,
     art: "roots",
   },
   {
@@ -74,6 +75,46 @@ export const FOREST_ROOMS = [
     art: "sanctum",
   },
 ];
+// Open space, following the reference's looping forest topology. These are
+// connected passages carved out of earth, not decorative room bounding boxes.
+export const FOREST_PASSAGES = [
+  // Spore fields: a sheltered arrival chamber with a rising mushroom alcove.
+  [40, 180, 720, 320],
+  [100, 140, 510, 360],
+  [410, 180, 450, 205],
+  // Upper loop: bends east, drops through the roots, then reaches the shaft.
+  [790, 160, 390, 220],
+  [1100, 220, 300, 200],
+  [1320, 300, 300, 200],
+  [1530, 300, 300, 230],
+  // Lower entrance: broad descending chamber and narrow root corridor.
+  [760, 340, 380, 710],
+  [950, 840, 420, 210],
+  [1320, 850, 1060, 200],
+  [1250, 1000, 250, 450],
+  // Root well: continuous cliff faces, the main vertical connection.
+  [1778, 300, 132, 750],
+  [1740, 240, 470, 190],
+  [1958, 280, 410, 170],
+  [2200, 220, 218, 160],
+  // Sealed mycelium room. Its only entrance is the destructible wall.
+  [2380, 170, 470, 210],
+  // Stream loop and its breakable return passage to the warm-stone refuge.
+  [750, 1140, 1850, 310],
+  [950, 1100, 550, 350],
+  [2150, 750, 450, 300],
+  [2380, 990, 220, 460],
+  // Mushroom thicket: a winding ascent with broad landings cut from rock.
+  [2380, 730, 400, 260],
+  [2580, 580, 390, 280],
+  [2770, 450, 410, 280],
+  [2960, 320, 420, 280],
+  [3200, 280, 340, 220],
+  // The Forgotten Tree is an enclosed arena, reached through the upper neck.
+  [3430, 130, 1080, 370],
+  [3570, 80, 770, 420],
+].map(([x, y, w, h], id) => ({ id, x, y, w, h }));
+
 export function forestRoom(p) {
   return (
     FOREST_ROOMS.find(
@@ -110,7 +151,7 @@ export function buildForest() {
   // Alternating wall kicks reach the third token; low left entrance stays open.
   solid(1730, 380, 48, 530, { wall: true, ground: false });
   solid(1910, 450, 48, 600, { wall: true, ground: false });
-  ledge(1780, 430, 128);
+  ledge(1780, 430, 70);
   ledge(1980, 430, 160);
   ledge(2210, 380, 150);
   // A cracked root wall protects the secret. Its floor/roof are fully solid.
@@ -144,9 +185,12 @@ export function buildForest() {
   solid(2620, 1110, 250, 490, { wall: true, ground: false });
   // Boundary roots prevent falling out of the stream chamber sideways.
   solid(710, 1070, 40, 530, { wall: true, ground: false });
+  // Existing landmark IDs stay stable so discoveries and broken seals survive.
+  platforms.push(...carveCaverns(4550, 1600, FOREST_PASSAGES));
   platforms.forEach((s, id) => (s.id = id));
   return {
     platforms,
+    caverns: FOREST_PASSAGES,
     width: 4550,
     height: 1600,
     rooms: FOREST_ROOMS,

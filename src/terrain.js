@@ -1,3 +1,4 @@
+import { caveStoneTexture } from "./forest-cave-surfaces.js";
 import { terrainEdges, drawVerticalMaterial } from "./wall-surfaces.js";
 // Painted terrain uses the same ledge kit as one-way platforms. Geometry here is
 // decorative: the authored collision rectangles remain the source of truth.
@@ -202,8 +203,10 @@ export function drawBreakableWall(r, s, game) {
       g,
       piece,
       palette,
-      r.assets[game.world.artKey + "-terrain"],
-      game.world.region === 0,
+      game.world.region === 0
+        ? caveStoneTexture(r) || r.assets["forest-terrain"]
+        : r.assets[game.world.artKey + "-terrain"],
+      game.world.region === 0 && !r.assets["forest-cave-walls"],
     );
     g.restore();
   }
@@ -280,8 +283,10 @@ export function drawWallDebris(r, game) {
       g,
       a,
       a.palette,
-      r.assets[game.world.artKey + "-terrain"],
-      game.world.region === 0,
+      game.world.region === 0
+        ? caveStoneTexture(r) || r.assets["forest-terrain"]
+        : r.assets[game.world.artKey + "-terrain"],
+      game.world.region === 0 && !r.assets["forest-cave-walls"],
     );
     g.restore();
   }

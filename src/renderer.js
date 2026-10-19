@@ -12,6 +12,7 @@ import { TOKEN_TYPES } from "./progression.js";
 import {
   drawForestBackground,
   drawForestTerrain,
+  drawForestEarth,
   drawForestDetails,
   drawMother,
   drawForestBossTell,
@@ -275,7 +276,9 @@ export class Renderer {
     g.globalAlpha = 1;
     g.save();
     g.translate(-camera, -(game.cameraY || 0));
+    if (w.caverns) drawForestEarth(this, game);
     for (const s of w.platforms) {
+      if (w.caverns && s.solid && !s.breakable) continue;
       if (s.x + s.w < camera - 30 || s.x > camera + view + 30) continue;
       if (
         s.y + s.h < (game.cameraY || 0) - 40 ||

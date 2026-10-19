@@ -1,3 +1,4 @@
+import forestRoute from "./forest-route.json" with { type: "json" };
 import { readFileSync } from "node:fs";
 const routes = JSON.parse(
   readFileSync(new URL("./routes.json", import.meta.url)),
@@ -50,9 +51,12 @@ for (let region = 0; region < 6; region++)
       ticks(g, 30);
       // Replay legal keyboard actions against the real production simulation.
       // Fixtures cover each authored route, including gaps and wall-jump shafts.
-      for (const index of (hero === 1 && routes.urmasa?.[region]) ||
-        routes.regions[region]) {
-        const action = routes.actions[index];
+      for (const index of region === 0
+        ? forestRoute.route
+        : (hero === 1 && routes.urmasa?.[region]) || routes.regions[region]) {
+        const action = (region === 0 ? forestRoute.actions : routes.actions)[
+          index
+        ];
         g.release("left");
         g.release("right");
         if (action.dir) g.press(action.dir < 0 ? "left" : "right");
