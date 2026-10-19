@@ -17,6 +17,26 @@ function layout(faces) {
 const prepared = new WeakMap();
 const surfaceMasks = new WeakMap();
 const views = new WeakMap();
+const connectionViews = new WeakMap();
+const connectionMasks = new WeakMap();
+
+function connectionMask(world, solid) {
+  let cached = connectionMasks.get(world);
+  if (cached?.solid === solid) return cached.canvas;
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.ceil(world.width / 2);
+  canvas.height = Math.ceil(world.height / 2);
+  const g = canvas.getContext("2d");
+  g.fillStyle = "#000";
+  // A small soft allowance preserves the painted moss/stone silhouette at
+  // the collision plane, without extending solid-looking art into tunnels.
+  g.shadowColor = "#000";
+  g.shadowBlur = 8;
+  for (const s of solid)
+    if (!s.breakable) g.fillRect(s.x / 2, s.y / 2, s.w / 2, s.h / 2);
+  connectionMasks.set(world, { solid, canvas });
+  return canvas;
+}
 
 function surfaceMask(world, faces) {
   let cached = surfaceMasks.get(world);
@@ -236,11 +256,11 @@ function cornerPatch(image, frame) {
     10,
     ax,
     ay,
-    Math.min(w, h) * 0.55,
+    Math.max(w, h) * 0.95,
   );
   fade.addColorStop(0, "#000");
-  fade.addColorStop(0.35, "#000e");
-  fade.addColorStop(0.7, "#0005");
+  fade.addColorStop(0.55, "#000");
+  fade.addColorStop(0.8, "#0009");
   fade.addColorStop(1, "#0000");
   g.globalCompositeOperation = "destination-in";
   g.fillStyle = fade;
@@ -265,26 +285,30 @@ function cornerPatch(image, frame) {
 }
 
 export function drawCaveConnections(r, game, faces, solid) {
-  const g = r.ctx;
+  let view = connectionViews.get(r);
+  if (!view) connectionViews.set(r, (view = document.createElement("canvas")));
+  const width = Math.ceil(r.viewWidth);
+  if (view.width !== width || view.height !== 620) {
+    view.width = width;
+    view.height = 620;
+  }
+  const g = view.getContext("2d");
+  g.clearRect(0, 0, view.width, view.height);
   g.save();
-  // Join art cannot cover open air and imply a different collision boundary.
-  g.beginPath();
-  for (const s of solid) if (!s.breakable) g.rect(s.x, s.y, s.w, s.h);
-  g.clip();
-  g.globalAlpha *= 0.78;
+  g.translate(-game.camera, -game.cameraY);
   for (const corner of layout(faces).corners) {
     if (
-      corner.x < game.camera - 120 ||
-      corner.x > game.camera + r.viewWidth + 120 ||
-      corner.y < game.cameraY - 120 ||
-      corner.y > game.cameraY + 740
+      corner.x < game.camera - 256 ||
+      corner.x > game.camera + r.viewWidth + 256 ||
+      corner.y < game.cameraY - 256 ||
+      corner.y > game.cameraY + 876
     )
       continue;
     const image = r.assets["forest-cave-" + corner.kind],
       frame = atlas[corner.kind]?.[corner.frame];
     if (!image || !frame) continue;
     const patch = cornerPatch(image, frame),
-      scale = 0.56;
+      scale = corner.scale;
     g.drawImage(
       patch,
       corner.x - frame.anchor[0] * scale,
@@ -294,6 +318,20 @@ export function drawCaveConnections(r, game, faces, solid) {
     );
   }
   g.restore();
+  g.globalCompositeOperation = "destination-in";
+  g.drawImage(
+    connectionMask(game.world, solid),
+    game.camera / 2,
+    game.cameraY / 2,
+    r.viewWidth / 2,
+    310,
+    0,
+    0,
+    r.viewWidth,
+    620,
+  );
+  g.globalCompositeOperation = "source-over";
+  r.ctx.drawImage(view, game.camera, game.cameraY);
 }
 
 export function caveStoneTexture(r) {

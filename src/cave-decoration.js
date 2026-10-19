@@ -41,7 +41,7 @@ export function caveSurfaces(faces) {
 }
 
 export function caveCorners(surfaces) {
-  const vertical = surfaces.filter((s) => !s.horizontal && s.b - s.a >= 40);
+  const vertical = surfaces.filter((s) => !s.horizontal);
   const corners = [];
   for (const h of surfaces.filter((s) => s.horizontal && s.b - s.a >= 40)) {
     for (const start of [true, false]) {
@@ -55,8 +55,26 @@ export function caveCorners(surfaces) {
           dy = Math.abs(vy - h.axis);
         if (dx > 48 || dy > 48) continue;
         const distance = dx + dy;
-        if (!closest || distance < closest.distance)
-          closest = { x: v.axis, y: h.axis, inner: !outer, distance };
+        // Prefer the main wall across the tiny bands of a rounded turn. If
+        // there is no long wall, a short step still needs its own join art.
+        const short = v.b - v.a < 40;
+        if (
+          !closest ||
+          (closest.short && !short) ||
+          (closest.short === short && distance < closest.distance)
+        )
+          closest = {
+            x: v.axis,
+            y: h.axis,
+            inner: !outer,
+            distance,
+            short,
+            scale: Math.min(
+              0.64,
+              Math.max(0.2, (v.b - v.a + dy) / 170),
+              Math.max(0.2, (h.b - h.a + dx) / 230),
+            ),
+          };
       }
       if (!closest) continue;
       const kind = `corners-${h.side === "top" ? "floor" : "ceiling"}-${start ? "left" : "right"}`;

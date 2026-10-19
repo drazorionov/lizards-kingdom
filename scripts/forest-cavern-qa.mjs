@@ -91,6 +91,45 @@ await page.evaluate(async () => {
 });
 
 await page.evaluate(() => window.fixture.start(0));
+const joins = await page.evaluate(async () => {
+  const { drawCaveConnections } = await import("/src/forest-cave-surfaces.js");
+  const { exposedTerrainEdges } = await import("/src/wall-surfaces.js");
+  const { game, assets } = window.fixture;
+  const solid = game.world.platforms.filter((s) => s.solid);
+  const faces = solid.map((s) => ({ s, edges: exposedTerrainEdges(s, solid) }));
+  const canvas = document.createElement("canvas");
+  canvas.width = 1000;
+  canvas.height = 620;
+  const ctx = canvas.getContext("2d");
+  ctx.translate(-1000, 0);
+  drawCaveConnections(
+    { ctx, assets, viewWidth: 1000 },
+    { world: game.world, camera: 1000, cameraY: 0 },
+    faces,
+    solid,
+  );
+  const coverage = (x, y, w, h) => {
+    const pixels = ctx.getImageData(x - 1000, y, w, h).data;
+    let count = 0;
+    for (let i = 3; i < pixels.length; i += 4) if (pixels[i] > 32) count++;
+    return count;
+  };
+  return {
+    shortStep: coverage(1525, 495, 24, 40),
+    horizontalArm: coverage(1170, 420, 25, 20),
+    verticalArm: coverage(1140, 450, 20, 25),
+    paintedRim: coverage(1136, 438, 4, 25),
+  };
+});
+assert.ok(joins.shortStep > 60, "the short step actually draws corner artwork");
+assert.ok(
+  joins.horizontalArm > 100 && joins.verticalArm > 100,
+  "join artwork remains visible along both connecting surfaces",
+);
+assert.ok(
+  joins.paintedRim > 10,
+  "the painted rim is not clipped at the collider rectangle",
+);
 for (const [scene, x, y, camera, cameraY] of [
   ["fields", 280, 446, 0, 0],
   ["upper-loop", 1260, 360, 820, 0],
