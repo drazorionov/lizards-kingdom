@@ -184,6 +184,9 @@ export function createWorld(region = 0, progress = {}) {
     cleared,
   };
 }
+// Keep shallow platform lips from grabbing a passing jump; full-height solid
+// faces support climbing regardless of whether the map labels them as walls.
+const climbableFace = (s) => s.wall || (s.solid && s.h >= 200);
 export function movePlayer(p, platforms, dt, width = WORLD_WIDTH) {
   const oldX = p.x,
     oldY = p.y;
@@ -194,16 +197,16 @@ export function movePlayer(p, platforms, dt, width = WORLD_WIDTH) {
     if (oldX + p.w <= s.x + 1) {
       p.x = s.x - p.w;
       p.vx = 0;
-      if (s.solid || s.wall) p.wall = 1;
+      if (climbableFace(s)) p.wall = 1;
     } else if (oldX >= s.x + s.w - 1) {
       p.x = s.x + s.w;
       p.vx = 0;
-      if (s.solid || s.wall) p.wall = -1;
+      if (climbableFace(s)) p.wall = -1;
     }
   }
   // Maintain contact when the player releases the direction on a wall.
   for (const s of platforms) {
-    if (!(s.solid || s.wall) || p.y + p.h <= s.y || p.y >= s.y + s.h) continue;
+    if (!climbableFace(s) || p.y + p.h <= s.y || p.y >= s.y + s.h) continue;
     if (Math.abs(p.x + p.w - s.x) < 1) p.wall = 1;
     if (Math.abs(p.x - s.x - s.w) < 1) p.wall = -1;
   }

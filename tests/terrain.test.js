@@ -91,7 +91,7 @@ test("connected terrain exposes only the playable perimeter, including after a b
   assert.deepEqual(exposedTerrainEdges(floor, solids).top, [[0, 350]]);
 });
 
-test("solid cliff and floor sides support sliding and wall-jump contact without a wall tag", () => {
+test("full-height solid faces support sliding and wall-jump contact without a wall tag", () => {
   const cliff = { x: 200, y: 100, w: 250, h: 500, solid: true, ground: true };
   for (const [x, vx, side] of [
     [170, 150, 1],
@@ -107,4 +107,9 @@ test("solid cliff and floor sides support sliding and wall-jump contact without 
   const p = { x: 170, y: 250, w: 30, h: 54, vx: 150, vy: 400, jumps: 2 };
   movePlayer(p, [{ ...cliff, solid: false, ground: false }], 1 / 60);
   assert.equal(p.wall, 0, "one-way ledges do not become solid climbing walls");
+  const lip = { ...cliff, y: 250, h: 100 };
+  Object.assign(p, { x: 170, y: 260, vx: 150, vy: 400 });
+  movePlayer(p, [lip], 1 / 60);
+  assert.equal(p.wall, 0, "shallow floor lips do not catch passing jumps");
+  assert.ok(p.vy > 105);
 });
