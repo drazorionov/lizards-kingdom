@@ -1,59 +1,133 @@
 import atlas from "./forest-cave-art.json" with { type: "json" };
-
-import { caveSurfaces, caveCorners } from "./cave-decoration.js";
-import { surfaceFade } from "./surface-fade.js";
+import {
+  artHash,
+  caveSurfaces,
+  caveCorners,
+  caveSkins,
+  skinOpacity,
+} from "./cave-decoration.js";
 
 const layouts = new WeakMap();
+const prepared = new WeakMap();
+const masks = new WeakMap();
+const views = new WeakMap();
+
 function layout(faces) {
   if (!layouts.has(faces)) {
     const surfaces = caveSurfaces(faces);
     layouts.set(faces, {
-      surfaces,
+      skins: caveSkins(surfaces),
       corners: caveCorners(surfaces),
     });
   }
   return layouts.get(faces);
 }
-const prepared = new WeakMap();
-const surfaceMasks = new WeakMap();
-const views = new WeakMap();
-const connectionViews = new WeakMap();
-const connectionMasks = new WeakMap();
+function cacheFor(image) {
+  if (!prepared.has(image)) prepared.set(image, new Map());
+  return prepared.get(image);
+}
+function viewFor(r) {
+  if (!views.has(r)) views.set(r, document.createElement("canvas"));
+  const view = views.get(r);
+  const width = Math.ceil(r.viewWidth);
+  if (view.width !== width || view.height !== 620) {
+    view.width = width;
+    view.height = 620;
+  }
+  return view;
+}
 
-function connectionMask(world, solid) {
-  let cached = connectionMasks.get(world);
-  if (cached?.solid === solid) return cached.canvas;
+// Canonical coordinates: x follows the surface, y points into solid earth.
+// The inverse transform used to prepare sprites preserves root gravity.
+function orient(g, s) {
+  if (s.side === "top") g.transform(1, 0, 0, 1, s.a, s.axis);
+  if (s.side === "bottom") g.transform(1, 0, 0, -1, s.a, s.axis);
+  if (s.side === "left") g.transform(0, 1, 1, 0, s.axis, s.a);
+  if (s.side === "right") g.transform(0, 1, -1, 0, s.axis, s.a);
+}
+function skinMask(world, faces) {
+  let cached = masks.get(world);
+  if (cached?.faces === faces) return cached.canvas;
   const canvas = document.createElement("canvas");
   canvas.width = Math.ceil(world.width / 2);
   canvas.height = Math.ceil(world.height / 2);
   const g = canvas.getContext("2d");
-  g.fillStyle = "#000";
-  // A small soft allowance preserves the painted moss/stone silhouette at
-  // the collision plane, without extending solid-looking art into tunnels.
-  g.shadowColor = "#000";
-  g.shadowBlur = 8;
-  for (const s of solid)
-    if (!s.breakable) g.fillRect(s.x / 2, s.y / 2, s.w / 2, s.h / 2);
-  connectionMasks.set(world, { solid, canvas });
+  g.scale(0.5, 0.5);
+  for (const s of layout(faces).skins) {
+    g.save();
+    orient(g, s);
+    const fade = g.createLinearGradient(0, -5, 0, s.depth);
+    fade.addColorStop(0, "#0000");
+    fade.addColorStop(5 / (s.depth + 5), "#000");
+    for (let i = 1; i <= 16; i++) {
+      const t = i / 16;
+      fade.addColorStop(
+        (5 + s.depth * t) / (s.depth + 5),
+        `rgba(0,0,0,${skinOpacity(s.depth * t, s.depth)})`,
+      );
+    }
+    g.fillStyle = fade;
+    g.fillRect(0, -5, s.b - s.a, s.depth + 5);
+    g.restore();
+  }
+  masks.set(world, { faces, canvas });
   return canvas;
 }
 
-function surfaceMask(world, faces) {
-  let cached = surfaceMasks.get(world);
-  if (cached?.faces === faces) return cached.canvas;
+function strip(image, frame, side) {
+  const cache = cacheFor(image);
+  if (cache.has(frame)) return cache.get(frame);
+  const [sx, sy, sw, sh] = frame.rect;
+  const horizontal = side === "top" || side === "bottom";
   const canvas = document.createElement("canvas");
-  const fade = surfaceFade(world.width, world.height, layout(faces).surfaces);
-  canvas.width = fade.width;
-  canvas.height = fade.height;
-  canvas
-    .getContext("2d")
-    .putImageData(new ImageData(fade.pixels, fade.width, fade.height), 0, 0);
-  surfaceMasks.set(world, { faces, canvas });
+  canvas.width = horizontal ? sw : sh;
+  canvas.height = horizontal ? sh : sw;
+  const g = canvas.getContext("2d");
+  if (side === "bottom") g.transform(1, 0, 0, -1, 0, sh);
+  if (side === "left") g.transform(0, 1, 1, 0, 0, 0);
+  if (side === "right") g.transform(0, -1, 1, 0, 0, sw);
+  g.drawImage(image, sx, sy, sw, sh, 0, 0, sw, sh);
+  cache.set(frame, canvas);
   return canvas;
 }
-function strip(image, frame, ceiling = false) {
-  let cache = prepared.get(image);
-  if (!cache) prepared.set(image, (cache = new Map()));
+function drawSkin(g, assets, s) {
+  const horizontal = s.horizontal;
+  const image =
+    assets[horizontal ? "forest-cave-edges-v2" : "forest-cave-walls-v2"];
+  if (!image) return;
+  const frames = atlas[horizontal ? "edges-v2" : "walls-v2"];
+  const variant = artHash(s.side, s.axis) % 2;
+  const frame =
+    frames[variant + (s.side === "bottom" || s.side === "right" ? 2 : 0)];
+  const im = strip(image, frame, s.side);
+  const length = s.b - s.a;
+  const tileLength = 300;
+  // Match the exposed plane; compress only inward depth on thin earth masses.
+  const crossScale = s.depth / Math.max(1, im.height - frame.surface);
+  const y = -frame.surface * crossScale;
+  g.save();
+  orient(g, s);
+  g.beginPath();
+  g.rect(0, -5, length, s.depth + 5);
+  g.clip();
+  const inset = Math.min(35, im.width * 0.08);
+  const phase = s.a - Math.floor(s.a / tileLength) * tileLength;
+  for (let x = -phase; x < length; x += tileLength)
+    g.drawImage(
+      im,
+      inset,
+      0,
+      im.width - inset * 2,
+      im.height,
+      x,
+      y,
+      tileLength + 0.5,
+      im.height * crossScale,
+    );
+  g.restore();
+}
+function cornerPatch(image, frame) {
+  const cache = cacheFor(image);
   if (cache.has(frame)) return cache.get(frame);
   const [x, y, w, h] = frame.rect;
   const canvas = document.createElement("canvas");
@@ -61,266 +135,49 @@ function strip(image, frame, ceiling = false) {
   canvas.height = h;
   const g = canvas.getContext("2d");
   g.drawImage(image, x, y, w, h, 0, 0, w, h);
-  // Bury the cut edge into the continuous rock body. Preserve the generated
-  // moss / root silhouette on the playable side of the boundary.
-  const fade = g.createLinearGradient(0, 0, 0, h);
-  for (let i = 0; i <= 24; i++) {
-    const position = i / 24;
-    const t = Math.max(
-      0,
-      Math.min(1, ceiling ? position / 0.4 : (position - 0.08) / 0.9),
-    );
-    const smooth = t * t * (3 - 2 * t);
-    fade.addColorStop(
-      position,
-      `rgba(0,0,0,${ceiling ? smooth : (1 - smooth) ** 2})`,
-    );
-  }
-  g.globalCompositeOperation = "destination-in";
-  g.fillStyle = fade;
-  g.fillRect(0, 0, w, h);
-  cache.set(frame, canvas);
-  return canvas;
-}
-
-export function drawCaveBody(r, game, faces) {
-  const g = r.ctx,
-    image = r.assets["forest-cave-walls"];
-  g.fillStyle = "#02050c";
-  g.fillRect(game.camera, game.cameraY, r.viewWidth, 620);
-  if (!image) return;
-  let cache = prepared.get(image);
-  if (!cache) prepared.set(image, (cache = new Map()));
-  if (!cache.has("body")) {
-    const tile = document.createElement("canvas");
-    tile.width = 520;
-    tile.height = 760;
-    const ctx = tile.getContext("2d");
-    const [sx, sy, sw, sh] = atlas.walls[0].rect;
-    ctx.drawImage(
-      image,
-      sx + sw * 0.15,
-      sy + sh * 0.08,
-      sw * 0.7,
-      sh * 0.84,
-      0,
-      0,
-      tile.width,
-      tile.height,
-    );
-    ctx.globalCompositeOperation = "destination-in";
-    for (const horizontal of [true, false]) {
-      const extent = horizontal ? tile.width : tile.height;
-      const fade = ctx.createLinearGradient(
-        0,
-        0,
-        horizontal ? extent : 0,
-        horizontal ? 0 : extent,
-      );
-      fade.addColorStop(0, "#0000");
-      fade.addColorStop(0.15, "#000");
-      fade.addColorStop(0.85, "#000");
-      fade.addColorStop(1, "#0000");
-      ctx.fillStyle = fade;
-      ctx.fillRect(0, 0, tile.width, tile.height);
-    }
-    cache.set("body", tile);
-  }
-  let view = views.get(r);
-  if (!view) views.set(r, (view = document.createElement("canvas")));
-  const width = Math.ceil(r.viewWidth);
-  if (view.width !== width || view.height !== 620) {
-    view.width = width;
-    view.height = 620;
-  }
-  const surface = view.getContext("2d");
-  surface.clearRect(0, 0, view.width, view.height);
-  surface.save();
-  surface.translate(-game.camera, -game.cameraY);
-  // Overlapping feathered panels preserve upright, asymmetric root growth.
-  // World anchoring keeps the material stationary while the camera moves.
-  for (
-    let y = Math.floor(game.cameraY / 646) * 646 - 646;
-    y < game.cameraY + 620;
-    y += 646
-  )
-    for (
-      let x = Math.floor(game.camera / 442) * 442 - 442;
-      x < game.camera + r.viewWidth;
-      x += 442
-    )
-      surface.drawImage(cache.get("body"), x, y);
-  surface.restore();
-  surface.globalCompositeOperation = "destination-in";
-  surface.drawImage(
-    surfaceMask(game.world, faces),
-    game.camera / 2,
-    game.cameraY / 2,
-    r.viewWidth / 2,
-    310,
-    0,
-    0,
-    r.viewWidth,
-    620,
-  );
-  surface.globalCompositeOperation = "source-over";
-  g.drawImage(view, game.camera, game.cameraY);
-}
-
-export function drawCaveEdge(r, x, y, width, ceiling, seed = 0) {
-  const kind = ceiling ? "ceilings" : "floors",
-    image = r.assets["forest-cave-" + kind];
-  if (!image) return false;
-  const g = r.ctx,
-    frame = atlas[kind][Math.abs(seed) % 2];
-  const im = strip(image, frame, ceiling),
-    scale = ceiling ? 0.3 : 0.36;
-  const tileWidth = (im.width - 90) * scale,
-    height = im.height * scale;
-  // Feather the strip into the wall material instead of cutting its ends
-  // with a hard rectangle. Cache each static span and retain world texture phase.
-  const cache = prepared.get(image);
-  const phase = x - Math.floor(x / tileWidth) * tileWidth;
-  const key = `edge:${seed % 2}:${width}:${phase}`;
-  let patch = cache.get(key);
-  if (!patch) {
-    patch = document.createElement("canvas");
-    patch.width = Math.ceil(width);
-    patch.height = Math.ceil(height);
-    const ctx = patch.getContext("2d");
-    for (let tx = -phase; tx < width; tx += tileWidth)
-      ctx.drawImage(
-        im,
-        45,
-        0,
-        im.width - 90,
-        im.height,
-        tx,
-        0,
-        tileWidth + 0.5,
-        height,
-      );
-    const fade = ctx.createLinearGradient(0, 0, width, 0);
-    const rim = Math.min(32, width * 0.45) / width;
-    for (let i = 0; i <= 12; i++) {
-      const t = i / 12,
-        alpha = t * t * (3 - 2 * t);
-      fade.addColorStop(t * rim, `rgba(0,0,0,${alpha})`);
-      fade.addColorStop(1 - t * rim, `rgba(0,0,0,${alpha})`);
-    }
-    ctx.globalCompositeOperation = "destination-in";
-    ctx.fillStyle = fade;
-    ctx.fillRect(0, 0, width, patch.height);
-    cache.set(key, patch);
-  }
-  g.drawImage(patch, x, y - frame.surface * scale);
-  return true;
-}
-
-export function drawCaveWalls(r, s, edges) {
-  const g = r.ctx;
-  // The material already follows the connected boundary. Add a narrow cool
-  // rim without re-stamping a separate panel over the continuous surface.
-  for (const side of ["left", "right"])
-    for (const [a, b] of edges[side]) {
-      const x = side === "left" ? s.x : s.x + s.w;
-      const depth = Math.min(42, s.w);
-      const shade = g.createLinearGradient(
-        x,
-        0,
-        x + (side === "left" ? depth : -depth),
-        0,
-      );
-      shade.addColorStop(0, "#3ce9dc28");
-      shade.addColorStop(0.2, "#16284720");
-      shade.addColorStop(1, "#03101200");
-      g.fillStyle = shade;
-      g.fillRect(side === "left" ? x : x - depth, s.y + a, depth, b - a);
-    }
-}
-
-function cornerPatch(image, frame) {
-  let cache = prepared.get(image);
-  if (!cache) prepared.set(image, (cache = new Map()));
-  if (cache.has(frame)) return cache.get(frame);
-  const [x, y, w, h] = frame.rect;
-  const canvas = document.createElement("canvas");
-  canvas.width = w;
-  canvas.height = h;
-  const g = canvas.getContext("2d"),
-    [ax, ay] = frame.anchor;
-  g.drawImage(image, x, y, w, h, 0, 0, w, h);
-  const fade = g.createRadialGradient(
-    ax,
-    ay,
-    10,
-    ax,
-    ay,
-    Math.max(w, h) * 0.95,
-  );
+  // Keep the bend intact and feather only the short trim's arm ends.
+  const [ax, ay] = frame.anchor;
+  const fade = g.createRadialGradient(ax, ay, 0, ax, ay, Math.max(w, h) * 0.85);
   fade.addColorStop(0, "#000");
   fade.addColorStop(0.55, "#000");
-  fade.addColorStop(0.8, "#0009");
   fade.addColorStop(1, "#0000");
   g.globalCompositeOperation = "destination-in";
   g.fillStyle = fade;
   g.fillRect(0, 0, w, h);
-  for (const horizontal of [true, false]) {
-    const extent = horizontal ? w : h;
-    const edge = g.createLinearGradient(
-      0,
-      0,
-      horizontal ? extent : 0,
-      horizontal ? 0 : extent,
-    );
-    edge.addColorStop(0, "#0000");
-    edge.addColorStop(0.12, "#000");
-    edge.addColorStop(0.88, "#000");
-    edge.addColorStop(1, "#0000");
-    g.fillStyle = edge;
-    g.fillRect(0, 0, w, h);
-  }
   cache.set(frame, canvas);
   return canvas;
 }
-
-export function drawCaveConnections(r, game, faces, solid) {
-  let view = connectionViews.get(r);
-  if (!view) connectionViews.set(r, (view = document.createElement("canvas")));
-  const width = Math.ceil(r.viewWidth);
-  if (view.width !== width || view.height !== 620) {
-    view.width = width;
-    view.height = 620;
-  }
-  const g = view.getContext("2d");
-  g.clearRect(0, 0, view.width, view.height);
-  g.save();
-  g.translate(-game.camera, -game.cameraY);
+function drawConnections(g, assets, game, faces, width) {
   for (const corner of layout(faces).corners) {
     if (
-      corner.x < game.camera - 256 ||
-      corner.x > game.camera + r.viewWidth + 256 ||
-      corner.y < game.cameraY - 256 ||
-      corner.y > game.cameraY + 876
+      corner.x < game.camera - 100 ||
+      corner.x > game.camera + width + 100 ||
+      corner.y < game.cameraY - 100 ||
+      corner.y > game.cameraY + 720
     )
       continue;
-    const image = r.assets["forest-cave-" + corner.kind],
-      frame = atlas[corner.kind]?.[corner.frame];
+    const kind = corner.kind.includes("ceiling")
+      ? "joins-ceiling-v2"
+      : "joins-floor-v2";
+    const image = assets["forest-cave-" + kind],
+      frame = atlas[kind]?.[corner.frame];
     if (!image || !frame) continue;
-    const patch = cornerPatch(image, frame),
-      scale = corner.scale;
-    g.drawImage(
-      patch,
-      corner.x - frame.anchor[0] * scale,
-      corner.y - frame.anchor[1] * scale,
-      patch.width * scale,
-      patch.height * scale,
+    const patch = cornerPatch(image, frame);
+    g.save();
+    g.translate(corner.x, corner.y);
+    g.scale(
+      corner.kind.endsWith("right") ? -corner.scale : corner.scale,
+      corner.scale,
     );
+    g.drawImage(patch, -frame.anchor[0], -frame.anchor[1]);
+    g.restore();
   }
-  g.restore();
+}
+function finishSkins(r, game, faces, view) {
+  const g = view.getContext("2d");
   g.globalCompositeOperation = "destination-in";
   g.drawImage(
-    connectionMask(game.world, solid),
+    skinMask(game.world, faces),
     game.camera / 2,
     game.cameraY / 2,
     r.viewWidth / 2,
@@ -333,30 +190,66 @@ export function drawCaveConnections(r, game, faces, solid) {
   g.globalCompositeOperation = "source-over";
   r.ctx.drawImage(view, game.camera, game.cameraY);
 }
+export function drawCaveTerrain(r, game, faces, solid) {
+  // Pass 1: black, non-reachable earth, drawn as one collision union.
+  const g = r.ctx;
+  g.save();
+  g.beginPath();
+  for (const s of solid) if (!s.breakable) g.rect(s.x, s.y, s.w, s.h);
+  g.clip();
+  g.fillStyle = "#02050c";
+  g.fillRect(game.camera, game.cameraY, r.viewWidth, 620);
+  g.restore();
 
+  const view = viewFor(r),
+    surface = view.getContext("2d");
+  surface.clearRect(0, 0, view.width, view.height);
+  surface.save();
+  surface.translate(-game.camera, -game.cameraY);
+  // Pass 2: independently oriented narrow floor, wall and ceiling skins.
+  for (const s of layout(faces).skins) {
+    const x = s.horizontal ? s.a : s.axis,
+      y = s.horizontal ? s.axis : s.a;
+    const w = s.horizontal ? s.b - s.a : 40,
+      h = s.horizontal ? 40 : s.b - s.a;
+    if (
+      x + w < game.camera - 50 ||
+      x > game.camera + r.viewWidth + 50 ||
+      y + h < game.cameraY - 50 ||
+      y > game.cameraY + 670
+    )
+      continue;
+    drawSkin(surface, r.assets, s);
+  }
+  // Pass 3: compact deterministic joins, constrained by the same depth mask.
+  drawConnections(surface, r.assets, game, faces, r.viewWidth);
+  surface.restore();
+  finishSkins(r, game, faces, view);
+}
+// Isolated pass used by visual regression checks.
+export function drawCaveConnections(r, game, faces) {
+  const view = viewFor(r),
+    g = view.getContext("2d");
+  g.clearRect(0, 0, view.width, view.height);
+  g.save();
+  g.translate(-game.camera, -game.cameraY);
+  drawConnections(g, r.assets, game, faces, r.viewWidth);
+  g.restore();
+  finishSkins(r, game, faces, view);
+}
 export function caveStoneTexture(r) {
-  const image = r.assets["forest-cave-walls"];
+  const image = r.assets["forest-cave-walls-v2"];
   if (!image) return null;
-  let cache = prepared.get(image);
-  if (!cache) prepared.set(image, (cache = new Map()));
+  const cache = cacheFor(image);
   if (!cache.has("stone")) {
     const canvas = document.createElement("canvas");
     canvas.width = 256;
     canvas.height = 512;
-    const [x, y, w, h] = atlas.walls[1].rect;
-    canvas
-      .getContext("2d")
-      .drawImage(
-        image,
-        x + w * 0.2,
-        y + h * 0.12,
-        w * 0.6,
-        h * 0.76,
-        0,
-        0,
-        256,
-        512,
-      );
+    const g = canvas.getContext("2d");
+    g.fillStyle = "#02050c";
+    g.fillRect(0, 0, 256, 512);
+    const [x, y, w, h] = atlas["walls-v2"][1].rect;
+    g.drawImage(image, x + w * 0.25, y, w * 0.5, h, 0, 0, 256, 512);
     cache.set("stone", canvas);
   }
   return cache.get("stone");

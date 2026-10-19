@@ -26,6 +26,12 @@ The Spore Mother has four attack timelines, a half-health awakening, 24 addition
 
 Three HD backdrop paintings, eight transparent ledge variants and a root/stone texture replace the first region's enlarged atlas tile. Sources, regional design study and exact generation prompts are in `art/forest/`; `scripts/prepare-forest.py` reproduces the optimized WebP assets. The other five regions retain their existing levels and encounters for subsequent pilots.
 
+Forest terrain is built from **passages → solid earth → exposed perimeter → narrow skins → compact joins**. `FOREST_PASSAGES` describes the open rooms and tunnels; `carveCaverns` computes their solid complement, with stepped curved turns. That same solid geometry drives collision and the map. The renderer first fills the solid union near-black, merges adjacent exposed edges, and dresses floors, ceilings and both wall faces independently. No texture is tiled through the buried interior.
+
+Each surface skin reaches at most 36 world pixels inward, or 38% of the distance to an opposing face. A 55-pixel wall therefore has two 20.9-pixel skins and a dark center at least 13.2 pixels wide; the same rule applies to thin roofs. A smooth fade hides the inner texture edge. Eight compact variants per inner/outer corner are selected by world coordinates; right-hand joints mirror their left-hand counterparts. Joints share the skin depth mask, so they cannot brighten a thin wall's center. Breaking a barrier invalidates the boundary and material caches. This geometry/material split can support another biome by replacing the four atlases without changing collision.
+
+The four active skin atlases, generated with built-in image generation, are `art/forest-caverns/{edges,walls,joins-floor,joins-ceiling}-v2-source.png`; exact prompts are in `art/forest-caverns/skin-prompts.json`. `scripts/prepare-cavern-assets.py` preserves generated transparency and records sprite planes/anchors. `scripts/forest-cavern-qa.mjs` checks both textured faces and black centers of thin walls/roofs, compact joins, all forest chambers and destructible-wall phases.
+
 ## Development
 
 Requires Node 20.19+ (Node 22 recommended).

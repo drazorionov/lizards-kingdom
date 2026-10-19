@@ -40,6 +40,61 @@ export function caveSurfaces(faces) {
   return result;
 }
 
+// Split only where the thickness of the actual solid changes. Each opposing
+// skin owns at most 38% of that thickness, leaving a continuous dark core.
+export function caveSkins(surfaces, maximumDepth = 36) {
+  const opposite = {
+    top: "bottom",
+    bottom: "top",
+    left: "right",
+    right: "left",
+  };
+  return surfaces.flatMap((surface) => {
+    const direction =
+      surface.side === "top" || surface.side === "left" ? 1 : -1;
+    const across = surfaces.filter(
+      (s) =>
+        s.side === opposite[surface.side] &&
+        (s.axis - surface.axis) * direction > 0 &&
+        (s.axis - surface.axis) * direction < maximumDepth / 0.38 &&
+        s.a < surface.b &&
+        s.b > surface.a,
+    );
+    const cuts = [
+      ...new Set([
+        surface.a,
+        surface.b,
+        ...across.flatMap((s) => [
+          Math.max(surface.a, s.a),
+          Math.min(surface.b, s.b),
+        ]),
+      ]),
+    ].sort((a, b) => a - b);
+    return cuts.slice(0, -1).map((a, i) => {
+      const b = cuts[i + 1],
+        middle = (a + b) / 2;
+      const thickness = Math.min(
+        Infinity,
+        ...across
+          .filter((s) => s.a <= middle && s.b >= middle)
+          .map((s) => (s.axis - surface.axis) * direction),
+      );
+      return {
+        ...surface,
+        a,
+        b,
+        depth: Math.min(maximumDepth, thickness * 0.38),
+      };
+    });
+  });
+}
+
+export function skinOpacity(distance, depth) {
+  if (distance >= depth) return 0;
+  const t = Math.max(0, distance / depth);
+  return (1 - t * t * (3 - 2 * t)) ** 2;
+}
+
 export function caveCorners(surfaces) {
   const vertical = surfaces.filter((s) => !s.horizontal);
   const corners = [];
@@ -70,9 +125,9 @@ export function caveCorners(surfaces) {
             distance,
             short,
             scale: Math.min(
-              0.64,
-              Math.max(0.2, (v.b - v.a + dy) / 170),
-              Math.max(0.2, (h.b - h.a + dx) / 230),
+              0.32,
+              Math.max(0.12, (v.b - v.a + dy) / 340),
+              Math.max(0.12, (h.b - h.a + dx) / 400),
             ),
           };
       }

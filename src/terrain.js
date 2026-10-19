@@ -206,7 +206,7 @@ export function drawBreakableWall(r, s, game) {
       game.world.region === 0
         ? caveStoneTexture(r) || r.assets["forest-terrain"]
         : r.assets[game.world.artKey + "-terrain"],
-      game.world.region === 0 && !r.assets["forest-cave-walls"],
+      game.world.region === 0 && !r.assets["forest-cave-walls-v2"],
     );
     g.restore();
   }
@@ -286,7 +286,7 @@ export function drawWallDebris(r, game) {
       game.world.region === 0
         ? caveStoneTexture(r) || r.assets["forest-terrain"]
         : r.assets[game.world.artKey + "-terrain"],
-      game.world.region === 0 && !r.assets["forest-cave-walls"],
+      game.world.region === 0 && !r.assets["forest-cave-walls-v2"],
     );
     g.restore();
   }

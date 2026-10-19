@@ -137,13 +137,10 @@ async function loadCreatureAssets(region) {
         "terrain",
         "ledges",
         "mother-attacks-atlas",
-        "cave-floors",
-        "cave-ceilings",
-        "cave-walls",
-        "cave-corners-floor-left",
-        "cave-corners-floor-right",
-        "cave-corners-ceiling-left",
-        "cave-corners-ceiling-right",
+        "cave-edges-v2",
+        "cave-walls-v2",
+        "cave-joins-floor-v2",
+        "cave-joins-ceiling-v2",
       ].map(async (name) => {
         const key = "forest-" + name;
         if (assets[key]) return;

@@ -1,8 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { caveSurfaces, caveCorners } from "../src/cave-decoration.js";
+import {
+  caveSurfaces,
+  caveCorners,
+  caveSkins,
+  skinOpacity,
+} from "../src/cave-decoration.js";
 import { exposedTerrainEdges } from "../src/wall-surfaces.js";
-import { surfaceFade } from "../src/surface-fade.js";
 import { buildForest } from "../src/forest.js";
 
 const surfaces = (solids) =>
@@ -53,32 +57,54 @@ test("short forest steps receive scaled corner art without losing rounded wall j
   );
 });
 
-test("surface fade has round end caps, a smooth falloff, and a black interior", () => {
-  const fade = surfaceFade(400, 400, [
-    { horizontal: false, axis: 100, a: 100, b: 300 },
-  ]);
-  const alpha = (x, y) =>
-    fade.pixels[(Math.floor(y / 2) * fade.width + Math.floor(x / 2)) * 4 + 3];
-  assert.equal(alpha(100, 200), 255);
-  assert.ok(
-    alpha(120, 90) > 0,
-    "texture fades around the end, without a rectangular cutoff",
-  );
-  assert.equal(alpha(260, 200), 0);
-  for (let x = 102; x <= 246; x += 2) {
-    assert.ok(alpha(x, 200) <= alpha(x - 2, 200));
-    assert.ok(
-      alpha(x - 2, 200) - alpha(x, 200) <= 8,
-      "no abrupt brightness step",
+test("opposing skins leave a dark core in a 55-pixel wall and a thin roof", () => {
+  for (const block of [
+    { x: 100, y: 100, w: 55, h: 400, solid: true },
+    { x: 100, y: 100, w: 400, h: 55, solid: true },
+  ]) {
+    const skins = caveSkins(surfaces([block]));
+    const pair = skins.filter((s) =>
+      block.w === 55 ? !s.horizontal : s.horizontal,
     );
+    assert.equal(pair.length, 2);
+    assert.ok(pair.every((s) => Math.abs(s.depth - 20.9) < 0.001));
+    assert.ok(pair.reduce((total, s) => total + s.depth, 0) < 55 * 0.8);
+    assert.ok(pair.every((s) => skinOpacity(27.5, s.depth) === 0));
   }
-  const split = surfaceFade(400, 400, [
-    { horizontal: false, axis: 100, a: 100, b: 200 },
-    { horizontal: false, axis: 100, a: 200, b: 300 },
-  ]);
-  assert.deepEqual(
-    split.pixels,
-    fade.pixels,
-    "collider seams do not alter the gradient",
+});
+
+test("skin depth changes where a thin wall meets a broad landmass", () => {
+  const skins = caveSkins(
+    surfaces([
+      { x: 100, y: 100, w: 55, h: 200, solid: true },
+      { x: 100, y: 300, w: 300, h: 200, solid: true },
+    ]),
   );
+  const left = skins.filter((s) => s.side === "left");
+  assert.deepEqual(
+    left.map(({ a, b, depth }) => [a, b, depth]),
+    [
+      [100, 300, 55 * 0.38],
+      [300, 500, 36],
+    ],
+  );
+});
+
+test("skin falloff reaches black smoothly without seams between colliders", () => {
+  assert.equal(skinOpacity(0, 36), 1);
+  assert.equal(skinOpacity(36, 36), 0);
+  for (let d = 1; d <= 36; d++) {
+    assert.ok(skinOpacity(d, 36) <= skinOpacity(d - 1, 36));
+    assert.ok(skinOpacity(d - 1, 36) - skinOpacity(d, 36) < 0.06);
+  }
+  const whole = surfaces([{ x: 100, y: 100, w: 55, h: 400, solid: true }]);
+  const split = surfaces([
+    { x: 100, y: 100, w: 55, h: 200, solid: true },
+    { x: 100, y: 300, w: 55, h: 200, solid: true },
+  ]);
+  const ordered = (s) =>
+    caveSkins(s).sort(
+      (a, b) => a.side.localeCompare(b.side) || a.axis - b.axis,
+    );
+  assert.deepEqual(ordered(whole), ordered(split));
 });

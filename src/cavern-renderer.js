@@ -1,9 +1,4 @@
-import {
-  drawCaveBody,
-  drawCaveEdge,
-  drawCaveWalls,
-  drawCaveConnections,
-} from "./forest-cave-surfaces.js";
+import { drawCaveTerrain } from "./forest-cave-surfaces.js";
 import { exposedTerrainEdges } from "./wall-surfaces.js";
 import { hasService, TOKEN_TYPES } from "./progression.js";
 
@@ -33,90 +28,11 @@ function boundaries(world) {
   }
   return cached;
 }
-const visible = (s, r, game) =>
-  s.x + s.w >= game.camera - 80 &&
-  s.x <= game.camera + r.viewWidth + 80 &&
-  s.y + s.h >= game.cameraY - 80 &&
-  s.y <= game.cameraY + 700;
-
-export function drawCavernTerrain(r, game, ledge) {
-  const g = r.ctx;
+// The collision union defines the black mass; its exposed perimeter alone
+// receives material and compact joins. Physics and map use the same geometry.
+export function drawCavernTerrain(r, game) {
   const { solid, faces } = boundaries(game.world);
-  // One continuous mass, not one sprite per collider. This also removes visual
-  // seams when floor, wall and ceiling rectangles belong to the same landform.
-  g.save();
-  g.beginPath();
-  for (const s of solid)
-    if (!s.breakable && visible(s, r, game)) g.rect(s.x, s.y, s.w, s.h);
-  g.clip();
-  drawCaveBody(r, game, faces);
-  // Rock strata fade into the dark interior; the playable edge carries detail.
-  for (const { s, edges } of faces) {
-    if (s.breakable || !visible(s, r, game)) continue;
-    for (const side of ["top", "bottom", "left", "right"]) {
-      for (const [a, b] of edges[side]) {
-        g.beginPath();
-        if (side === "top" || side === "bottom") {
-          const y = s.y + (side === "bottom" ? s.h : 0);
-          g.moveTo(s.x + a, y);
-          g.lineTo(s.x + b, y);
-        } else {
-          const x = s.x + (side === "right" ? s.w : 0);
-          g.moveTo(x, s.y + a);
-          g.lineTo(x, s.y + b);
-        }
-        g.strokeStyle = "#166a7544";
-        g.lineWidth = 12;
-        g.stroke();
-        g.strokeStyle = "#4bbdb633";
-        g.lineWidth = 2;
-        g.stroke();
-      }
-    }
-  }
-  g.restore();
-  for (const { s, edges } of faces) {
-    if (s.breakable || !visible(s, r, game)) continue;
-    drawCaveWalls(r, s, edges);
-    for (const [a, b] of edges.top) {
-      if (b - a < 28) continue;
-      if (s.y < game.cameraY - 75 || s.y > game.cameraY + 680) continue;
-      if (drawCaveEdge(r, s.x + a, s.y, b - a, false, s.y > 1100 ? 1 : 0))
-        continue;
-      g.save();
-      g.beginPath();
-      g.rect(s.x + a, s.y - 48, b - a, 110);
-      g.clip();
-      const count = Math.max(1, Math.ceil((b - a) / 220)),
-        width = (b - a) / count;
-      for (let i = 0; i < count; i++) {
-        const x = s.x + a + i * width;
-        if (x + width > game.camera && x < game.camera + r.viewWidth)
-          ledge(x, s.y, width, (s.id + i) % 8);
-      }
-      g.restore();
-    }
-    // Dedicated ceiling art hangs from the actual collision underside.
-    for (const [a, b] of edges.bottom) {
-      const y = s.y + s.h;
-      if (b - a < 28 || y < game.cameraY - 60 || y > game.cameraY + 620)
-        continue;
-      if (drawCaveEdge(r, s.x + a, y, b - a, true, y > 900 ? 1 : 0)) continue;
-      g.save();
-      g.beginPath();
-      g.rect(s.x + a, y - 30, b - a, 67);
-      g.clip();
-      const count = Math.max(1, Math.ceil((b - a) / 230)),
-        width = (b - a) / count;
-      for (let i = 0; i < count; i++) {
-        const x = s.x + a + i * width;
-        if (x + width > game.camera && x < game.camera + r.viewWidth)
-          ledge(x, y - 42, width, (s.id + i) % 8);
-      }
-      g.restore();
-    }
-  }
-  drawCaveConnections(r, game, faces, solid);
+  drawCaveTerrain(r, game, faces, solid);
 }
 
 function discovered(world, point, all) {

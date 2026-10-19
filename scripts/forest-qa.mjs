@@ -49,6 +49,10 @@ await page.evaluate(async () => {
     "forest-sanctum",
     "forest-terrain",
     "forest-ledges",
+    "forest-cave-edges-v2",
+    "forest-cave-walls-v2",
+    "forest-cave-joins-floor-v2",
+    "forest-cave-joins-ceiling-v2",
     "forest-mother-attacks-atlas",
   ];
   await Promise.all(

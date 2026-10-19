@@ -60,13 +60,10 @@ await page.evaluate(async () => {
             "terrain",
             "ledges",
             "mother-attacks-atlas",
-            "cave-floors",
-            "cave-ceilings",
-            "cave-walls",
-            "cave-corners-floor-left",
-            "cave-corners-floor-right",
-            "cave-corners-ceiling-left",
-            "cave-corners-ceiling-right",
+            "cave-edges-v2",
+            "cave-walls-v2",
+            "cave-joins-floor-v2",
+            "cave-joins-ceiling-v2",
           ]
         : ["background", "terrain", "ledges", "boss-attacks-atlas"]
       ).map((k) => load(prefix + "-" + k)),
@@ -91,6 +88,45 @@ await page.evaluate(async () => {
 });
 
 await page.evaluate(() => window.fixture.start(0));
+const thinTerrain = await page.evaluate(async () => {
+  const { drawCaveTerrain } = await import("/src/forest-cave-surfaces.js");
+  const { exposedTerrainEdges } = await import("/src/wall-surfaces.js");
+  const solid = [
+    { x: 100, y: 100, w: 55, h: 400, solid: true },
+    { x: 300, y: 100, w: 400, h: 55, solid: true },
+  ];
+  const world = { width: 800, height: 620, platforms: solid };
+  const faces = solid.map((s) => ({ s, edges: exposedTerrainEdges(s, solid) }));
+  const canvas = document.createElement("canvas");
+  canvas.width = 800;
+  canvas.height = 620;
+  const ctx = canvas.getContext("2d");
+  drawCaveTerrain(
+    { ctx, assets: window.fixture.assets, viewWidth: 800 },
+    { world, camera: 0, cameraY: 0 },
+    faces,
+    solid,
+  );
+  const peak = (x, y, w, h) => {
+    const pixels = ctx.getImageData(x, y, w, h).data;
+    let maximum = 0;
+    for (let i = 0; i < pixels.length; i += 4)
+      maximum = Math.max(maximum, pixels[i], pixels[i + 1], pixels[i + 2]);
+    return maximum;
+  };
+  return {
+    wallCore: peak(125, 180, 5, 240),
+    roofCore: peak(380, 125, 240, 5),
+    left: peak(100, 180, 5, 240),
+    right: peak(150, 180, 5, 240),
+    floor: peak(380, 100, 240, 5),
+    ceiling: peak(380, 150, 240, 5),
+  };
+});
+assert.equal(thinTerrain.wallCore, 12, "a thin wall retains its black center");
+assert.equal(thinTerrain.roofCore, 12, "a thin roof retains its black center");
+for (const side of ["left", "right", "floor", "ceiling"])
+  assert.ok(thinTerrain[side] > 30, `${side} has its own visible texture`);
 const joins = await page.evaluate(async () => {
   const { drawCaveConnections } = await import("/src/forest-cave-surfaces.js");
   const { exposedTerrainEdges } = await import("/src/wall-surfaces.js");
