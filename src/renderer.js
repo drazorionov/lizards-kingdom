@@ -1,3 +1,4 @@
+import { drawWallDebris } from "./terrain.js";
 import {
   regionBackground,
   regionTerrain,
@@ -308,6 +309,8 @@ export class Renderer {
       g.fillStyle = "#d4c4a0";
       g.font = "10px Georgia";
       g.textAlign = "center";
+      g.save();
+      g.globalAlpha *= 0.12;
       g.fillText("СТАРЕЙШИНА", w.elder.x + 16, w.elder.y - 33);
       g.strokeStyle = "#9eaa8b66";
       g.beginPath();
@@ -319,6 +322,7 @@ export class Renderer {
       g.fillStyle = "#b2c4a5";
       g.font = "11px Georgia";
       g.fillText("→", 184, 456);
+      g.restore();
     }
     this.beacon(w.checkpoint.x, w.checkpoint.y + 50, t, game.checkpointUsed);
     for (const token of w.tokens) {
@@ -454,10 +458,19 @@ export class Renderer {
       g.stroke();
       g.restore();
     }
+    drawWallDebris(this, game);
     for (const a of game.particles) {
       g.globalAlpha = clamp(a.life / 0.7, 0, 1);
       g.fillStyle = a.color;
-      g.fillRect(a.x, a.y, a.size, a.size);
+      if (a.dust) {
+        g.globalAlpha *= 0.24;
+        const radius = a.size * (2 - Math.min(a.life, 1));
+        const dust = g.createRadialGradient(a.x, a.y, 0, a.x, a.y, radius);
+        dust.addColorStop(0, a.color);
+        dust.addColorStop(1, a.color + "00");
+        g.fillStyle = dust;
+        g.fillRect(a.x - radius, a.y - radius, radius * 2, radius * 2);
+      } else g.fillRect(a.x, a.y, a.size, a.size);
     }
     g.globalAlpha = 1;
     regionForeground(this, game);
@@ -473,7 +486,10 @@ export class Renderer {
     shade.addColorStop(1, "#030b1600");
     g.fillStyle = shade;
     g.fillRect(0, 0, view, 170);
+    g.save();
+    g.globalAlpha *= 0.1;
     regionMinimap(this, game);
+    g.restore();
     this.frameCount++;
     const now = performance.now();
     if (now - this.lastFps >= 1000) {
@@ -549,7 +565,10 @@ export class Renderer {
     g.font = "9px Manrope";
     g.textAlign = "center";
     g.fillStyle = "#b9d0c7";
+    g.save();
+    g.globalAlpha *= 0.12;
     g.fillText(active ? "ПУТЬ СОХРАНЁН" : "ТЁПЛЫЙ СВЕТ", x, y - 84);
+    g.restore();
   }
   gate(x, y, t, ready) {
     const g = this.ctx;

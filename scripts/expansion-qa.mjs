@@ -19,16 +19,43 @@ await page.waitForFunction(() => window.__kingdom.snapshot()?.town);
 await page.waitForTimeout(1500);
 await page.screenshot({ path: "/tmp/expansion-town.png" });
 await page.keyboard.down("ArrowRight");
-await page.waitForFunction(() => window.__kingdom.snapshot().player.x > 350);
+await page.waitForFunction(() => window.__kingdom.snapshot().player.x > 670);
 await page.keyboard.up("ArrowRight");
 await page.keyboard.press("Space");
 await page.waitForSelector("#resident-done");
 assert.match(await page.locator("#modal-title").textContent(), /Ронг/);
 await page.screenshot({ path: "/tmp/expansion-resident.png" });
 await page.click("#resident-done");
-await page.keyboard.down("ArrowRight");
-await page.waitForFunction(() => window.__kingdom.snapshot().player.x > 865);
-await page.keyboard.up("ArrowRight");
+async function townMove(x, jump = false, feet) {
+  const current = await page.evaluate(
+    () => window.__kingdom.snapshot().player.x,
+  );
+  const key = current < x ? "ArrowRight" : "ArrowLeft";
+  if (Math.abs(current - x) > 4) await page.keyboard.down(key);
+  if (jump) {
+    await page.keyboard.press("ArrowUp");
+    await page.waitForTimeout(180);
+    await page.keyboard.press("ArrowUp");
+  }
+  await page.waitForFunction(
+    ({ x, right }) =>
+      right
+        ? window.__kingdom.snapshot().player.x >= x - 3
+        : window.__kingdom.snapshot().player.x <= x + 3,
+    { x, right: current < x },
+  );
+  await page.keyboard.up(key);
+  if (feet)
+    await page.waitForFunction((y) => {
+      const p = window.__kingdom.snapshot().player;
+      return p.grounded && p.y + p.h === y;
+    }, feet);
+}
+await townMove(255);
+await townMove(255, true, 1240);
+await townMove(425, true, 1150);
+await townMove(580, true, 1060);
+await townMove(1810, false, 1060);
 await page.keyboard.press("Space");
 await page.waitForSelector("#resident-reward");
 await page.click("#resident-reward");

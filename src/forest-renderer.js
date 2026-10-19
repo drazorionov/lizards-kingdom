@@ -1,3 +1,4 @@
+import { drawSolidTerrain, drawBreakableWall } from "./terrain.js";
 import { FOREST_ROOMS, forestRoom } from "./forest.js";
 import { MOTHER_LABELS } from "./forest-boss.js";
 const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
@@ -32,9 +33,6 @@ export function drawForestTerrain(renderer, s, game) {
   const g = renderer.ctx,
     im = renderer.assets["forest-terrain"];
   if (!im) return;
-  const camera = game.camera,
-    cy = game.cameraY,
-    view = renderer.viewWidth;
   const ledges = renderer.assets["forest-ledges"];
   const ledge = (x, y, width, index) => {
     if (!ledges) return;
@@ -59,65 +57,14 @@ export function drawForestTerrain(renderer, s, game) {
     ledge(s.x, s.y, s.w, s.id % 8);
     return;
   }
-  // Clip to viewport AND collision bounds. No full-world canvas allocation.
-  g.save();
-  g.beginPath();
-  g.rect(s.x, s.y, s.w, s.h);
-  g.clip();
-  const tw = 512,
-    th = 342;
-  for (
-    let y = Math.max(s.y, s.y + Math.floor((cy - s.y) / th) * th);
-    y < Math.min(s.y + s.h, cy + 620);
-    y += th
-  )
-    for (
-      let x = Math.max(s.x, s.x + Math.floor((camera - s.x) / tw) * tw);
-      x < Math.min(s.x + s.w, camera + view);
-      x += tw
-    )
-      g.drawImage(im, 0, 100, im.width, im.height - 100, x, y, tw, th);
-  g.restore();
-  // Transparent painted overhangs replace rectangular texture fringes.
-  if (!s.wall && !s.ceiling) {
-    g.save();
-    g.beginPath();
-    g.rect(s.x - 3, s.y - 85, s.w + 6, 110);
-    g.clip();
-    const parts = Math.max(1, Math.ceil(s.w / 300)),
-      width = s.w / parts;
-    for (let n = 0; n < parts; n++)
-      if (s.x + (n + 1) * width > camera && s.x + n * width < camera + view)
-        ledge(s.x + n * width, s.y, width, (s.id + n) % 8);
-    g.restore();
-  }
-  g.strokeStyle = s.breakable ? "#e0b982" : s.wall ? "#63d7c5aa" : "#7eb8a277";
-  g.lineWidth = s.breakable ? 3 : 1;
-  if (s.wall) {
-    g.beginPath();
-    g.moveTo(s.x + 2, s.y);
-    g.lineTo(s.x + 2, s.y + s.h);
-    g.moveTo(s.x + s.w - 2, s.y);
-    g.lineTo(s.x + s.w - 2, s.y + s.h);
-    g.stroke();
-    if (s.breakable) {
-      g.beginPath();
-      g.moveTo(s.x + s.w * 0.6, s.y + 8);
-      g.lineTo(s.x + 8, s.y + s.h * 0.35);
-      g.lineTo(s.x + s.w - 8, s.y + s.h * 0.55);
-      g.lineTo(s.x + 9, s.y + s.h * 0.9);
-      g.stroke();
-    }
-  } else {
-    g.beginPath();
-    g.moveTo(s.x, s.y);
-    g.lineTo(s.x + s.w, s.y);
-    g.stroke();
-  }
+  if (s.breakable) return drawBreakableWall(renderer, s, game);
+  drawSolidTerrain(renderer, s, game, ledge, im, true);
 }
 export function drawForestDetails(renderer, game) {
   const g = renderer.ctx,
     w = game.world;
+  g.save();
+  g.globalAlpha *= 0.12;
   for (const sign of w.signs) {
     if (
       sign.x < game.camera - 150 ||
@@ -135,6 +82,7 @@ export function drawForestDetails(renderer, game) {
     g.fillStyle = "#d1d8b4";
     g.fillText(sign.text, sign.x, sign.y);
   }
+  g.restore();
   for (const a of w.hazards) {
     const cx = a.x + a.w / 2;
     if (a.delay > 0) {

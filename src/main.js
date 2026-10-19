@@ -110,6 +110,7 @@ const creatureLoads = new Map();
 const loadedRegions = [];
 async function loadCreatureAssets(region) {
   const assets = await loadAssets();
+  await loadExtra(assets, ["vertical-walls-painted"]);
   const keys = [...REGION_CREATURES[region], BOSSES[region]];
   await Promise.all(
     keys.map(async (key) => {
@@ -214,7 +215,10 @@ async function start(region = progress.region, town = false) {
     const assets = await loadCreatureAssets(region);
     if (town)
       await loadExtra(assets, [
-        "town-background",
+        "town-tree-painted",
+        "town-homes-painted",
+        "town-platforms-painted",
+        "forest-terrain",
         "town-npcs-0-atlas",
         "town-npcs-1-atlas",
         "town-npcs-2-atlas",
@@ -267,7 +271,7 @@ function updateHud({ health, maxHealth, tokens, boss, region, town, level }) {
   $("#chapter-label").textContent =
     `${town ? "ГОРОД" : "ГЛАВА " + REGIONS[region].chapter} · ${selectedHero === 0 ? "КВИРЕЛ" : "УРМАСА"} · УР. ${level}`;
   $("#region-name").textContent = town
-    ? "Лагерь · Город"
+    ? "Древоград · Город в ветвях"
     : REGIONS[region].name;
   $("#hearts").innerHTML = Array.from(
     { length: maxHealth },
@@ -288,7 +292,7 @@ function updateHud({ health, maxHealth, tokens, boss, region, town, level }) {
   $("#boss-name").textContent = REGIONS[region].boss;
   $("#boss-health").style.width = `${(boss.hp / boss.maxHp) * 100}%`;
   $("#objective").textContent = town
-    ? "Подойди к жителю · Пробел / меч — говорить"
+    ? "↑ / W — прыгать по уступам · Пробел / меч — говорить · M — карта"
     : tokens.every((t) => t.collected)
       ? "Пять огоньков найдены. К вратам →"
       : boss.dead
@@ -301,8 +305,17 @@ function showModal(kind, html) {
   heroShowcase?.stop();
   heroShowcase = null;
   if (game?.running) game.pause();
+  if ($("#modal").classList.contains("hidden"))
+    modalReturnFocus = document.activeElement;
+  pointerControls.clear();
+  document
+    .querySelectorAll("[data-control].pressed")
+    .forEach((button) => button.classList.remove("pressed"));
+  $("#menu").inert = true;
+  $("#game").inert = true;
+  $("#pause").inert = true;
+  $("#pause").setAttribute("aria-expanded", "true");
   modalKind = kind;
-  modalReturnFocus = document.activeElement;
   $("#modal-content").innerHTML = html;
   $("#modal").classList.remove("hidden");
   requestAnimationFrame(() => $("#modal-close").focus());
@@ -314,6 +327,10 @@ function closeModal(resume = true) {
   heroShowcase = null;
   $("#modal").classList.add("hidden");
   modalKind = "";
+  $("#menu").inert = false;
+  $("#game").inert = false;
+  $("#pause").inert = false;
+  $("#pause").setAttribute("aria-expanded", "false");
   if (resume && game?.running) game.resume();
   else modalReturnFocus?.focus();
 }
@@ -334,10 +351,19 @@ function bindMode() {
     };
 }
 function showPause() {
-  if (!game?.running) return;
+  if (!game?.running) {
+    showModal(
+      "pause",
+      `<div class="eyebrow">КОРОЛЕВСТВО ЯЩЕРИЦ</div><h2 id="modal-title">Меню</h2>${modeSetting()}<div class="modal-actions"><button id="menu-done" class="primary-button">Вернуться <b>→</b></button><button id="help-pause" class="secondary-button">Как играть</button></div>`,
+    );
+    $("#menu-done").onclick = () => closeModal();
+    $("#help-pause").onclick = showHelp;
+    bindMode();
+    return;
+  }
   showModal(
     "pause",
-    `<div class="eyebrow">ПЕРЕДОХНИ, МАЛЕНЬКИЙ СТРАННИК</div><h2 id="modal-title">Королевство подождёт.</h2><p>Все найденные жетоны сохранены. Возвращайся, когда захочешь.</p>${modeSetting()}<div class="modal-actions"><button id="resume" class="primary-button">Вернуться в приключение <b>→</b></button>${!game.world.town ? '<button id="forest-rematch" class="secondary-button">Повторить бой со стражем</button>' : ""}<button id="help-pause" class="secondary-button">Как играть</button><button id="town-pause" class="secondary-button">В город</button><button id="growth-pause" class="secondary-button">Развитие героя</button><button id="home" class="secondary-button">Главное меню</button></div>`,
+    `<div class="eyebrow">ПЕРЕДОХНИ, МАЛЕНЬКИЙ СТРАННИК</div><h2 id="modal-title">Королевство подождёт.</h2><p>${$("#region-name").textContent} · ${$("#chapter-label").textContent}</p><p>${$("#objective").textContent}</p>${modeSetting()}<div class="modal-actions"><button id="resume" class="primary-button">Вернуться в приключение <b>→</b></button>${!game.world.town ? '<button id="forest-rematch" class="secondary-button">Повторить бой со стражем</button>' : ""}<button id="map-pause" class="secondary-button">Карта мира</button><button id="bestiary-pause" class="secondary-button">Бестиарий</button><button id="heroes-pause" class="secondary-button">Герои</button><button id="help-pause" class="secondary-button">Как играть</button><button id="town-pause" class="secondary-button">В город</button><button id="growth-pause" class="secondary-button">Развитие героя</button><button id="home" class="secondary-button">Главное меню</button></div>`,
   );
   $("#resume").onclick = () => closeModal();
   const rematch = $("#forest-rematch");
@@ -346,6 +372,9 @@ function showPause() {
       game.rematchMother();
       closeModal();
     };
+  $("#map-pause").onclick = showMap;
+  $("#bestiary-pause").onclick = () => showBestiary(game.world.region);
+  $("#heroes-pause").onclick = showHeroes;
   $("#home").onclick = goHome;
   $("#town-pause").onclick = startTown;
   $("#growth-pause").onclick = showGrowth;
@@ -441,7 +470,7 @@ async function showBestiary(region = 0) {
 function showHelp() {
   showModal(
     "help",
-    `<div class="eyebrow">ПЕРЕД НАЧАЛОМ ПУТИ</div><h2 id="modal-title">Маленькие шаги. Смелые приключения.</h2><div class="help-grid"><div><strong>← → Движение · ↑ Прыжок</strong><p>Нажми ↑ ещё раз в воздухе для второго прыжка. Удерживай кнопку, чтобы прыгнуть выше. Коснись стены и нажми ↑: герой оттолкнётся. Чередуй стены, чтобы забраться наверх.</p></div><div><strong>ПРОБЕЛ — атака · ↓ Рывок</strong><p>Квирел бьёт посохом по кругу, Урмаса — клинками перед собой. Рывок помогает пройти сквозь опасность. Пробел рядом со Старейшиной начинает разговор.</p></div><div><strong>Пять жетонов</strong><p>Исследуй верхние тропы. Успокой стража, забери последнего жетона и дойди до врат.</p></div><div><strong>Тёплые огоньки сохраняют путь</strong><p>Отдохни у огонька в середине уровня. После падения ты вернёшься к нему. Жетоны всегда остаются с тобой.</p></div><div><strong>Можно играть на iPad</strong><p>Используй экранные стрелки, прыжок, рывок и меч. Удерживай направление и нажимай прыжок или атаку другим пальцем. От стен можно прыгать той же кнопкой ↑.</p></div><div><strong>Твоё приключение, твой темп</strong><p>Спокойный режим даёт больше сердец и времени между ранениями. Escape — пауза. M — карта.</p></div></div>${modeSetting()}<div class="modal-actions"><button id="help-done" class="primary-button">Я готов <b>→</b></button></div>`,
+    `<div class="eyebrow">ПЕРЕД НАЧАЛОМ ПУТИ</div><h2 id="modal-title">Маленькие шаги. Смелые приключения.</h2><div class="help-grid"><div><strong>← → Движение · ↑ Прыжок</strong><p>Нажми ↑ ещё раз в воздухе для второго прыжка. Удерживай кнопку, чтобы прыгнуть выше. Коснись стены и нажми ↑: герой оттолкнётся. Чередуй стены, чтобы забраться наверх.</p></div><div><strong>ПРОБЕЛ — атака · ↓ Рывок</strong><p>Квирел бьёт посохом по кругу, Урмаса — клинками перед собой. Рывок помогает пройти сквозь опасность. Пробел рядом со Старейшиной начинает разговор.</p></div><div><strong>Пять жетонов</strong><p>Исследуй верхние тропы. Успокой стража, забери последнего жетона и дойди до врат.</p></div><div><strong>Тёплые огоньки сохраняют путь</strong><p>Отдохни у огонька в середине уровня. После падения ты вернёшься к нему. Жетоны всегда остаются с тобой.</p></div><div><strong>Можно играть на iPad</strong><p>Используй экранные стрелки, прыжок, рывок и меч. Удерживай направление и нажимай прыжок или атаку другим пальцем. От стен можно прыгать той же кнопкой ↑.</p></div><div><strong>Твоё приключение, твой темп</strong><p>Спокойный режим даёт больше сердец и времени между ранениями. Escape или ☰ в углу экрана — меню и пауза. M — карта.</p></div></div>${modeSetting()}<div class="modal-actions"><button id="help-done" class="primary-button">Я готов <b>→</b></button></div>`,
   );
   $("#help-done").onclick = () => closeModal();
   bindMode();
@@ -449,7 +478,7 @@ function showHelp() {
 function showMap() {
   showModal(
     "map",
-    `<div class="eyebrow">РАЗНЫЕ ЗЕМЛИ. ОДНО КОРОЛЕВСТВО.</div><h2 id="modal-title">Атлас странника</h2><p>Чтобы открыть следующий путь, найди пять жетонов и дойди до врат. В открытые земли можно вернуться.</p>${game?.running ? (game.world.town ? townMapMarkup(game) : regionMapMarkup(game)) : ""}<details><summary>Оригинальная карта-подсказка · содержит расположение тайн</summary><img class="map-image" src="/assets/world-secrets.webp" alt="Карта королевства с шестью землями"></details><div class="map-regions"><button id="map-town">⌂ Лагерь / Город</button>${REGIONS.map((r, i) => `<button data-travel="${i}" ${unlocked(i) ? "" : "disabled"}>${progress.cleared.includes(i) ? "✓" : unlocked(i) ? "✦" : "◇"} ${r.name}</button>`).join("")}</div>`,
+    `<div class="eyebrow">РАЗНЫЕ ЗЕМЛИ. ОДНО КОРОЛЕВСТВО.</div><h2 id="modal-title">Атлас странника</h2><p>Чтобы открыть следующий путь, найди пять жетонов и дойди до врат. В открытые земли можно вернуться.</p>${game?.running ? (game.world.town ? townMapMarkup(game) : regionMapMarkup(game)) : ""}<details><summary>Оригинальная карта-подсказка · содержит расположение тайн</summary><img class="map-image" src="/assets/world-secrets.webp" alt="Карта королевства с шестью землями"></details><div class="map-regions"><button id="map-town">⌂ Древоград</button>${REGIONS.map((r, i) => `<button data-travel="${i}" ${unlocked(i) ? "" : "disabled"}>${progress.cleared.includes(i) ? "✓" : unlocked(i) ? "✦" : "◇"} ${r.name}</button>`).join("")}</div>`,
   );
   $("#map-town").onclick = startTown;
   document.querySelectorAll("[data-travel]").forEach(
@@ -490,7 +519,7 @@ function showResident(n) {
   }
   showModal(
     "resident",
-    `<div class="resident-dialog"><img src="/assets/npc-${n.sheet}-${n.row}.webp" alt="${n.name}"><div><div class="eyebrow">${n.role}</div><h2 id="modal-title">${n.name}</h2><p>${n.text}</p>${reward ? `<p>${status.done ? "✓ Дар уже с тобой" : `${status.count} / ${n.need} · ${status.ready ? "Можно получить награду" : "Продолжай исследовать"}`}</p>` : ""}<div class="modal-actions">${reward && !status.done ? `<button id="resident-reward" class="primary-button" ${status.ready ? "" : "disabled"}>Принять дар</button>` : ""}<button id="resident-done" class="secondary-button">Продолжить прогулку →</button><button id="resident-map" class="text-button">Карта королевства</button></div></div></div>`,
+    `<div class="resident-dialog"><img src="/assets/npc-${n.sheet}-${n.row}.webp" alt="${n.name}"><div><div class="eyebrow">${n.role} · ${n.home}</div><h2 id="modal-title">${n.name}</h2><p>${n.text}</p>${reward ? `<p>${status.done ? "✓ Дар уже с тобой" : `${status.count} / ${n.need} · ${status.ready ? "Можно получить награду" : "Продолжай исследовать"}`}</p>` : ""}<div class="modal-actions">${reward && !status.done ? `<button id="resident-reward" class="primary-button" ${status.ready ? "" : "disabled"}>Принять дар</button>` : ""}<button id="resident-done" class="secondary-button">Продолжить прогулку →</button><button id="resident-map" class="text-button">Карта королевства</button></div></div></div>`,
   );
   const b = $("#resident-reward");
   if (b)
@@ -521,15 +550,10 @@ $("#heroes-menu").onclick = showHeroes;
 $("#start").onclick = () => start();
 $("#help-menu").onclick = showHelp;
 $("#map-menu").onclick = showMap;
-$("#map-game").onclick = showMap;
 $("#pause").onclick = showPause;
 $("#modal-close").onclick = () => {
   if (modalKind === "complete") goHome();
   else closeModal();
-};
-$(".wordmark").onclick = (e) => {
-  e.preventDefault();
-  if (game?.running) showPause();
 };
 document.querySelectorAll(".hero-choice").forEach(
   (b) =>
@@ -541,30 +565,35 @@ document.querySelectorAll(".hero-choice").forEach(
 );
 $("#sound").onclick = () => {
   const enabled = sound.toggle();
-  $("#sound").classList.toggle("sound-on", enabled);
+  $("#sound").textContent = enabled ? "Звук: вкл." : "Звук: выкл.";
+  $("#sound").setAttribute("aria-pressed", String(enabled));
   $("#sound").setAttribute(
     "aria-label",
     enabled ? "Выключить звук" : "Включить звук",
   );
 };
 $("#fullscreen").onclick = async () => {
+  $("#fullscreen-status").textContent = "";
   try {
     if (document.fullscreenElement) await document.exitFullscreen();
     else if (document.documentElement.requestFullscreen)
       await document.documentElement.requestFullscreen();
-    else if (game?.running)
-      toast("Скрой панель инструментов Safari, чтобы увеличить обзор.");
+    else
+      $("#fullscreen-status").textContent =
+        "Скрой панель инструментов Safari, чтобы увеличить обзор.";
   } catch {
-    if (game?.running) toast("Полноэкранный режим недоступен в этом браузере.");
+    $("#fullscreen-status").textContent =
+      "Полноэкранный режим недоступен в этом браузере.";
   }
 };
 window.addEventListener("keydown", (e) => {
   if (e.code === "Escape") {
     e.preventDefault();
+    if (e.repeat) return;
     if (!$("#modal").classList.contains("hidden")) {
       if (modalKind === "complete") goHome();
       else closeModal();
-    } else if (game?.running) showPause();
+    } else showPause();
   }
   if (
     e.code === "KeyM" &&

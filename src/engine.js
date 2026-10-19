@@ -1,6 +1,7 @@
+import { createWallDebris, stepWallDebris } from "./terrain.js";
 import { roomAt } from "./regions.js";
 import { growth, hasService, TOKEN_TYPES } from "./progression.js";
-import { createTown } from "./town.js";
+import { createTown, nearbyResident } from "./town.js";
 import { stepRegionBoss } from "./region-boss.js";
 import { stepMother, resetMother, stepForestHazards } from "./forest-boss.js";
 import { stepCreature } from "./creatures.js";
@@ -52,6 +53,7 @@ export class Game {
     this.accumulator = 0;
     this.previous = 0;
     this.particles = [];
+    this.wallDebris = [];
     this.attackSerial = 0;
     this.camera = 0;
     this.checkpointUsed = false;
@@ -151,6 +153,7 @@ export class Game {
       dashCooldown: 0,
     };
     this.particles = [];
+    this.wallDebris = [];
     this.cameraY = this.world.expanded
       ? Math.max(0, Math.min(this.world.height - 620, this.player.y - 350))
       : 0;
@@ -183,14 +186,14 @@ export class Game {
     this.start(progress.region, progress);
     this.world = createTown(progress.region);
     this.camera = 0;
-    this.cameraY = 0;
-    this.player.x = 110;
-    this.player.y = 446;
+    this.cameraY = Math.max(0, this.world.height - 620);
+    this.player.x = this.world.spawn.x;
+    this.player.y = this.world.spawn.y;
     this.player.health = this.maxHealth();
     this.renderer.prepare(progress.region, this.world);
     this.lastHud = "";
     this.updateHud();
-    this.cb.toast("Город · Подойди к жителю и нажми пробел / меч.");
+    this.cb.toast("Древоград · Поднимайся по уступам к домам в кроне.");
   }
   attackPower() {
     return (
@@ -253,11 +256,7 @@ export class Game {
     p.buff = Math.max(0, (p.buff || 0) - dt);
     p.counter = Math.max(0, (p.counter || 0) - dt);
     if (this.pressed.has("attack")) {
-      const npc =
-        w.town &&
-        w.npcs.find(
-          (n) => Math.abs(n.x - p.x - 15) < 85 && Math.abs(p.y - 446) < 80,
-        );
+      const npc = w.town && nearbyResident(w, p);
       const portal = w.portals?.find(
         (n) =>
           Math.hypot(n.x - p.x - 15, n.y - p.y - 27) < 65 &&
@@ -384,10 +383,13 @@ export class Game {
           this.camera) *
         Math.min(1, dt * 6);
       if (p.y > w.height) {
-        p.x = 110;
-        p.y = 446;
-        p.vy = 0;
+        p.x = w.spawn.x;
+        p.y = w.spawn.y;
+        p.vx = p.vy = 0;
       }
+      this.cameraY +=
+        (clamp(p.y - 330, 0, Math.max(0, w.height - 620)) - this.cameraY) *
+        Math.min(1, dt * 6);
       updateHeroAnimation(p, dt);
       this.pressed.clear();
       this.updateHud();
@@ -421,7 +423,20 @@ export class Game {
             ...new Set([...(this.progress.broken[w.region] || []), s.id]),
           ];
           this.persist();
-          this.emit(s.x + s.w / 2, s.y + s.h / 2, "#9bcaba", 24);
+          this.wallDebris.push(...createWallDebris(s, w.region, p.dir));
+          // Bound effects even if several barriers are destroyed together.
+          this.wallDebris = this.wallDebris.slice(-160);
+          for (let y = s.y + 12; y < s.y + s.h; y += 32) {
+            const first = this.particles.length;
+            this.emit(s.x + s.w / 2, y, "#c6b99a", 3);
+            for (let i = first; i < this.particles.length; i++) {
+              this.particles[i].dust = true;
+              this.particles[i].life = 0.7 + Math.random() * 0.4;
+              this.particles[i].size = 5 + Math.random() * 7;
+              this.particles[i].vx *= 0.5;
+              this.particles[i].vy *= 0.3;
+            }
+          }
           this.cb.toast(
             s.secret
               ? "Тайная грибница! В трещинах скрывался путь."
@@ -577,6 +592,7 @@ export class Game {
         "Для врат нужны пять жетонов. Вернись по тропе за остальными.",
       );
     }
+    stepWallDebris(this.wallDebris, dt);
     for (let i = this.particles.length - 1; i >= 0; i--) {
       const a = this.particles[i];
       a.life -= dt;
@@ -586,7 +602,7 @@ export class Game {
       }
       a.x += a.vx * dt;
       a.y += a.vy * dt;
-      a.vy += 210 * dt;
+      a.vy += (a.dust ? -30 : 210) * dt;
     }
     const view = this.renderer.viewWidth;
     const target = clamp(p.x - view * 0.36, 0, Math.max(0, w.width - view));

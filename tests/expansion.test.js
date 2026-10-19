@@ -115,7 +115,7 @@ test("town walking and conversations do not overwrite the current region save", 
     spoke = n.id;
   };
   g.startTown(p);
-  g.player.x = 380;
+  g.player.x = RESIDENTS.find((n) => n.id === "rong").x - 15;
   tick(g, 40);
   g.press("attack");
   tick(g);

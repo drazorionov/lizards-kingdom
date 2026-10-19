@@ -18,31 +18,16 @@
   </head>
   <body>
     <div id="app">
-      <header class="topbar">
-        <a class="wordmark" href="#" aria-label="Королевство ящериц — главная"
-          ><span class="crest">♜</span
-          ><span>КОРОЛЕВСТВО <small>ЯЩЕРИЦ</small></span></a
-        ><span class="top-label">МАЛЕНЬКИЙ ГЕРОЙ. БОЛЬШОЕ ПРИКЛЮЧЕНИЕ.</span>
-        <div class="header-actions">
-          <span class="save-status" id="save-status"
-            >Сохранено на устройстве</span
-          ><button
-            id="sound"
-            class="icon-button"
-            aria-label="Включить звук"
-            title="Звук"
-          >
-            ♫<span class="sound-dot"></span></button
-          ><button
-            id="fullscreen"
-            class="icon-button"
-            aria-label="На весь экран"
-            title="На весь экран"
-          >
-            ⛶
-          </button>
-        </div>
-      </header>
+      <button
+        id="pause"
+        class="menu-toggle"
+        aria-label="Открыть меню"
+        aria-haspopup="dialog"
+        aria-controls="modal"
+        aria-expanded="false"
+        aria-keyshortcuts="Escape"
+        title="Меню · Escape"
+      ><span aria-hidden="true">☰</span></button>
       <main id="menu">
         <div class="hero-art" aria-hidden="true"></div>
         <div class="hero-shade" aria-hidden="true"></div>
@@ -76,7 +61,7 @@
           <button id="heroes-menu" class="text-button heroes-link">
             Познакомиться с героями <span>↗</span>
           </button>
-          <button id="town-menu" class="text-button heroes-link">Лагерь / Город</button>
+          <button id="town-menu" class="text-button heroes-link">Древоград / Город</button>
           <button id="growth-menu" class="text-button heroes-link">Развитие героя</button>
           <button id="bestiary-menu" class="text-button heroes-link">
             Бестиарий <span>↗</span>
@@ -125,17 +110,6 @@
           <div class="hud-center">
             <span class="hud-eyebrow">ЖЕТОНЫ МУХ</span>
             <div id="token-count"></div>
-          </div>
-          <div class="hud-right">
-            <button
-              id="map-game"
-              class="game-button"
-              aria-label="Открыть карту мира"
-            >
-              ♧ <span>Карта</span></button
-            ><button id="pause" class="game-button" aria-label="Пауза">
-              Ⅱ
-            </button>
           </div>
         </div>
         <div id="boss-hud" class="boss-hud hidden">
@@ -214,6 +188,12 @@
             ×
           </button>
           <div id="modal-content"></div>
+          <div class="menu-settings">
+            <button id="sound" class="secondary-button" aria-pressed="false">Звук: выкл.</button>
+            <button id="fullscreen" class="secondary-button">На весь экран</button>
+            <span class="save-status" id="save-status" role="status">Сохранено на устройстве</span>
+          </div>
+          <p id="fullscreen-status" role="status"></p>
         </div>
       </div>
       <div id="phone-notice">

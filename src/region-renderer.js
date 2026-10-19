@@ -1,5 +1,6 @@
+import { drawSolidTerrain, drawBreakableWall } from "./terrain.js";
+export { drawTown, townMapMarkup } from "./town-renderer.js";
 import { regionBossFrame } from "./region-boss.js";
-import { drawHero } from "./hero-animation.js";
 import {
   drawForestBackground,
   drawForestTerrain,
@@ -56,76 +57,8 @@ export function regionTerrain(r, s, game) {
     g.restore();
     return;
   }
-  g.save();
-  g.beginPath();
-  g.rect(s.x, s.y, s.w, s.h);
-  g.clip();
-  const left = s.x + Math.max(0, Math.floor((game.camera - s.x) / 512)) * 512,
-    top = s.y + Math.max(0, Math.floor((game.cameraY - s.y) / 512)) * 512;
-  for (let y = top; y < Math.min(s.y + s.h, game.cameraY + 620); y += 512)
-    for (
-      let x = left;
-      x < Math.min(s.x + s.w, game.camera + r.viewWidth);
-      x += 512
-    )
-      g.drawImage(im, x, y, 512, 512);
-  g.restore();
-  if (!s.wall && !s.ceiling) {
-    g.save();
-    g.beginPath();
-    g.rect(s.x - 3, s.y - 100, s.w + 6, 130);
-    g.clip();
-    const n = Math.ceil(s.w / 300),
-      width = s.w / n;
-    for (let i = 0; i < n; i++)
-      if (
-        s.x + (i + 1) * width > game.camera &&
-        s.x + i * width < game.camera + r.viewWidth
-      )
-        ledge(s.x + i * width, s.y, width, s.id + i);
-    g.restore();
-  }
-  if (s.ceiling) {
-    g.save();
-    g.beginPath();
-    g.rect(s.x, s.y + s.h, s.w, 80);
-    g.clip();
-    const count = Math.ceil(s.w / 260),
-      width = s.w / count;
-    for (let i = 0; i < count; i++)
-      ledge(s.x + i * width, s.y + s.h, width, s.id + i);
-    g.restore();
-  }
-  if (s.wall && !s.breakable) {
-    g.save();
-    g.beginPath();
-    g.rect(s.x - 22, s.y, 22, s.h);
-    g.clip();
-    g.translate(s.x, s.y);
-    g.rotate(Math.PI / 2);
-    const count = Math.ceil(s.h / 240),
-      width = s.h / count;
-    for (let i = 0; i < count; i++) ledge(i * width, 0, width, s.id + i);
-    g.restore();
-  }
-  g.strokeStyle = s.breakable ? "#e8c081" : game.region.color + "99";
-  g.lineWidth = s.breakable ? 3 : 1;
-  if (s.wall) {
-    g.strokeRect(s.x + 2, s.y, s.w - 4, s.h);
-    if (s.breakable) {
-      g.beginPath();
-      g.moveTo(s.x + s.w * 0.6, s.y + 8);
-      g.lineTo(s.x + 8, s.y + s.h * 0.35);
-      g.lineTo(s.x + s.w - 8, s.y + s.h * 0.55);
-      g.lineTo(s.x + 9, s.y + s.h * 0.9);
-      g.stroke();
-    }
-  } else {
-    g.beginPath();
-    g.moveTo(s.x, s.y);
-    g.lineTo(s.x + s.w, s.y);
-    g.stroke();
-  }
+  if (s.breakable) drawBreakableWall(r, s, game);
+  else drawSolidTerrain(r, s, game, ledge, im);
   g.restore();
 }
 export function regionDetails(r, game) {
@@ -134,6 +67,8 @@ export function regionDetails(r, game) {
     w = game.world;
   if (w.region !== 0) {
     for (const a of w.hazards) drawRegionalHazard(r, a, game);
+    g.save();
+    g.globalAlpha *= 0.12;
     for (const s of w.signs) {
       if (
         Math.abs(s.x - game.camera - r.viewWidth / 2) > r.viewWidth / 2 + 150 ||
@@ -145,6 +80,7 @@ export function regionDetails(r, game) {
       g.fillStyle = "#eddfbd";
       g.fillText(s.text, s.x, s.y);
     }
+    g.restore();
   }
   for (const spring of w.springs || [])
     r.beacon(spring.x, spring.y, game.time, false);
@@ -169,7 +105,10 @@ export function regionDetails(r, game) {
     g.font = "10px Arial";
     g.fillStyle = "#f2dcad";
     g.textAlign = "center";
+    g.save();
+    g.globalAlpha *= 0.12;
     g.fillText(portal.name, portal.x, portal.y - 65);
+    g.restore();
     if (
       Math.hypot(portal.x - game.player.x - 15, portal.y - game.player.y - 27) <
       65
@@ -310,70 +249,6 @@ export function regionMapMarkup(game) {
       "",
     )}${seen(w.checkpoint) ? `<path d="M${w.checkpoint.x} ${w.checkpoint.y - 40} l-35 60 h70 Z" fill="#efbd78"/>` : ""}<circle cx="${p.x + 15}" cy="${p.y + 27}" r="30" fill="#fff5d5" stroke="#75e4cc" stroke-width="10"/></svg><p>● Ты здесь · ▲ Тёплый камень · Золотые трещины: атакуй · Неизведанные комнаты и спрятанные жетоны скрыты.</p><div class="secret-list">${w.secrets.map((s) => `<span class="${s.found ? "found" : ""}">${w.region + 1}.${s.id + 1} ${s.found ? "✓ " + s.name : hints ? s.name : "Неизвестная тайна"}</span>`).join("")}</div>${game.progress.quests?.includes("dar") ? "<p>Дар: нижние тоннели возвращаются к тёплому камню. От него ищи уступы справа и колодец слева.</p>" : ""}</div>`;
 }
-export function drawTown(r, game) {
-  const g = r.ctx,
-    p = game.player,
-    w = game.world,
-    t = game.time,
-    im = r.assets["town-background"];
-  g.setTransform(r.scale, 0, 0, r.scale, 0, 0);
-  g.fillStyle = "#07131d";
-  g.fillRect(0, 0, r.viewWidth, 620);
-  const h = 650,
-    wi = w.width,
-    offset = game.camera;
-  for (let x = -offset % wi; x < r.viewWidth; x += wi)
-    g.drawImage(im, x, -61, wi, h);
-  g.fillStyle = "#08101755";
-  g.fillRect(0, 500, r.viewWidth, 120);
-  g.save();
-  g.translate(-game.camera, 0);
-  for (const n of w.npcs) {
-    if (n.x < game.camera - 150 || n.x > game.camera + r.viewWidth + 150)
-      continue;
-    const near = Math.abs(n.x - p.x - 15) < 85,
-      frame = (near ? 2 : 0) + (Math.floor(t * (near ? 4 : 2)) % 2),
-      atlas = r.assets[`town-npcs-${n.sheet}-atlas`],
-      size = n.id === "child" ? 88 : 122;
-    g.drawImage(
-      atlas,
-      frame * 256,
-      n.row * 256,
-      256,
-      256,
-      n.x - size / 2,
-      500 - (size * 240) / 256,
-      size,
-      size,
-    );
-    g.font = "11px Georgia";
-    g.fillStyle = "#ead6b2";
-    g.textAlign = "center";
-    g.fillText(n.name, n.x, 500 - size - 8);
-    if (near) {
-      g.font = "bold 11px Arial";
-      g.fillStyle = "#fff2c8";
-      g.fillText("ПРОБЕЛ / МЕЧ · ГОВОРИТЬ", n.x, 365);
-    }
-  }
-  r.gate(125, 500, t, true);
-  g.font = "11px Arial";
-  g.fillStyle = "#e8d9b1";
-  g.fillText("Вернуться в путь", 125, 320);
-  drawHero(
-    g,
-    r.assets[`hero-${p.hero ? "urmasa" : "quirel"}-painted-atlas`],
-    p,
-  );
-  g.restore();
-  r.frameCount++;
-  const now = performance.now();
-  if (now - r.lastFps >= 1000) {
-    r.fps = Math.round((r.frameCount * 1000) / (now - r.lastFps));
-    r.frameCount = 0;
-    r.lastFps = now;
-  }
-}
 export function drawRegionBoss(r, game) {
   const b = game.world.boss,
     frame = regionBossFrame(b),
@@ -456,7 +331,4 @@ export function drawRegionalHazard(r, a, game) {
     }
   r.glow(cx, 450, a.w, game.region.glow, 0.35);
   g.restore();
-}
-export function townMapMarkup(game) {
-  return `<div class="forest-map"><svg viewBox="0 0 3650 500" role="img" aria-label="Город и его жители"><rect width="3650" height="500" fill="#0b1822"/><path d="M125 300 H3500" stroke="#b99562" stroke-width="15"/>${game.world.npcs.map((n, i) => `<path d="M${n.x - 65} 240 v-110 l65-45 65 45 v110Z" fill="#28403f" stroke="#c39c66" stroke-width="5"/><text x="${n.x}" y="${i % 2 ? 395 : 365}" text-anchor="middle" fill="#ead6b4" font-size="35">${n.name}</text>`).join("")}<circle cx="${game.player.x + 15}" cy="300" r="25" fill="#fff2be"/></svg><p>● Ты здесь · У каждого жителя можно поговорить и узнать о его даре.</p></div>`;
 }
