@@ -1,0 +1,115 @@
+[
+  {
+    "name": "marsh-background",
+    "transparent": false,
+    "refs": [
+      "art/expansion/world-secrets-reference.png"
+    ],
+    "prompt": "Use case: stylized-concept. HD 2048x1152 background for a hand-painted 2D side scrolling platformer, region Топи from the attached world design. Green drowned ruins, crooked flooded temple arches, hanging moss, reeds, pale green swamp fireflies and shallow black pools. Low layered bridges and tree roots, melancholy emerald fog. Match the reference region faithfully: rich matte painted cartoon brushwork, clean ink contours, Hollow Knight-like layered atmosphere, not photorealism or 3D. Single continuous side-on landscape, open central foreground for separate game terrain, no characters, UI, text or panels. Highly detailed regional architecture and restrained lighting, readable dark foreground and atmospheric distant planes."
+  },
+  {
+    "name": "marsh-ledges",
+    "transparent": true,
+    "refs": [
+      "art/expansion/world-secrets-reference.png"
+    ],
+    "prompt": "Use case: stylized-concept. Transparent 2D game terrain sprite kit for Топи, matching its area in the attached map. EXACTLY eight isolated wide low stone platforms in a four-column two-row grid with generous transparent separation. Each has a flat walkable upper surface, naturally irregular lower silhouette, same orientation. Green drowned ruins, crooked flooded temple arches, hanging moss, reeds, pale green swamp fireflies and shallow black pools. Low layered bridges and tree roots, melancholy emerald fog. Interpret this as small terrain objects: cliff shelves, broken bridge pieces, ruined masonry, mineral ledges; use the region palette and materials, no whole backgrounds. Detailed matte cartoon painting with dark ink contours, consistent with Hollow Knight-inspired platformer scenery. Each object roughly three times wider than tall. Every sprite fully visible. No text, ground plane, background color or objects touching."
+  },
+  {
+    "name": "storm-background",
+    "transparent": false,
+    "refs": [
+      "art/expansion/world-secrets-reference.png"
+    ],
+    "prompt": "Use case: stylized-concept. HD 2048x1152 background for a hand-painted 2D side scrolling platformer, region Гора Гроз from the attached world design. An immense vertical mountain cathedral in blue storm clouds, jagged slate cliffs, ruined spires, distant forked lightning, hanging stone bridges and waterfalls. Crisp icy blue silver edges. Match the reference region faithfully: rich matte painted cartoon brushwork, clean ink contours, Hollow Knight-like layered atmosphere, not photorealism or 3D. Single continuous side-on landscape, open central foreground for separate game terrain, no characters, UI, text or panels. Highly detailed regional architecture and restrained lighting, readable dark foreground and atmospheric distant planes."
+  },
+  {
+    "name": "storm-ledges",
+    "transparent": true,
+    "refs": [
+      "art/expansion/world-secrets-reference.png"
+    ],
+    "prompt": "Use case: stylized-concept. Transparent 2D game terrain sprite kit for Гора Гроз, matching its area in the attached map. EXACTLY eight isolated wide low stone platforms in a four-column two-row grid with generous transparent separation. Each has a flat walkable upper surface, naturally irregular lower silhouette, same orientation. An immense vertical mountain cathedral in blue storm clouds, jagged slate cliffs, ruined spires, distant forked lightning, hanging stone bridges and waterfalls. Crisp icy blue silver edges. Interpret this as small terrain objects: cliff shelves, broken bridge pieces, ruined masonry, mineral ledges; use the region palette and materials, no whole backgrounds. Detailed matte cartoon painting with dark ink contours, consistent with Hollow Knight-inspired platformer scenery. Each object roughly three times wider than tall. Every sprite fully visible. No text, ground plane, background color or objects touching."
+  },
+  {
+    "name": "belfry-background",
+    "transparent": false,
+    "refs": [
+      "art/expansion/world-secrets-reference.png"
+    ],
+    "prompt": "Use case: stylized-concept. HD 2048x1152 background for a hand-painted 2D side scrolling platformer, region Колокольня Пустоши from the attached world design. Burnished amber sunset behind immense broken gothic bell towers, rusty suspended bells and chains, shattered stone arches, orange embers and black silhouettes. Warm desolate high belfries. Match the reference region faithfully: rich matte painted cartoon brushwork, clean ink contours, Hollow Knight-like layered atmosphere, not photorealism or 3D. Single continuous side-on landscape, open central foreground for separate game terrain, no characters, UI, text or panels. Highly detailed regional architecture and restrained lighting, readable dark foreground and atmospheric distant planes."
+  },
+  {
+    "name": "belfry-ledges",
+    "transparent": true,
+    "refs": [
+      "art/expansion/world-secrets-reference.png"
+    ],
+    "prompt": "Use case: stylized-concept. Transparent 2D game terrain sprite kit for Колокольня Пустоши, matching its area in the attached map. EXACTLY eight isolated wide low stone platforms in a four-column two-row grid with generous transparent separation. Each has a flat walkable upper surface, naturally irregular lower silhouette, same orientation. Burnished amber sunset behind immense broken gothic bell towers, rusty suspended bells and chains, shattered stone arches, orange embers and black silhouettes. Warm desolate high belfries. Interpret this as small terrain objects: cliff shelves, broken bridge pieces, ruined masonry, mineral ledges; use the region palette and materials, no whole backgrounds. Detailed matte cartoon painting with dark ink contours, consistent with Hollow Knight-inspired platformer scenery. Each object roughly three times wider than tall. Every sprite fully visible. No text, ground plane, background color or objects touching."
+  },
+  {
+    "name": "depths-background",
+    "transparent": false,
+    "refs": [
+      "art/expansion/world-secrets-reference.png"
+    ],
+    "prompt": "Use case: stylized-concept. HD 2048x1152 background for a hand-painted 2D side scrolling platformer, region Забытые глубины from the attached world design. A deep cobalt blue underground cathedral, immense stalactites, forgotten laboratory arches, pale cyan mineral veins, ancient stone pillars, distant underground water. Layered darkness, mysterious blue light. Match the reference region faithfully: rich matte painted cartoon brushwork, clean ink contours, Hollow Knight-like layered atmosphere, not photorealism or 3D. Single continuous side-on landscape, open central foreground for separate game terrain, no characters, UI, text or panels. Highly detailed regional architecture and restrained lighting, readable dark foreground and atmospheric distant planes."
+  },
+  {
+    "name": "depths-ledges",
+    "transparent": true,
+    "refs": [
+      "art/expansion/world-secrets-reference.png"
+    ],
+    "prompt": "Use case: stylized-concept. Transparent 2D game terrain sprite kit for Забытые глубины, matching its area in the attached map. EXACTLY eight isolated wide low stone platforms in a four-column two-row grid with generous transparent separation. Each has a flat walkable upper surface, naturally irregular lower silhouette, same orientation. A deep cobalt blue underground cathedral, immense stalactites, forgotten laboratory arches, pale cyan mineral veins, ancient stone pillars, distant underground water. Layered darkness, mysterious blue light. Interpret this as small terrain objects: cliff shelves, broken bridge pieces, ruined masonry, mineral ledges; use the region palette and materials, no whole backgrounds. Detailed matte cartoon painting with dark ink contours, consistent with Hollow Knight-inspired platformer scenery. Each object roughly three times wider than tall. Every sprite fully visible. No text, ground plane, background color or objects touching."
+  },
+  {
+    "name": "lake-background",
+    "transparent": false,
+    "refs": [
+      "art/expansion/world-secrets-reference.png"
+    ],
+    "prompt": "Use case: stylized-concept. HD 2048x1152 background for a hand-painted 2D side scrolling platformer, region Аметистовое озеро from the attached world design. Violet amethyst crystal grotto, mirrored subterranean lake, delicate lavender crystal spires and floating stone islands, blue-violet waterfalls, luminous purple reflections, distant cavern vaults. Match the reference region faithfully: rich matte painted cartoon brushwork, clean ink contours, Hollow Knight-like layered atmosphere, not photorealism or 3D. Single continuous side-on landscape, open central foreground for separate game terrain, no characters, UI, text or panels. Highly detailed regional architecture and restrained lighting, readable dark foreground and atmospheric distant planes."
+  },
+  {
+    "name": "lake-ledges",
+    "transparent": true,
+    "refs": [
+      "art/expansion/world-secrets-reference.png"
+    ],
+    "prompt": "Use case: stylized-concept. Transparent 2D game terrain sprite kit for Аметистовое озеро, matching its area in the attached map. EXACTLY eight isolated wide low stone platforms in a four-column two-row grid with generous transparent separation. Each has a flat walkable upper surface, naturally irregular lower silhouette, same orientation. Violet amethyst crystal grotto, mirrored subterranean lake, delicate lavender crystal spires and floating stone islands, blue-violet waterfalls, luminous purple reflections, distant cavern vaults. Interpret this as small terrain objects: cliff shelves, broken bridge pieces, ruined masonry, mineral ledges; use the region palette and materials, no whole backgrounds. Detailed matte cartoon painting with dark ink contours, consistent with Hollow Knight-inspired platformer scenery. Each object roughly three times wider than tall. Every sprite fully visible. No text, ground plane, background color or objects touching."
+  },
+  {
+    "name": "town-background",
+    "transparent": false,
+    "refs": [
+      "art/expansion/world-secrets-reference.png",
+      "inputs/0fe04303-582c-496e-a3a5-f4144246b897.JPG"
+    ],
+    "prompt": "Use case: stylized-concept. Create a very wide 3072x1024 side-view painted cartoon town panorama for the central ЛАГЕРЬ / ГОРОД in these supplied boards. Faithful cozy amber-lit gothic lizard settlement beneath towering black castle spires. A continuous cobbled street along bottom, left welcoming stone gate and guardhouse, blacksmith forge with orange furnace, herbalist shop with green bottles, map shop with parchment rolls, warm market stalls, grand Elder house in center, training courtyard, blue luminous spring at right. Rich wood and old stone, ropes and warm lanterns, layered distant cathedral roofs beneath dusk sky. No residents or characters: these will be separate animated sprites. HD matte hand-painted 2D ink contour style like the reference. Side-scrolling camera, not isometric, no UI or readable text. Leave clear walkable street in foreground and open silhouettes for NPCs."
+  },
+  {
+    "name": "town-npcs-0",
+    "transparent": true,
+    "refs": [
+      "inputs/0fe04303-582c-496e-a3a5-f4144246b897.JPG"
+    ],
+    "prompt": "Use case: identity-preserve. Create a transparent sprite sheet EXACTLY four columns by four rows. Four different NPCs from the reference, one character per ROW. Row 1: Ронг, large muscular rust-red lizard blacksmith, leather apron, hammer. Row 2: Нели, olive-gold female lizard merchant, dark green hooded cloak, potion satchel. Row 3: Тесс, pale gray lizard cartographer, blue-gray cloak, holding rolled parchment map. Row 4: Дар, golden-brown lizard traveler, large red-brown backpack, walking spear. Each row contains four consistent full body animation poses of its own named character: neutral standing, breathing/looking, speaking with hand gesture, lively expressive talking gesture. Match each reference identity, clothing, species and colors. All are upright anthropomorphic lizards with tails, detailed matte hand-painted cartoon ink outlines, same art direction as reference. Stable scale and ground line within each row; entirely separate sprites with wide transparent padding. No backgrounds, labels, text, shadow rectangles or grid. Keep full weapons, feet and tails within each cell."
+  },
+  {
+    "name": "town-npcs-1",
+    "transparent": true,
+    "refs": [
+      "inputs/0fe04303-582c-496e-a3a5-f4144246b897.JPG"
+    ],
+    "prompt": "Use case: identity-preserve. Create a transparent sprite sheet EXACTLY four columns by four rows. Four different NPCs from the reference, one character per ROW. Row 1: Сола, green female lizard herbalist, burgundy shawl and small glowing green potion. Row 2: Варт, golden lizard guard in heavy dark steel armor, red crest and spear. Row 3: Кай, gray-gold lizard trainer, burgundy scarf, light leather armor and curved practice sword. Row 4: Ящерёнок, small friendly green lizard child, red scarf, oversized curious eyes. Each row contains four consistent full body animation poses of its own named character: neutral standing, breathing/looking, speaking with hand gesture, lively expressive talking gesture. Match each reference identity, clothing, species and colors. All are upright anthropomorphic lizards with tails, detailed matte hand-painted cartoon ink outlines, same art direction as reference. Stable scale and ground line within each row; entirely separate sprites with wide transparent padding. No backgrounds, labels, text, shadow rectangles or grid. Keep full weapons, feet and tails within each cell."
+  },
+  {
+    "name": "town-npcs-2",
+    "transparent": true,
+    "refs": [
+      "inputs/0fe04303-582c-496e-a3a5-f4144246b897.JPG"
+    ],
+    "prompt": "Use case: identity-preserve. Create a transparent sprite sheet EXACTLY four columns by four rows. Four different NPCs from the reference, one character per ROW. Row 1: Странник, mysterious dark golden lizard, deep navy hood and cape, small golden lantern. Row 2: Хранитель, elegant blue lizard spring keeper, layered dark blue robes, turquoise glowing staff. Row 3: Грук, stocky bronze-brown lizard mercenary, heavy dark armor, large sheathed sword. Row 4: Старейшина, elderly pale gray lizard sage, long ivory beard, dark cloak, wooden walking staff. Each row contains four consistent full body animation poses of its own named character: neutral standing, breathing/looking, speaking with hand gesture, lively expressive talking gesture. Match each reference identity, clothing, species and colors. All are upright anthropomorphic lizards with tails, detailed matte hand-painted cartoon ink outlines, same art direction as reference. Stable scale and ground line within each row; entirely separate sprites with wide transparent padding. No backgrounds, labels, text, shadow rectangles or grid. Keep full weapons, feet and tails within each cell."
+  }
+]

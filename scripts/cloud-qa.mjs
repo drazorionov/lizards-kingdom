@@ -21,6 +21,12 @@ try {
     cleared: [],
     defeated: [],
     checkpoint: true,
+    secrets: { 0: [0, 3] },
+    broken: { 0: [20] },
+    discovered: { 0: ["fields", "secret"] },
+    services: ["compass"],
+    quests: ["child"],
+    visited: [0],
     mode: "gentle",
     updatedAt: Date.now(),
   };
@@ -39,6 +45,10 @@ try {
   }).then((r) => r.json());
   assert.deepEqual(read.progress.tokens[0], [0, 2]);
   assert.equal(read.progress.hero, 1);
+  assert.deepEqual(read.progress.secrets[0], [0, 3]);
+  assert.deepEqual(read.progress.services, ["compass"]);
+  assert.deepEqual(read.progress.broken[0], [20]);
+  assert.deepEqual(read.progress.quests, ["child"]);
   assert.equal(read.progress.checkpoint, true);
   const isolated = await fetch(origin + "/api/progress").then((r) => r.json());
   assert.equal(isolated.progress, null);

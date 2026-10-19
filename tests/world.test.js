@@ -38,21 +38,18 @@ test("one-way platforms allow rising from underneath", () => {
     movePlayer(p, [{ x: 0, y: 360, w: 200, h: 24 }], 1 / 60);
   assert.ok(p.y + p.h < 360);
 });
-test("double jump can reach every required platform from its predecessor", () => {
+test("expanded regions have vertical climbs, sealed chambers and return tunnels", () => {
   const ascent =
     (PHYSICS.jump ** 2 + PHYSICS.doubleJump ** 2) / (2 * PHYSICS.gravity);
   assert.ok(ascent > 180);
-  // The 2D forest is verified by a full input replay; these five routes share one ground plane.
-  for (const { platforms } of REGIONS.slice(1).map((_, i) =>
-    createWorld(i + 1),
-  )) {
-    const ground = platforms.filter((p) => p.ground);
-    for (let i = 1; i < ground.length; i++) {
-      const gap = ground[i].x - (ground[i - 1].x + ground[i - 1].w);
-      assert.ok(
-        gap < (PHYSICS.speed * 2 * Math.abs(PHYSICS.jump)) / PHYSICS.gravity,
-      );
-    }
+  for (let i = 0; i < 6; i++) {
+    const w = createWorld(i);
+    assert.equal(w.height, 1600);
+    assert.equal(w.rooms.length, 8);
+    assert.ok(w.platforms.some((p) => p.y >= 1400 && p.w > 1000));
+    assert.ok(w.platforms.some((p) => p.breakable && p.secret));
+    assert.ok(w.platforms.filter((p) => p.wall && p.h >= 500).length >= 2);
+    assert.equal(w.secrets.length, 5);
   }
 });
 test("save sanitizer bounds untrusted state and drops unknown fields", () => {

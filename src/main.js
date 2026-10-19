@@ -1,4 +1,7 @@
-import { forestMapMarkup } from "./forest-renderer.js";
+import { regionMapMarkup, townMapMarkup } from "./region-renderer.js";
+import { REGION_KEYS } from "./regions.js";
+import { growth, LEVELS, TOKEN_TYPES } from "./progression.js";
+import { RESIDENTS, residentProgress } from "./town.js";
 import { CreatureShowcase } from "./creature-showcase.js";
 import { CREATURES, REGION_CREATURES, BOSSES } from "./creatures.js";
 import { HeroShowcase } from "./hero-showcase.js";
@@ -22,7 +25,8 @@ let heroShowcase,
   modalReturnFocus,
   modalKind = "",
   selectedHero = progress.hero;
-const unlocked = (i) => i === 0 || progress.cleared.includes(i - 1);
+const unlocked = (i) =>
+  i === 0 || progress.cleared.includes(i - 1) || progress.visited.includes(i);
 function save(p = progress) {
   progress = { ...p, hero: selectedHero };
   store.update(progress);
@@ -68,9 +72,15 @@ async function loadAssets() {
         "hero-quirel-painted-atlas",
         "hero-urmasa-painted-atlas",
         "elder-atlas",
+        ...Array.from({ length: 5 }, (_, i) => `token-type-${i}`),
       ]
         .filter((k) => !k.startsWith("hero-") || k.endsWith("painted-atlas"))
-        .filter((k) => !k.startsWith("enemy-") && !k.startsWith("boss-"))
+        .filter(
+          (k) =>
+            !k.startsWith("enemy-") &&
+            !k.startsWith("boss-") &&
+            !k.startsWith("background-"),
+        )
         .filter(
           (k) =>
             ![
@@ -88,6 +98,9 @@ async function loadAssets() {
           await im.decode();
           assets[key] = im;
         }),
+    );
+    assets.expansion = await fetch("/assets/expansion.json").then((r) =>
+      r.json(),
     );
     return assets;
   })();
@@ -140,6 +153,13 @@ async function loadCreatureAssets(region) {
       }),
     );
   }
+  if (region !== 0)
+    await loadExtra(assets, [
+      `${REGION_KEYS[region]}-background`,
+      `${REGION_KEYS[region]}-ledges`,
+      `${REGION_KEYS[region]}-terrain`,
+      `${REGION_KEYS[region]}-boss-attacks-atlas`,
+    ]);
   const old = loadedRegions.indexOf(region);
   if (old >= 0) loadedRegions.splice(old, 1);
   loadedRegions.push(region);
@@ -157,7 +177,27 @@ async function loadCreatureAssets(region) {
   if (!keepRegions.has(0))
     for (const key of Object.keys(assets))
       if (key.startsWith("forest-")) delete assets[key];
+  for (const [i, prefix] of REGION_KEYS.entries())
+    if (i > 0 && !keepRegions.has(i))
+      for (const suffix of [
+        "background",
+        "ledges",
+        "terrain",
+        "boss-attacks-atlas",
+      ])
+        delete assets[`${prefix}-${suffix}`];
   return assets;
+}
+async function loadExtra(assets, keys) {
+  await Promise.all(
+    keys.map(async (key) => {
+      if (assets[key]) return;
+      const im = new Image();
+      im.src = `/assets/${key}.webp`;
+      await im.decode();
+      assets[key] = im;
+    }),
+  );
 }
 function toast(message) {
   $("#toast").textContent = message;
@@ -165,13 +205,20 @@ function toast(message) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => $("#toast").classList.remove("visible"), 4200);
 }
-async function start(region = progress.region) {
+async function start(region = progress.region, town = false) {
   if (!unlocked(region)) region = 0;
   const serial = ++startSerial;
   $("#start").disabled = true;
   $("#start span").textContent = "Открываем королевство…";
   try {
     const assets = await loadCreatureAssets(region);
+    if (town)
+      await loadExtra(assets, [
+        "town-background",
+        "town-npcs-0-atlas",
+        "town-npcs-1-atlas",
+        "town-npcs-2-atlas",
+      ]);
     if (serial !== startSerial) return;
     if (!game) {
       const renderer = new Renderer($("#canvas"), assets);
@@ -181,6 +228,15 @@ async function start(region = progress.region) {
         sound: (type) => sound.play(type),
         save: (p) => save(p),
         complete: showComplete,
+        interact: showResident,
+        travel: (to) => {
+          if (to === "town") startTown();
+          else {
+            progress.visited = [...new Set([...progress.visited, to])];
+            save();
+            start(to);
+          }
+        },
         hud: updateHud,
       });
     }
@@ -190,7 +246,8 @@ async function start(region = progress.region) {
     if (progress.region !== region) progress.checkpoint = false;
     progress.region = region;
     progress.hero = selectedHero;
-    game.start(region, progress);
+    if (town) game.startTown(progress);
+    else game.start(region, progress);
     $("#canvas").focus();
     save();
   } catch (e) {
@@ -206,10 +263,12 @@ async function start(region = progress.region) {
     updateMenu();
   }
 }
-function updateHud({ health, maxHealth, tokens, boss, region }) {
+function updateHud({ health, maxHealth, tokens, boss, region, town, level }) {
   $("#chapter-label").textContent =
-    `ГЛАВА ${REGIONS[region].chapter} · ${selectedHero === 0 ? "КВИРЕЛ" : "УРМАСА"}`;
-  $("#region-name").textContent = REGIONS[region].name;
+    `${town ? "ГОРОД" : "ГЛАВА " + REGIONS[region].chapter} · ${selectedHero === 0 ? "КВИРЕЛ" : "УРМАСА"} · УР. ${level}`;
+  $("#region-name").textContent = town
+    ? "Лагерь · Город"
+    : REGIONS[region].name;
   $("#hearts").innerHTML = Array.from(
     { length: maxHealth },
     (_, i) =>
@@ -222,17 +281,19 @@ function updateHud({ health, maxHealth, tokens, boss, region }) {
   $("#token-count").innerHTML = tokens
     .map(
       (t) =>
-        `<span class="token-pip ${t.collected ? "found" : ""}" aria-label="Светлячок ${t.id + 1}: ${t.collected ? "найден" : "не найден"}">✧</span>`,
+        `<span class="token-pip ${t.collected ? "found" : ""}" style="color:${TOKEN_TYPES[t.type].color}" aria-label="${TOKEN_TYPES[t.type].name}: ${t.collected ? "найден" : "не найден"}">✧</span>`,
     )
     .join("");
   $("#boss-hud").classList.toggle("hidden", !boss.active || boss.dead);
   $("#boss-name").textContent = REGIONS[region].boss;
   $("#boss-health").style.width = `${(boss.hp / boss.maxHp) * 100}%`;
-  $("#objective").textContent = tokens.every((t) => t.collected)
-    ? "Пять огоньков найдены. К вратам →"
-    : boss.dead
-      ? "Страж отдыхает. Найди остальных светлячков."
-      : "Исследуй тропы. Найди всех пятерых светлячков.";
+  $("#objective").textContent = town
+    ? "Подойди к жителю · Пробел / меч — говорить"
+    : tokens.every((t) => t.collected)
+      ? "Пять огоньков найдены. К вратам →"
+      : boss.dead
+        ? "Страж отдыхает. Найди остальных жетонов."
+        : "Исследуй тропы. Найди все пять жетонов.";
 }
 function showModal(kind, html) {
   creatureShowcase?.stop();
@@ -276,7 +337,7 @@ function showPause() {
   if (!game?.running) return;
   showModal(
     "pause",
-    `<div class="eyebrow">ПЕРЕДОХНИ, МАЛЕНЬКИЙ СТРАННИК</div><h2 id="modal-title">Королевство подождёт.</h2><p>Все найденные светлячки сохранены. Возвращайся, когда захочешь.</p>${modeSetting()}<div class="modal-actions"><button id="resume" class="primary-button">Вернуться в приключение <b>→</b></button>${game.world.region === 0 ? '<button id="forest-rematch" class="secondary-button">Снова сразиться со Споровой матерью</button>' : ""}<button id="help-pause" class="secondary-button">Как играть</button><button id="home" class="secondary-button">В лагерь</button></div>`,
+    `<div class="eyebrow">ПЕРЕДОХНИ, МАЛЕНЬКИЙ СТРАННИК</div><h2 id="modal-title">Королевство подождёт.</h2><p>Все найденные жетоны сохранены. Возвращайся, когда захочешь.</p>${modeSetting()}<div class="modal-actions"><button id="resume" class="primary-button">Вернуться в приключение <b>→</b></button>${!game.world.town ? '<button id="forest-rematch" class="secondary-button">Повторить бой со стражем</button>' : ""}<button id="help-pause" class="secondary-button">Как играть</button><button id="town-pause" class="secondary-button">В город</button><button id="growth-pause" class="secondary-button">Развитие героя</button><button id="home" class="secondary-button">Главное меню</button></div>`,
   );
   $("#resume").onclick = () => closeModal();
   const rematch = $("#forest-rematch");
@@ -286,6 +347,8 @@ function showPause() {
       closeModal();
     };
   $("#home").onclick = goHome;
+  $("#town-pause").onclick = startTown;
+  $("#growth-pause").onclick = showGrowth;
   $("#help-pause").onclick = showHelp;
   bindMode();
 }
@@ -378,7 +441,7 @@ async function showBestiary(region = 0) {
 function showHelp() {
   showModal(
     "help",
-    `<div class="eyebrow">ПЕРЕД НАЧАЛОМ ПУТИ</div><h2 id="modal-title">Маленькие шаги. Смелые приключения.</h2><div class="help-grid"><div><strong>← → Движение · ↑ Прыжок</strong><p>Нажми ↑ ещё раз в воздухе для второго прыжка. Удерживай кнопку, чтобы прыгнуть выше. Коснись стены и нажми ↑: герой оттолкнётся. Чередуй стены, чтобы забраться наверх.</p></div><div><strong>ПРОБЕЛ — атака · ↓ Рывок</strong><p>Квирел бьёт посохом по кругу, Урмаса — клинками перед собой. Рывок помогает пройти сквозь опасность. Пробел рядом со Старейшиной начинает разговор.</p></div><div><strong>Пять светлячков</strong><p>Исследуй верхние тропы. Успокой стража, забери последнего светлячка и дойди до врат.</p></div><div><strong>Тёплые огоньки сохраняют путь</strong><p>Отдохни у огонька в середине уровня. После падения ты вернёшься к нему. Светлячки всегда остаются с тобой.</p></div><div><strong>Можно играть на iPad</strong><p>Используй экранные стрелки, прыжок, рывок и меч. Удерживай направление и нажимай прыжок или атаку другим пальцем. От стен можно прыгать той же кнопкой ↑.</p></div><div><strong>Твоё приключение, твой темп</strong><p>Спокойный режим даёт больше сердец и времени между ранениями. Escape — пауза. M — карта.</p></div></div>${modeSetting()}<div class="modal-actions"><button id="help-done" class="primary-button">Я готов <b>→</b></button></div>`,
+    `<div class="eyebrow">ПЕРЕД НАЧАЛОМ ПУТИ</div><h2 id="modal-title">Маленькие шаги. Смелые приключения.</h2><div class="help-grid"><div><strong>← → Движение · ↑ Прыжок</strong><p>Нажми ↑ ещё раз в воздухе для второго прыжка. Удерживай кнопку, чтобы прыгнуть выше. Коснись стены и нажми ↑: герой оттолкнётся. Чередуй стены, чтобы забраться наверх.</p></div><div><strong>ПРОБЕЛ — атака · ↓ Рывок</strong><p>Квирел бьёт посохом по кругу, Урмаса — клинками перед собой. Рывок помогает пройти сквозь опасность. Пробел рядом со Старейшиной начинает разговор.</p></div><div><strong>Пять жетонов</strong><p>Исследуй верхние тропы. Успокой стража, забери последнего жетона и дойди до врат.</p></div><div><strong>Тёплые огоньки сохраняют путь</strong><p>Отдохни у огонька в середине уровня. После падения ты вернёшься к нему. Жетоны всегда остаются с тобой.</p></div><div><strong>Можно играть на iPad</strong><p>Используй экранные стрелки, прыжок, рывок и меч. Удерживай направление и нажимай прыжок или атаку другим пальцем. От стен можно прыгать той же кнопкой ↑.</p></div><div><strong>Твоё приключение, твой темп</strong><p>Спокойный режим даёт больше сердец и времени между ранениями. Escape — пауза. M — карта.</p></div></div>${modeSetting()}<div class="modal-actions"><button id="help-done" class="primary-button">Я готов <b>→</b></button></div>`,
   );
   $("#help-done").onclick = () => closeModal();
   bindMode();
@@ -386,8 +449,9 @@ function showHelp() {
 function showMap() {
   showModal(
     "map",
-    `<div class="eyebrow">РАЗНЫЕ ЗЕМЛИ. ОДНО КОРОЛЕВСТВО.</div><h2 id="modal-title">Атлас странника</h2><p>Чтобы открыть следующий путь, найди пять светлячков и дойди до врат. В открытые земли можно вернуться.</p>${game?.running && game.world.region === 0 ? forestMapMarkup(game) : ""}<details ${game?.running && game.world.region === 0 ? "" : "open"}><summary>Карта всего королевства</summary><img class="map-image" src="/assets/world-map.webp" alt="Карта королевства с шестью землями"></details><div class="map-regions">${REGIONS.map((r, i) => `<button data-travel="${i}" ${unlocked(i) ? "" : "disabled"}>${progress.cleared.includes(i) ? "✓" : unlocked(i) ? "✦" : "◇"} ${r.name}</button>`).join("")}</div>`,
+    `<div class="eyebrow">РАЗНЫЕ ЗЕМЛИ. ОДНО КОРОЛЕВСТВО.</div><h2 id="modal-title">Атлас странника</h2><p>Чтобы открыть следующий путь, найди пять жетонов и дойди до врат. В открытые земли можно вернуться.</p>${game?.running ? (game.world.town ? townMapMarkup(game) : regionMapMarkup(game)) : ""}<details><summary>Оригинальная карта-подсказка · содержит расположение тайн</summary><img class="map-image" src="/assets/world-secrets.webp" alt="Карта королевства с шестью землями"></details><div class="map-regions"><button id="map-town">⌂ Лагерь / Город</button>${REGIONS.map((r, i) => `<button data-travel="${i}" ${unlocked(i) ? "" : "disabled"}>${progress.cleared.includes(i) ? "✓" : unlocked(i) ? "✦" : "◇"} ${r.name}</button>`).join("")}</div>`,
   );
+  $("#map-town").onclick = startTown;
   document.querySelectorAll("[data-travel]").forEach(
     (b) =>
       (b.onclick = () => {
@@ -408,11 +472,50 @@ function showComplete(region) {
   const last = region === 5;
   showModal(
     "complete",
-    `<div class="eyebrow">${last ? "ШЕСТЬ ЗЕМЕЛЬ. ОДИН СМЕЛЫЙ ГЕРОЙ." : "ОТКРЫТ НОВЫЙ ПУТЬ"}</div><h2 id="modal-title">${last ? "Ты вернул королевству жизнь." : "Чуть смелее. Чуть светлее."}</h2><p>${last ? "Все светлячки найдены. Все стражи успокоились. Твоя история стала частью королевства. Возвращайся в любимые земли, когда захочешь." : `Пять огоньков сияют в земле «${REGIONS[region].name}». За вратами ждёт следующая глава: ${REGIONS[region + 1].name}.`}</p><div style="color:var(--gold);font-size:35px;letter-spacing:15px;margin:24px 0">✧ ✧ ✧ ✧ ✧</div><div class="modal-actions"><button id="next-chapter" class="primary-button">${last ? "Исследовать королевство" : "Вперёд: " + REGIONS[region + 1].name}<b>→</b></button><button id="complete-home" class="secondary-button">Отдохнуть в лагере</button></div>`,
+    `<div class="eyebrow">${last ? "ШЕСТЬ ЗЕМЕЛЬ. ОДИН СМЕЛЫЙ ГЕРОЙ." : "ОТКРЫТ НОВЫЙ ПУТЬ"}</div><h2 id="modal-title">${last ? "Ты вернул королевству жизнь." : "Чуть смелее. Чуть светлее."}</h2><p>${last ? "Все жетоны найдены. Все стражи успокоились. Твоя история стала частью королевства. Возвращайся в любимые земли, когда захочешь." : `Пять огоньков сияют в земле «${REGIONS[region].name}». За вратами ждёт следующая глава: ${REGIONS[region + 1].name}.`}</p><div style="color:var(--gold);font-size:35px;letter-spacing:15px;margin:24px 0">✧ ✧ ✧ ✧ ✧</div><div class="modal-actions"><button id="next-chapter" class="primary-button">${last ? "Исследовать королевство" : "Вперёд: " + REGIONS[region + 1].name}<b>→</b></button><button id="complete-home" class="secondary-button">Отдохнуть в лагере</button></div>`,
   );
   $("#next-chapter").onclick = () => (last ? showMap() : start(region + 1));
-  $("#complete-home").onclick = goHome;
+  $("#complete-home").onclick = startTown;
 }
+async function startTown() {
+  if (game?.running) game.persist();
+  await start(progress.region, true);
+}
+function showResident(n) {
+  const status = residentProgress(n, progress),
+    reward = n.service || n.quest;
+  if (["neli", "sola", "keeper"].includes(n.id)) {
+    game.player.health = game.maxHealth();
+    game.updateHud();
+  }
+  showModal(
+    "resident",
+    `<div class="resident-dialog"><img src="/assets/npc-${n.sheet}-${n.row}.webp" alt="${n.name}"><div><div class="eyebrow">${n.role}</div><h2 id="modal-title">${n.name}</h2><p>${n.text}</p>${reward ? `<p>${status.done ? "✓ Дар уже с тобой" : `${status.count} / ${n.need} · ${status.ready ? "Можно получить награду" : "Продолжай исследовать"}`}</p>` : ""}<div class="modal-actions">${reward && !status.done ? `<button id="resident-reward" class="primary-button" ${status.ready ? "" : "disabled"}>Принять дар</button>` : ""}<button id="resident-done" class="secondary-button">Продолжить прогулку →</button><button id="resident-map" class="text-button">Карта королевства</button></div></div></div>`,
+  );
+  const b = $("#resident-reward");
+  if (b)
+    b.onclick = () => {
+      if (!residentProgress(n, progress).ready) return;
+      const key = n.service ? "services" : "quests";
+      progress[key] = [...new Set([...progress[key], reward])];
+      game.progress = progress;
+      game.player.health = game.maxHealth();
+      save();
+      game.updateHud();
+      showResident(n);
+    };
+  $("#resident-done").onclick = () => closeModal();
+  $("#resident-map").onclick = showMap;
+}
+function showGrowth() {
+  const g = growth(progress);
+  showModal(
+    "growth",
+    `<div class="eyebrow">ЖЕТОНЫ МУХ — ТВОЙ РОСТ</div><h2 id="modal-title">Уровень ${g.level} · ${LEVELS[g.level - 1][0]}</h2><p>Общий путь Квирела и Урмасы: ${g.flies}/30 жетонов · ${g.secrets}/30 тайн. Каждые пять жетонов и каждые десять тайн дают уровень. Найденное сохраняется навсегда.</p><div class="token-types">${TOKEN_TYPES.map((t, i) => `<article><img src="/assets/token-type-${i}.webp" alt=""><h3>${t.name}</h3><p>${t.description}</p><small>${Object.values(progress.tokens).filter((a) => a.includes(i)).length} / 6</small></article>`).join("")}</div><ol class="growth-list">${LEVELS.map(([name, description], i) => `<li class="${i < g.level ? "earned" : ""}"><strong>${i + 1}. ${name}</strong><span>${description}</span></li>`).join("")}</ol><p>Улучшения города: ${progress.services.length}/6 · Поручения жителей: ${progress.quests.length}/4</p>`,
+  );
+}
+$("#town-menu").onclick = startTown;
+$("#growth-menu").onclick = showGrowth;
 $("#bestiary-menu").onclick = () => showBestiary();
 $("#heroes-menu").onclick = showHeroes;
 $("#start").onclick = () => start();

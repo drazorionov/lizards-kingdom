@@ -578,44 +578,185 @@ canvas {
   transition: width 0.15s;
 }
 .touch-controls {
+  --control-ink: #d4eee6;
   display: none;
   position: absolute;
-  inset: auto 25px 45px;
+  left: max(30px, env(safe-area-inset-left));
+  right: max(30px, env(safe-area-inset-right));
+  bottom: calc(42px + env(safe-area-inset-bottom));
   justify-content: space-between;
+  align-items: flex-end;
   pointer-events: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 .touch-controls button {
-  width: 65px;
-  height: 65px;
-  border: 1px solid #e1d2ad66;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  padding: 0;
+  color: var(--control-ink);
+  border: 1px solid #b2dac566;
   border-radius: 50%;
-  background: #132636ae;
-  backdrop-filter: blur(4px);
-  font-size: 23px;
+  background: linear-gradient(150deg, #4867636b, #0c2228b8 70%);
+  box-shadow:
+    inset 0 1px 0 #e5fff32b,
+    inset 0 -3px 8px #020c1840,
+    0 5px 18px #020b1640;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
   pointer-events: auto;
   touch-action: none;
-  -webkit-user-select: none;
+  transition:
+    background 100ms ease,
+    box-shadow 100ms ease,
+    transform 100ms ease;
+}
+.touch-controls button::before {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  border: 1px solid #cce9d91c;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.touch-controls button:hover {
+  filter: none;
+}
+.touch-controls svg {
+  width: 32px;
+  height: 32px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 3px #020d17b3);
+}
+.touch-controls button > span {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  pointer-events: none;
 }
 .touch-controls button.pressed {
-  background: #c19b57a8;
-  border-color: #f6d99d;
+  color: #f3fff9;
+  background: linear-gradient(145deg, #83c7ad99, #234e50dd);
+  border-color: #d6ffec;
+  box-shadow:
+    inset 0 0 16px #b4ffda26,
+    0 0 20px #8fe8bf33;
+  transform: scale(0.95);
 }
-.touch-move,
-.touch-actions {
+.touch-move {
+  position: relative;
   display: flex;
-  gap: 14px;
-  align-items: flex-end;
+  gap: 12px;
+  padding: 7px;
+  margin-bottom: 6px;
+  border: 1px solid #a5d3c42e;
+  border-radius: 54px;
+  background: linear-gradient(180deg, #15313b38, #06182266);
+  box-shadow:
+    inset 0 1px 0 #c6e8df12,
+    0 8px 30px #020d1626;
 }
-.touch-actions .touch-attack {
+.touch-caption {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  left: 0;
+  width: 100%;
+  text-align: center;
+  color: #c0d6ce;
+  text-shadow: 0 2px 5px #021019;
+  font-size: 8px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+}
+.touch-move button {
   width: 78px;
   height: 78px;
-  background: #baa05b55;
+}
+.touch-move button:first-of-type {
+  border-radius: 40px 18px 18px 40px;
+}
+.touch-move button:last-of-type {
+  border-radius: 18px 40px 40px 18px;
+}
+.touch-pivot {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 4px;
+  height: 4px;
+  background: #d2b88399;
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+.touch-actions {
+  position: relative;
+  width: 232px;
+  height: 180px;
+}
+.touch-actions button {
+  position: absolute;
+}
+.touch-actions .touch-attack {
+  right: 0;
+  bottom: 48px;
+  width: 96px;
+  height: 96px;
+  color: #ffe1a5;
+  border-color: #e6c07c99;
+  background: linear-gradient(145deg, #af8b475e, #302c23b8 75%);
+  box-shadow:
+    inset 0 1px 0 #ffe7b84d,
+    0 0 0 4px #e7bd7010,
+    0 6px 24px #090c1466;
+}
+.touch-attack svg {
+  width: 39px;
+  height: 39px;
+}
+.touch-spark {
+  stroke-width: 1.2;
+  opacity: 0.65;
+}
+.touch-controls .touch-attack.pressed {
+  color: #fff2d2;
+  border-color: #ffe3a7;
+  background: linear-gradient(145deg, #d4aa62ba, #66502acc);
+  box-shadow:
+    inset 0 0 18px #ffe7ac26,
+    0 0 24px #eac5844d;
+}
+.touch-actions .touch-jump {
+  right: 112px;
+  bottom: 0;
+  width: 82px;
+  height: 82px;
 }
 .touch-actions .touch-dash {
-  width: 48px;
-  height: 48px;
-  font-size: 24px;
-  margin-right: 4px;
+  right: 132px;
+  bottom: 102px;
+  width: 66px;
+  height: 66px;
+  color: #bfd3ee;
+  border-color: #a3bfdf66;
+  background: linear-gradient(145deg, #52627e66, #172539b8);
+}
+.touch-dash svg {
+  width: 27px;
+  height: 27px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .touch-controls button {
+    transition: none;
+  }
 }
 .modal {
   position: fixed;
@@ -743,7 +884,7 @@ canvas {
   opacity: 0.6;
   pointer-events: none;
 }
-@media (pointer: coarse) {
+@media (any-pointer: coarse) {
   .touch-controls {
     display: flex;
   }
@@ -755,10 +896,39 @@ canvas {
     font-size: 9px;
   }
   .boss-hud {
-    bottom: 35px;
+    bottom: calc(35px + env(safe-area-inset-bottom));
   }
   .intro-controls .touch-note {
     color: var(--gold);
+  }
+}
+@media (any-pointer: coarse) and (max-width: 900px) {
+  .touch-controls {
+    left: max(20px, env(safe-area-inset-left));
+    right: max(20px, env(safe-area-inset-right));
+    bottom: calc(38px + env(safe-area-inset-bottom));
+  }
+  .touch-move button {
+    width: 70px;
+    height: 70px;
+  }
+  .touch-actions {
+    width: 210px;
+    height: 168px;
+  }
+  .touch-actions .touch-attack {
+    width: 88px;
+    height: 88px;
+    bottom: 44px;
+  }
+  .touch-actions .touch-jump {
+    right: 102px;
+    width: 76px;
+    height: 76px;
+  }
+  .touch-actions .touch-dash {
+    right: 120px;
+    bottom: 94px;
   }
 }
 @media (min-width: 1600px) {
@@ -1071,3 +1241,4 @@ summary {
   padding: 12px 0;
   color: #dbcfad;
 }
+.resident-dialog{display:grid;grid-template-columns:210px 1fr;gap:28px;align-items:center}.resident-dialog>img{width:210px;height:260px;object-fit:contain}.token-types{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin:25px 0}.token-types article{padding:14px;background:#10242b;border:1px solid #c4a57733;border-radius:12px}.token-types img{width:56px;height:56px;object-fit:contain}.token-types h3{font-size:13px}.token-types p{font-size:12px;line-height:1.6}.growth-list{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0;list-style:none}.growth-list li{padding:15px;border:1px solid #839c9733;opacity:.5}.growth-list li.earned{opacity:1;border-color:#dbba7566}.growth-list span{display:block;font-size:13px;margin-top:5px}.secret-list{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0}.secret-list span{font-size:12px;color:#859c9c;padding:7px 10px;background:#10232b}.secret-list .found{color:#f0a5cb}.resident-dialog button:disabled{opacity:.4;cursor:default}@media(max-width:1000px){.token-types{grid-template-columns:repeat(3,1fr)}.resident-dialog{grid-template-columns:150px 1fr}.resident-dialog>img{width:150px}}

@@ -32,6 +32,7 @@ export function resetMother(b) {
   b.y = 380;
   b.hp = b.maxHp;
   b.enraged = false;
+  b.shieldUsed = false;
   b.awakened = false;
   b.moveIndex = 0;
   b.move = null;

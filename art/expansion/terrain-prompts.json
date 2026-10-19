@@ -1,0 +1,22 @@
+[
+  {
+    "name": "marsh-terrain",
+    "prompt": "Create an opaque seamless game terrain texture, 1024x1024 square. The ENTIRE image is a close-up flat cross section of solid dark emerald moss, compact roots, wet dark stone. Hand-painted 2D dark fantasy cartoon game style, precise ink outlines and matte brushwork. Front orthographic view, no depth perspective. Small repeating irregular stone facets. Almost black interior with restrained edge highlights; readable quiet texture to fill thick walls and the inside of solid platforms. Every pixel is SOLID ROCK, no scenery, no skyline, no buildings, no ground horizon, no air, no holes, no transparent areas, no large objects, no text. Pattern continues off all four edges, seamless and evenly lit. Must look beautiful in a painterly platform adventure and not distract from characters."
+  },
+  {
+    "name": "storm-terrain",
+    "prompt": "Create an opaque seamless game terrain texture, 1024x1024 square. The ENTIRE image is a close-up flat cross section of solid slate blue basalt, small cracks, cool gray stone. Hand-painted 2D dark fantasy cartoon game style, precise ink outlines and matte brushwork. Front orthographic view, no depth perspective. Small repeating irregular stone facets. Almost black interior with restrained edge highlights; readable quiet texture to fill thick walls and the inside of solid platforms. Every pixel is SOLID ROCK, no scenery, no skyline, no buildings, no ground horizon, no air, no holes, no transparent areas, no large objects, no text. Pattern continues off all four edges, seamless and evenly lit. Must look beautiful in a painterly platform adventure and not distract from characters."
+  },
+  {
+    "name": "belfry-terrain",
+    "prompt": "Create an opaque seamless game terrain texture, 1024x1024 square. The ENTIRE image is a close-up flat cross section of solid charcoal old brick, subtle warm ochre edges, eroded masonry. Hand-painted 2D dark fantasy cartoon game style, precise ink outlines and matte brushwork. Front orthographic view, no depth perspective. Small repeating irregular stone facets. Almost black interior with restrained edge highlights; readable quiet texture to fill thick walls and the inside of solid platforms. Every pixel is SOLID ROCK, no scenery, no skyline, no buildings, no ground horizon, no air, no holes, no transparent areas, no large objects, no text. Pattern continues off all four edges, seamless and evenly lit. Must look beautiful in a painterly platform adventure and not distract from characters."
+  },
+  {
+    "name": "depths-terrain",
+    "prompt": "Create an opaque seamless game terrain texture, 1024x1024 square. The ENTIRE image is a close-up flat cross section of solid deep cobalt rock, very faint cyan mineral veins. Hand-painted 2D dark fantasy cartoon game style, precise ink outlines and matte brushwork. Front orthographic view, no depth perspective. Small repeating irregular stone facets. Almost black interior with restrained edge highlights; readable quiet texture to fill thick walls and the inside of solid platforms. Every pixel is SOLID ROCK, no scenery, no skyline, no buildings, no ground horizon, no air, no holes, no transparent areas, no large objects, no text. Pattern continues off all four edges, seamless and evenly lit. Must look beautiful in a painterly platform adventure and not distract from characters."
+  },
+  {
+    "name": "lake-terrain",
+    "prompt": "Create an opaque seamless game terrain texture, 1024x1024 square. The ENTIRE image is a close-up flat cross section of solid dark purple rock, small embedded amethyst veins. Hand-painted 2D dark fantasy cartoon game style, precise ink outlines and matte brushwork. Front orthographic view, no depth perspective. Small repeating irregular stone facets. Almost black interior with restrained edge highlights; readable quiet texture to fill thick walls and the inside of solid platforms. Every pixel is SOLID ROCK, no scenery, no skyline, no buildings, no ground horizon, no air, no holes, no transparent areas, no large objects, no text. Pattern continues off all four edges, seamless and evenly lit. Must look beautiful in a painterly platform adventure and not distract from characters."
+  }
+]

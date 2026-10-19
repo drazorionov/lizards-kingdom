@@ -8,7 +8,7 @@
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
     "test": "node --test tests/*.test.js",
-    "assets": "python3 scripts/prepare-assets.py && python3 scripts/prepare-heroes.py && python3 scripts/prepare-creatures.py && python3 scripts/prepare-forest.py",
+    "assets": "python3 scripts/prepare-assets.py && python3 scripts/prepare-heroes.py && python3 scripts/prepare-creatures.py && python3 scripts/prepare-forest.py && python3 scripts/prepare-expansion.py",
     "db:migrate": "node --env-file=.env.local scripts/migrate.js"
   },
   "dependencies": {

@@ -1,0 +1,46 @@
+{
+  "method": "Built-in image_gen tool; reference-guided new artwork. Original source files retained. Pillow is used only for extraction, packing, resize and WebP encoding.",
+  "references": [
+    "town-npcs-reference.png",
+    "world-secrets-reference.png",
+    "progression-reference.png",
+    "../../inputs/0fe04303-582c-496e-a3a5-f4144246b897.JPG",
+    "../../inputs/7a06ef01-a2cc-4817-9f2a-afeae65be50d.JPG"
+  ],
+  "prompts": [
+    "prompts.json",
+    "terrain-prompts.json",
+    "boss-prompts.json"
+  ],
+  "sources": [
+    "belfry-background-source.png",
+    "belfry-boss-attacks-source.png",
+    "belfry-ledges-source.png",
+    "belfry-terrain-source.png",
+    "depths-background-source.png",
+    "depths-boss-attacks-source.png",
+    "depths-ledges-source.png",
+    "depths-terrain-source.png",
+    "lake-background-source.png",
+    "lake-boss-attacks-source.png",
+    "lake-ledges-source.png",
+    "lake-terrain-source.png",
+    "marsh-background-source.png",
+    "marsh-boss-attacks-source.png",
+    "marsh-ledges-source.png",
+    "marsh-terrain-source.png",
+    "storm-background-source.png",
+    "storm-boss-attacks-source.png",
+    "storm-ledges-source.png",
+    "storm-terrain-source.png",
+    "town-background-source.png",
+    "town-npcs-0-source.png",
+    "town-npcs-1-source.png",
+    "town-npcs-2-source.png"
+  ],
+  "packing": "../../scripts/prepare-expansion.py",
+  "runtimeMetadata": [
+    "../../public/assets/expansion.json",
+    "../../public/assets/expansion-bosses.json"
+  ]
+}

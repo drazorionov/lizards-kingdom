@@ -1,3 +1,4 @@
+import { SERVICES } from "./progression.js";
 import { buildLevel } from "./levels.js";
 import { CREATURES, REGION_CREATURES, BOSSES } from "./creatures.js";
 export const REGIONS = [
@@ -73,10 +74,19 @@ export function overlaps(a, b) {
 }
 export function createWorld(region = 0, progress = {}) {
   const level = buildLevel(region);
-  const platforms = level.platforms;
+  const platforms = level.platforms.filter(
+    (s) => !(progress.broken?.[region] || []).includes(s.id),
+  );
   const found = progress.tokens?.[region] || [];
   const tokens = [...level.tokens, { x: 4195, y: 445, boss: true }].map(
-    (t, id) => ({ ...t, id, collected: found.includes(id) }),
+    (t, id) => ({
+      ...t,
+      id,
+      type: id,
+      revealed:
+        found.includes(id) || (progress.revealed?.[region] || []).includes(id),
+      collected: found.includes(id),
+    }),
   );
   const roster = REGION_CREATURES[region];
   const enemies = [];
@@ -133,15 +143,26 @@ export function createWorld(region = 0, progress = {}) {
     rooms: level.rooms,
     signs: level.signs || [],
     spawn: level.spawn || { x: 110, y: 410 },
-    discovered: new Set(),
+    discovered: new Set(progress.discovered?.[region] || []),
+    expanded: true,
+    artKey: level.artKey,
+    secrets: level.secrets.map((s) => ({
+      ...s,
+      found: (progress.secrets?.[region] || []).includes(s.id),
+    })),
+    veils: level.veils,
+    portals: level.portals,
+    springs: level.springs,
+    water: level.water || [],
+    wind: level.wind || [],
     hazards: [],
     shaft: level.shaft,
     title: level.title,
     platforms,
     tokens,
-    enemies,
+    enemies: enemies.filter((e) => e.x < 3430),
     checkpoint: level.checkpoint || { x: 2240, y: 450 },
-    elder: { x: 240, y: 446 },
+    elder: { x: 240, y: level.spawn.y },
     boss: {
       key: BOSSES[region],
       dir: -1,
@@ -216,6 +237,19 @@ export function movePlayer(p, platforms, dt, width = WORLD_WIDTH) {
     p.lastWall = p.wall;
   }
 }
+const cleanIds = (v, max) =>
+  [
+    ...new Set(
+      (Array.isArray(v) ? v : []).filter(
+        (n) => Number.isInteger(n) && n >= 0 && n < max,
+      ),
+    ),
+  ].sort((a, b) => a - b);
+const cleanWords = (v, allowed) => [
+  ...new Set((Array.isArray(v) ? v : []).filter((n) => allowed.includes(n))),
+];
+const cleanRegions = (v, max) =>
+  Object.fromEntries(REGIONS.map((_, i) => [i, cleanIds(v?.[i], max)]));
 export function sanitizeProgress(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const tokens = {};
@@ -243,7 +277,26 @@ export function sanitizeProgress(value) {
     ),
   ].sort();
   return {
-    version: 1,
+    version: 2,
+    secrets: cleanRegions(value.secrets, 5),
+    revealed: cleanRegions(value.revealed, 5),
+    broken: cleanRegions(value.broken, 80),
+    discovered: Object.fromEntries(
+      REGIONS.map((_, i) => [
+        i,
+        [
+          ...new Set(
+            (Array.isArray(value.discovered?.[i])
+              ? value.discovered[i]
+              : []
+            ).filter((id) => buildLevel(i).rooms.some((r) => r.id === id)),
+          ),
+        ],
+      ]),
+    ),
+    services: cleanWords(value.services, SERVICES),
+    quests: cleanWords(value.quests, ["dar", "child", "stranger", "sola"]),
+    visited: cleanIds(value.visited, 6),
     hero: value.hero === 1 ? 1 : 0,
     region: clamp(Number.isInteger(value.region) ? value.region : 0, 0, 5),
     tokens,
@@ -264,6 +317,23 @@ export function mergeProgress(local, remote) {
   const newer = a.updatedAt >= b.updatedAt ? a : b;
   return {
     ...newer,
+    ...Object.fromEntries(
+      ["secrets", "revealed", "broken", "discovered"].map((key) => [
+        key,
+        Object.fromEntries(
+          REGIONS.map((_, i) => [
+            i,
+            [...new Set([...a[key][i], ...b[key][i]])],
+          ]),
+        ),
+      ]),
+    ),
+    ...Object.fromEntries(
+      ["services", "quests", "visited"].map((key) => [
+        key,
+        [...new Set([...a[key], ...b[key]])],
+      ]),
+    ),
     tokens: Object.fromEntries(
       REGIONS.map((_, i) => [
         i,

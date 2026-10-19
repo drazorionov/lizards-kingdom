@@ -58,7 +58,7 @@ Never commit `.env.local`, `.vercel/`, or database credentials.
 - `scripts/prepare-assets.py`: reproducible sprite-region extraction, edge-connected matte removal, and WebP optimization (Python + Pillow).
 - `public/assets/manifest.json`: exact source/crop provenance for every optimized asset.
 - `art/environment-atlas.png`: generated environment extension matching the supplied world map; see [art notes](art/README.md) for the exact prompt and method.
-- Both heroes, all 12 enemy species, six guardians, and the Elder use detailed painted transparent animation sheets. Quirel has 24 poses, including her double-bladed staff sweep and wall kick. Other cast members have 16 poses. See [character notes](art/characters/README.md) and [creature notes](art/creatures/README.md) for exact prompts and references.
+- Both heroes, all 12 enemy species, six guardians, and the Elder use detailed painted transparent animation sheets. Quirel has 24 poses, including her double-bladed staff sweep and wall kick. Enemy cast members have 16 poses; every guardian now has 24 additional attack/awakening/recoil/defeat poses. See [character notes](art/characters/README.md) and [creature notes](art/creatures/README.md) for exact prompts and references.
 - `scripts/prepare-creatures.py` packs the active sprites. Open «Познакомиться с героями» or «Бестиарий» from camp to inspect animation states.
 - Each level has an authored platform route, a wall-jump shaft, three enemy species, and regional scenery details. Corvids match the user's masked feathered bird reference.
 
@@ -66,7 +66,7 @@ No Hollow Knight art, music, characters, or code is included. Exploration, close
 
 ## Rendering and performance
 
-Vanilla ES modules and Canvas 2D; no UI framework or game engine runtime. Fixed 60 Hz simulation, bounded catch-up time, cached background and platform textures, camera culling, at most 100 particles, capped device pixel ratio (1.6) and 1.5-million-pixel canvas budget, event-driven HUD changes, and WebP textures. Older regions cache their scenery; the taller forest draws only visible terrain tiles and never allocates a full-world scenery canvas. Common assets decode before play; creature sheets load by region with a bounded recent-region cache. The render loop suspends simulation on pause or when hidden. Audio is procedural and opt-in. Fonts are self-hosted.
+Vanilla ES modules and Canvas 2D; no UI framework or game engine runtime. Fixed 60 Hz simulation, bounded catch-up time, cached background and platform textures, camera culling, at most 100 particles, capped device pixel ratio (1.6) and 1.5-million-pixel canvas budget, event-driven HUD changes, and WebP textures. All six tall regions draw only visible terrain tiles and never allocate a full-world scenery canvas. Regional art and creature atlases use a bounded recent-region cache. Common assets decode before play; creature sheets load by region with a bounded recent-region cache. The render loop suspends simulation on pause or when hidden. Audio is procedural and opt-in. Fonts are self-hosted.
 
 Measured desktop Chromium rendering was approximately 60 fps during the smoke test; this is not a guarantee for every device. iPad layout, touch controls, and WebKit are covered by browser checks; physical iPad hardware has not been tested.
 
@@ -81,6 +81,8 @@ node scripts/webkit-qa.mjs
 node scripts/hero-qa.mjs
 node scripts/creature-qa.mjs
 node scripts/forest-qa.mjs
+node scripts/expansion-qa.mjs
+node scripts/expansion-scene-qa.mjs
 ```
 
 Run the dev server first. `forest-qa.mjs` imports production modules into an isolated local test fixture for full traversal screenshots and all boss timelines; run it against the dev server. The other browser scripts also support deployed builds. Set `QA_URL` to test another deployment. Optional `PLAYWRIGHT_CHROMIUM_EXECUTABLE` / `PLAYWRIGHT_WEBKIT_EXECUTABLE` variables reuse an existing browser installation. QA screenshots are written to the system temporary directory.
@@ -95,3 +97,15 @@ vercel --prod --yes
 ```
 
 Deploy through the Vercel CLI. Automatic GitHub deployments require the repository owner to add a GitHub Login Connection in Vercel; the initial direct deployment does not depend on that connection.
+
+## Six-region expansion
+
+The new world follows the supplied six-region and 30-secret board. Each area is 4550 × 1600 world units with eight named rooms, a distinct initial route, shared readable wall-jump and return-path conventions, a sealed chamber, five collectible types and five optional numbered secrets. The belfry includes crumbling ledges that respawn. Lower passages connect the marsh to the depths, the depths to the lake, and the lake to the forest. These hidden links can open a region earlier than the main sequence.
+
+The town is a walkable painted street with 12 animated residents. Space or the touch action button talks to the nearest resident. Six permanent services affect weapon damage, health, map hints, attack cooldown, springs and boss protection. Four discovery quests reward additional hints and spring benefits. No consumable spending or real-money purchases are involved.
+
+Progression is shared between Quirel and Urmasa: `min(10, 1 + floor(tokens / 5) + floor(secrets / 10))`. Thirty tokens and thirty secrets make all ten levels attainable. Each region contains one ordinary, glowing, ancient, cursed and golden token. Cursed tokens require nearby guards to be defeated, golden tokens require the boss, and solid walls block token discovery/collection. Maps remember explored rooms, revealed tokens, discoveries and broken walls. The original reference map is available behind an explicit spoiler disclosure.
+
+Save schema v2 migrates the original localStorage key and existing Neon JSON records without a SQL migration. All added IDs and services are bounded and merged monotonically. Levels and combat stats are derived from discoveries rather than trusted as stored numbers.
+
+`art/expansion/` contains the references, exact built-in image-generation prompts and chosen PNG sources. `scripts/prepare-expansion.py` packs the runtime WebP sheets and records source bounds. `tests/secret-routes.json` replays all 30 secrets using production keyboard input; no teleportation or debug mutation is needed in those traversal tests. Browser scene QA uses a separate local fixture solely to inspect each rendered animation frame.

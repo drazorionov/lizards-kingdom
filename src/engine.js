@@ -1,4 +1,7 @@
-import { forestRoom } from "./forest.js";
+import { roomAt } from "./regions.js";
+import { growth, hasService, TOKEN_TYPES } from "./progression.js";
+import { createTown } from "./town.js";
+import { stepRegionBoss } from "./region-boss.js";
 import { stepMother, resetMother, stepForestHazards } from "./forest-boss.js";
 import { stepCreature } from "./creatures.js";
 import { createHeroAnimation, updateHeroAnimation } from "./hero-animation.js";
@@ -11,6 +14,30 @@ import {
   overlaps,
   clamp,
 } from "./world.js";
+export function clearSight(p, target, platforms) {
+  const x = p.x + p.w / 2,
+    y = p.y + p.h / 2,
+    dx = target.x - x,
+    dy = target.y - y;
+  const steps = Math.max(2, Math.ceil(Math.hypot(dx, dy) / 12));
+  for (let i = 1; i < steps; i++) {
+    const px = x + (dx * i) / steps,
+      py = y + (dy * i) / steps;
+    if (
+      platforms.some(
+        (s) =>
+          s.solid &&
+          !s.absent &&
+          px > s.x &&
+          px < s.x + s.w &&
+          py > s.y &&
+          py < s.y + s.h,
+      )
+    )
+      return false;
+  }
+  return true;
+}
 export class Game {
   constructor(canvas, assets, renderer, callbacks) {
     this.canvas = canvas;
@@ -88,6 +115,11 @@ export class Game {
   }
   start(region, progress) {
     this.progress = progress;
+    for (const key of ["secrets", "revealed", "discovered", "broken"])
+      this.progress[key] ||= {};
+    for (const key of ["services", "quests", "visited"])
+      this.progress[key] ||= [];
+    this.progress.visited = [...new Set([...this.progress.visited, region])];
     this.world = createWorld(region, progress);
     this.region = REGIONS[region];
     this.checkpointUsed = progress.region === region && progress.checkpoint;
@@ -119,10 +151,9 @@ export class Game {
       dashCooldown: 0,
     };
     this.particles = [];
-    this.cameraY =
-      region === 0
-        ? Math.max(0, Math.min(this.world.height - 620, this.player.y - 350))
-        : 0;
+    this.cameraY = this.world.expanded
+      ? Math.max(0, Math.min(this.world.height - 620, this.player.y - 350))
+      : 0;
     this.camera = Math.max(0, this.player.x - 300);
     this.running = true;
     this.paused = false;
@@ -144,7 +175,29 @@ export class Game {
   maxHealth() {
     return (
       (this.progress?.mode === "adventure" ? 5 : 7) +
-      Math.min(2, Math.floor((this.progress?.cleared.length || 0) / 2))
+      growth(this.progress).hearts +
+      (hasService(this.progress, "medicine") ? 1 : 0)
+    );
+  }
+  startTown(progress) {
+    this.start(progress.region, progress);
+    this.world = createTown(progress.region);
+    this.camera = 0;
+    this.cameraY = 0;
+    this.player.x = 110;
+    this.player.y = 446;
+    this.player.health = this.maxHealth();
+    this.renderer.prepare(progress.region, this.world);
+    this.lastHud = "";
+    this.updateHud();
+    this.cb.toast("Город · Подойди к жителю и нажми пробел / меч.");
+  }
+  attackPower() {
+    return (
+      growth(this.progress).damage +
+      (hasService(this.progress, "forge") ? 1 : 0) +
+      (this.player.buff > 0 ? 1 : 0) +
+      (this.player.counter > 0 ? 1 : 0)
     );
   }
   pause() {
@@ -196,6 +249,33 @@ export class Game {
     const p = this.player,
       w = this.world;
     this.time += dt;
+    const stats = growth(this.progress);
+    p.buff = Math.max(0, (p.buff || 0) - dt);
+    p.counter = Math.max(0, (p.counter || 0) - dt);
+    if (this.pressed.has("attack")) {
+      const npc =
+        w.town &&
+        w.npcs.find(
+          (n) => Math.abs(n.x - p.x - 15) < 85 && Math.abs(p.y - 446) < 80,
+        );
+      const portal = w.portals?.find(
+        (n) =>
+          Math.hypot(n.x - p.x - 15, n.y - p.y - 27) < 65 &&
+          ((!n.secretId && n.secretId !== 0) ||
+            w.secrets.some((s) => s.id === n.secretId && s.found)),
+      );
+      if (
+        (npc && this.cb.interact) ||
+        (portal && this.cb.travel && p.invulnerable < 0.7)
+      ) {
+        this.clearInput();
+        this.persist();
+        this.pause();
+        if (npc) this.cb.interact?.(npc);
+        else this.cb.travel?.(portal.to);
+        return;
+      }
+    }
     for (const key of [
       "invulnerable",
       "attack",
@@ -206,12 +286,13 @@ export class Game {
       "jumpBuffer",
       "wallCoyote",
       "wallKick",
+      "absorb",
     ])
-      p[key] = Math.max(0, p[key] - dt);
+      p[key] = Math.max(0, (p[key] || 0) - dt);
     if (p.grounded) p.coyote = 0.12;
     if (this.pressed.has("jump")) p.jumpBuffer = 0.14;
     if (p.jumpBuffer > 0 && p.wallCoyote > 0 && !p.grounded) {
-      p.vy = -570;
+      p.vy = stats.wallJump;
       p.vx = -p.lastWall * 310;
       p.dir = -p.lastWall;
       p.wallKick = 0.18;
@@ -233,8 +314,14 @@ export class Game {
       this.cb.sound("jump");
     }
     if (this.pressed.has("dash") && p.dashCooldown === 0) {
-      p.dash = 0.18;
-      p.dashCooldown = 0.8;
+      p.dash = p.hero === 1 && stats.level >= 3 ? 0.24 : 0.18;
+      p.dashCooldown = stats.level >= 10 ? 0.5 : 0.8;
+      if (p.hero === 1 && stats.level >= 3) {
+        p.attackDuration = 0.24;
+        p.attack = 0.24;
+        p.attackCooldown = 0.32;
+        this.attackSerial++;
+      }
       p.invulnerable = Math.max(p.invulnerable, 0.22);
       this.emit(p.x, p.y + 25, this.region.color, 8);
     }
@@ -248,25 +335,81 @@ export class Game {
     if (this.keys.has("attack") && p.attackCooldown === 0) {
       p.attackDuration = p.hero === 0 ? 0.32 : 0.21;
       p.attack = p.attackDuration;
-      p.attackCooldown = p.hero === 0 ? 0.42 : 0.32;
+      p.attackCooldown =
+        (p.hero === 0 ? 0.42 : 0.32) *
+        (stats.level >= 6 ? 0.85 : 1) *
+        (hasService(this.progress, "training") ? 0.85 : 1);
       this.attackSerial++;
       this.cb.sound("attack");
-      if (Math.abs(p.x - w.elder.x) < 100)
+      if (
+        !w.town &&
+        Math.abs(p.x - w.elder.x) < 100 &&
+        Math.abs(p.y - w.elder.y) < 80
+      )
         this.cb.toast(
-          "Старейшина: Найди пять светлячков. Последнего охраняет страж. Прыгай дважды и отталкивайся от стен!",
+          "Старейшина: Найди пять жетонов. Последний охраняет страж. Прыгай дважды и отталкивайся от стен!",
         );
     }
-    movePlayer(p, w.platforms, dt, w.width);
+    const activePlatforms = w.platforms.filter((s) => !s.absent);
+    movePlayer(p, activePlatforms, dt, w.width);
+    for (const s of w.platforms)
+      if (s.crumble) {
+        if (s.absent) {
+          s.restore -= dt;
+          if (s.restore <= 0) {
+            s.absent = false;
+            s.crumbleTime = 0;
+          }
+        } else if (
+          s.crumbleTime > 0 ||
+          (p.grounded &&
+            p.x + p.w > s.x &&
+            p.x < s.x + s.w &&
+            Math.abs(p.y + p.h - s.y) < 2)
+        ) {
+          s.crumbleTime = (s.crumbleTime || 0) + dt;
+          if (s.crumbleTime > 0.8) {
+            s.absent = true;
+            s.restore = 3;
+          }
+        }
+      }
+    if (w.town) {
+      this.camera +=
+        (clamp(
+          p.x - this.renderer.viewWidth * 0.36,
+          0,
+          Math.max(0, w.width - this.renderer.viewWidth),
+        ) -
+          this.camera) *
+        Math.min(1, dt * 6);
+      if (p.y > w.height) {
+        p.x = 110;
+        p.y = 446;
+        p.vy = 0;
+      }
+      updateHeroAnimation(p, dt);
+      this.pressed.clear();
+      this.updateHud();
+      return;
+    }
     if (p.y > w.height) this.damage(true);
     const attack = {
-      x: p.hero === 0 ? p.x - 58 : p.dir > 0 ? p.x + 10 : p.x - 86,
+      x:
+        p.hero === 0
+          ? p.x - (stats.level >= 3 ? 78 : 58)
+          : p.dir > 0
+            ? p.x + 10
+            : p.x - 86,
       y: p.y - 10,
-      w: p.hero === 0 ? 147 : 108,
+      w: p.hero === 0 ? (stats.level >= 3 ? 187 : 147) : 108,
       h: 80,
     };
-    if (w.region === 0) {
-      const room = forestRoom(p);
+    if (w.expanded) {
+      const room = roomAt(w, p);
+      const fresh = !w.discovered.has(room.id);
       w.discovered.add(room.id);
+      if (fresh) this.persist();
       if (w.roomId !== room.id) {
         w.roomId = room.id;
         this.cb.toast(room.name);
@@ -274,6 +417,10 @@ export class Game {
       for (const s of w.platforms) {
         if (s.breakable && p.attack > 0 && overlaps(attack, s)) {
           s.broken = true;
+          this.progress.broken[w.region] = [
+            ...new Set([...(this.progress.broken[w.region] || []), s.id]),
+          ];
+          this.persist();
           this.emit(s.x + s.w / 2, s.y + s.h / 2, "#9bcaba", 24);
           this.cb.toast(
             s.secret
@@ -287,7 +434,7 @@ export class Game {
     }
     for (const e of w.enemies) {
       if (
-        w.region === 0 &&
+        w.expanded &&
         (Math.abs(e.x - p.x) > 1100 || Math.abs(e.y - p.y) > 700)
       )
         continue;
@@ -299,27 +446,87 @@ export class Game {
         e.lastAttack !== this.attackSerial
       ) {
         e.lastAttack = this.attackSerial;
-        e.hp -= 1 + Math.floor(this.progress.cleared.length / 2);
+        e.hp -= this.attackPower();
+        p.counter = 0;
+        if (stats.level >= 7 && !p.grounded) p.jumps = Math.min(1, p.jumps);
         e.hit = 0.18;
         this.emit(e.x + 20, e.y + 20, this.region.glow);
         if (e.hp <= 0) this.cb.sound("token");
       }
-      if (e.hp > 0 && overlaps(p, e) && p.dash === 0) this.damage();
+      if (e.hp > 0 && overlaps(p, e)) {
+        if (p.dash === 0) this.damage();
+        else if (stats.level >= 8) p.counter = 3;
+      }
+    }
+    for (const secret of w.secrets) {
+      if (
+        !secret.found &&
+        Math.hypot(p.x + 15 - secret.x, p.y + 27 - secret.y) < 70 &&
+        clearSight(p, secret, w.platforms)
+      ) {
+        secret.found = true;
+        this.persist();
+        this.cb.toast(`Тайна ${w.region + 1}.${secret.id + 1}: ${secret.name}`);
+        this.emit(secret.x, secret.y, this.region.glow, 20);
+        this.cb.sound("token");
+      }
+    }
+    for (const spring of w.springs) {
+      if (
+        Math.hypot(p.x + 15 - spring.x, p.y + p.h - spring.y) < 65 &&
+        (spring.refuge || hasService(this.progress, "spring"))
+      ) {
+        p.health = this.maxHealth();
+        p.invulnerable = Math.max(
+          p.invulnerable,
+          this.progress.quests.includes("child") ? 3 : 1,
+        );
+        if (stats.level >= 5 && hasService(this.progress, "spring"))
+          p.buff = this.progress.quests.includes("sola") ? 18 : 10;
+      }
     }
     for (const token of w.tokens) {
+      if (
+        !token.revealed &&
+        Math.hypot(p.x + 15 - token.x, p.y + 27 - token.y) < 150 &&
+        clearSight(p, token, w.platforms)
+      ) {
+        token.revealed = true;
+        this.persist();
+      }
+      if (
+        token.type === 3 &&
+        w.enemies.some(
+          (e) => e.hp > 0 && Math.hypot(e.x - token.x, e.y - token.y) < 200,
+        )
+      )
+        continue;
       if (token.collected || (token.boss && !w.boss.dead)) continue;
-      if (Math.hypot(p.x + 15 - token.x, p.y + 27 - token.y) < 44) {
+      if (
+        Math.hypot(p.x + 15 - token.x, p.y + 27 - token.y) < 44 &&
+        clearSight(p, token, w.platforms)
+      ) {
+        const oldLevel = growth(this.progress).level;
         token.collected = true;
+        p.absorb = 0.65;
+        p.absorbColor = TOKEN_TYPES[token.type].color;
+        if (token.type === 1 && stats.level >= 5) p.buff = 15;
         this.emit(token.x, token.y, "#f8d78d", 20);
         this.cb.sound("token");
         this.persist();
         const count = w.tokens.filter((t) => t.collected).length;
         this.cb.toast(
           count === 5
-            ? "Все пять светлячков найдены! Врата открыты."
-            : `Найден светлячок · ${count} / 5`,
+            ? "Все пять жетонов найдены! Врата открыты."
+            : `${TOKEN_TYPES[token.type].name} · ${count} / 5`,
         );
         if (count === 5) p.health = this.maxHealth();
+        if (growth(this.progress).level > oldLevel) {
+          p.health = this.maxHealth();
+          this.cb.toast(
+            `Новый уровень ${growth(this.progress).level}! Сила внутри.`,
+          );
+        }
       }
     }
     if (
@@ -335,7 +542,7 @@ export class Game {
       this.persist();
     }
     this.stepBoss(dt, attack);
-    if (w.region === 0) stepForestHazards(this, dt);
+    stepForestHazards(this, dt);
     for (let i = w.projectiles.length - 1; i >= 0; i--) {
       const a = w.projectiles[i];
       if (!a) break; // A respawn clears the projectile list during collision handling.
@@ -344,6 +551,7 @@ export class Game {
       a.y += a.vy * dt;
       a.life -= dt;
       if (overlaps(p, a)) {
+        if (p.dash > 0 && stats.level >= 8) p.counter = 3;
         this.damage();
         a.life = 0;
       }
@@ -366,7 +574,7 @@ export class Game {
     } else if (p.x > 4330 && !all && !this.gateHint) {
       this.gateHint = true;
       this.cb.toast(
-        "Для врат нужны пять светлячков. Вернись по тропе за остальными.",
+        "Для врат нужны пять жетонов. Вернись по тропе за остальными.",
       );
     }
     for (let i = this.particles.length - 1; i >= 0; i--) {
@@ -383,7 +591,7 @@ export class Game {
     const view = this.renderer.viewWidth;
     const target = clamp(p.x - view * 0.36, 0, Math.max(0, w.width - view));
     this.camera += (target - this.camera) * Math.min(1, dt * 6);
-    const targetY = w.region === 0 ? clamp(p.y - 330, 0, w.height - 620) : 0;
+    const targetY = w.expanded ? clamp(p.y - 330, 0, w.height - 620) : 0;
     this.cameraY += (targetY - this.cameraY) * Math.min(1, dt * 7);
     updateHeroAnimation(p, dt);
     this.pressed.clear();
@@ -403,19 +611,22 @@ export class Game {
       this.cb.toast(
         w.region === 0
           ? "Споровая мать · Следи за корнями и светящимися спорами!"
-          : `${this.region.boss} · Перепрыгивай светящиеся волны!`,
+          : `${this.region.boss} · Следи за метками, прыжками и светящимися волнами!`,
       );
     }
     if (!b.active) return;
     b.hit = Math.max(0, b.hit - dt);
-    if (w.region !== 0) b.timer -= dt;
+
     if (
       p.attack > 0 &&
       overlaps(attack, b) &&
       b.lastAttack !== this.attackSerial
     ) {
       b.lastAttack = this.attackSerial;
-      b.hp -= 1 + Math.floor(this.progress.cleared.length / 2);
+      b.hp -= this.attackPower();
+      p.counter = 0;
+      if (growth(this.progress).level >= 7 && !p.grounded)
+        p.jumps = Math.min(1, p.jumps);
       b.hit = 0.17;
       this.emit(b.x + 50, b.y + 50, "#edd296", 15);
       if (b.hp <= 0) {
@@ -425,7 +636,7 @@ export class Game {
         w.hazards = [];
         this.emit(b.x + 60, b.y + 50, this.region.glow, 40);
         this.cb.sound("win");
-        this.cb.toast("Страж успокоился! Забери последнего светлячка.");
+        this.cb.toast("Страж успокоился! Забери последний жетон.");
         this.progress.defeated = [
           ...new Set([...this.progress.defeated, w.region]),
         ];
@@ -441,49 +652,21 @@ export class Game {
       p.x = clamp(p.x, 3480, 4400 - p.w);
       return;
     }
-    // A long, visible wind-up before every shockwave. Gentle mode sends one wave.
-    if (b.timer <= 0) {
-      b.phase = (b.phase + 1) % 3;
-      if (b.phase === 0) {
-        b.timer = this.progress.mode === "gentle" ? 2.1 : 1.4;
-      } else if (b.phase === 1) {
-        b.timer = 1.0;
-        this.emit(b.x + 60, b.y + 100, "#f6c989", 8);
-      } else {
-        b.timer = 0.4;
-        b.attackId++;
-        w.projectiles.push({
-          x: b.x,
-          y: 476,
-          w: 32,
-          h: 24,
-          vx: -230 - w.region * 12,
-          life: 5,
-        });
-        if (this.progress.mode === "adventure" && b.attackId % 2 === 0)
-          w.projectiles.push({
-            x: b.x + 30,
-            y: 395,
-            w: 23,
-            h: 23,
-            vx: -180,
-            life: 5,
-          });
-        this.emit(b.x + 50, 492, this.region.glow, 15);
-      }
-    }
+    stepRegionBoss(this, dt);
+    p.x = clamp(p.x, 3480, 4400 - p.w);
   }
 
   rematchMother() {
     const w = this.world;
-    if (w.region !== 0) return;
+    if (w.town) return;
     resetMother(w.boss);
+    w.boss.shieldUsed = false;
     w.boss.dead = false;
     w.boss.deathTime = 0;
     w.projectiles = [];
     w.hazards = [];
     this.finished = false;
-    this.player.x = 3560;
+    this.player.x = w.region === 0 ? 3560 : 3660;
     this.player.y = 446;
     this.player.vx = 0;
     this.player.vy = 0;
@@ -491,6 +674,7 @@ export class Game {
       "jumps",
       "wall",
       "wallKick",
+      "absorb",
       "wallCoyote",
       "dash",
       "dashCooldown",
@@ -507,20 +691,32 @@ export class Game {
     this.camera = clamp(3260, 0, w.width - this.renderer.viewWidth);
     this.cameraY = 0;
     this.cb.toast(
-      "Повторный бой. Найденные светлячки и открытые земли сохранены.",
+      "Повторный бой. Найденные жетоны и открытые земли сохранены.",
     );
   }
   damage(fall = false) {
     const p = this.player;
     if (!fall && p.invulnerable > 0) return;
+    if (
+      !fall &&
+      this.world.boss.active &&
+      hasService(this.progress, "mercenary") &&
+      !this.world.boss.shieldUsed
+    ) {
+      this.world.boss.shieldUsed = true;
+      p.invulnerable = 2;
+      this.cb.toast("Щит Грука принял удар!");
+      return;
+    }
     p.health--;
+
     this.cb.sound("hit");
     this.emit(p.x + 15, p.y + 20, "#f1c292", 10);
     p.invulnerable = this.progress.mode === "gentle" ? 2.2 : 1.4;
     if (p.health <= 0 || fall) {
       if (p.health <= 0) {
         p.health = this.maxHealth();
-        this.cb.toast("Герои пробуют снова. Все светлячки с тобой.");
+        this.cb.toast("Герои пробуют снова. Все жетоны с тобой.");
       } else this.cb.toast("Возвращаемся к последнему тёплому огоньку.");
       p.x = this.checkpointUsed ? this.world.checkpoint.x : this.world.spawn.x;
       p.y = this.checkpointUsed
@@ -535,12 +731,10 @@ export class Game {
       this.camera = Math.max(0, p.x - 300);
       this.world.projectiles = [];
       this.world.hazards = [];
-      if (this.world.region === 0 && !this.world.boss.dead)
-        resetMother(this.world.boss);
-      this.cameraY =
-        this.world.region === 0
-          ? clamp(p.y - 330, 0, Math.max(0, this.world.height - 620))
-          : 0;
+      if (!this.world.boss.dead) resetMother(this.world.boss);
+      this.cameraY = this.world.expanded
+        ? clamp(p.y - 330, 0, Math.max(0, this.world.height - 620))
+        : 0;
       this.world.boss.active = false;
       this.world.boss.phase = 0;
       this.world.boss.timer = 2.1;
@@ -556,6 +750,17 @@ export class Game {
     }
   }
   persist() {
+    if (this.world.town) {
+      this.cb.save(this.progress);
+      return;
+    }
+    this.progress.revealed[this.world.region] = this.world.tokens
+      .filter((t) => t.revealed)
+      .map((t) => t.id);
+    this.progress.secrets[this.world.region] = this.world.secrets
+      .filter((s) => s.found)
+      .map((s) => s.id);
+    this.progress.discovered[this.world.region] = [...this.world.discovered];
     this.progress.region = this.world.region;
     this.progress.tokens[this.world.region] = this.world.tokens
       .filter((t) => t.collected)
@@ -572,10 +777,14 @@ export class Game {
       w.boss.hp,
       w.boss.active,
       w.boss.dead,
+      growth(this.progress).level,
+      w.town,
     ].join();
     if (key === this.lastHud) return;
     this.lastHud = key;
     this.cb.hud({
+      town: w.town,
+      level: growth(this.progress).level,
       health: p.health,
       maxHealth: this.maxHealth(),
       tokens: w.tokens,
@@ -585,6 +794,9 @@ export class Game {
   }
   snapshot() {
     return {
+      town: this.world?.town,
+      progression: growth(this.progress),
+      secrets: this.world?.secrets,
       running: this.running,
       paused: this.paused,
       region: this.world?.region,

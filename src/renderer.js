@@ -1,4 +1,14 @@
 import {
+  regionBackground,
+  regionTerrain,
+  regionDetails,
+  regionForeground,
+  regionMinimap,
+  drawTown,
+  drawRegionBoss,
+} from "./region-renderer.js";
+import { TOKEN_TYPES } from "./progression.js";
+import {
   drawForestBackground,
   drawForestTerrain,
   drawForestDetails,
@@ -51,9 +61,9 @@ export class Renderer {
   prepare(region, world) {
     this.regionIndex = region;
     this.region = REGIONS[region];
-    this.background = region === 0 ? null : this.makeBackground(region);
+    this.background = null;
     this.platformTextures = new Map();
-    this.scenery = region === 0 ? null : this.makeScenery(world);
+    this.scenery = null;
     this.resize();
   }
   makeBackground(region) {
@@ -233,6 +243,7 @@ export class Renderer {
     g.globalAlpha = 1;
   }
   draw(game) {
+    if (game.world.town) return drawTown(this, game);
     const g = this.ctx,
       p = game.player,
       w = game.world,
@@ -243,13 +254,7 @@ export class Renderer {
     g.setTransform(this.scale, 0, 0, this.scale, 0, 0);
     g.fillStyle = "#050e17";
     g.fillRect(0, 0, view, 620);
-    if (w.region === 0) drawForestBackground(this, game);
-    else {
-      const bgOffset = (camera * 0.13) % 1600;
-      g.drawImage(this.background, -bgOffset, 0);
-      if (bgOffset + view > 1600)
-        g.drawImage(this.background, 1600 - bgOffset, 0);
-    }
+    regionBackground(this, game);
     // Distant drifting motes, capped and independent of simulation objects.
     for (let i = 0; i < 35; i++) {
       const x =
@@ -276,12 +281,11 @@ export class Renderer {
         s.y > (game.cameraY || 0) + 650
       )
         continue;
-      if (w.region === 0) drawForestTerrain(this, s, game);
-      else g.drawImage(this.platform(s), s.x - 10, s.y - 12);
+      regionTerrain(this, s, game);
     }
     if (this.scenery)
       g.drawImage(this.scenery, camera, 0, view, 620, camera, 0, view, 620);
-    if (w.region === 0) drawForestDetails(this, game);
+    regionDetails(this, game);
     // The Elder shares the painted art style and responds with talking poses.
     if (camera < 420) {
       const talking = Math.abs(p.x - w.elder.x) < 100 && p.attack > 0;
@@ -297,14 +301,14 @@ export class Renderer {
           256,
           256,
           w.elder.x - 30,
-          420,
+          w.elder.y - 26,
           86,
           86,
         );
       g.fillStyle = "#d4c4a0";
       g.font = "10px Georgia";
       g.textAlign = "center";
-      g.fillText("СТАРЕЙШИНА", w.elder.x + 16, 413);
+      g.fillText("СТАРЕЙШИНА", w.elder.x + 16, w.elder.y - 33);
       g.strokeStyle = "#9eaa8b66";
       g.beginPath();
       g.moveTo(170, 500);
@@ -320,15 +324,16 @@ export class Renderer {
     for (const token of w.tokens) {
       if (
         token.collected ||
+        !token.revealed ||
         (token.boss && !w.boss.dead) ||
         token.x < camera - 60 ||
         token.x > camera + view + 60
       )
         continue;
       const y = token.y + Math.sin(t * 2 + token.id) * 5;
-      this.glow(token.x, y, 40, "#f4d283", 0.25);
-      this.sprite("token", token.x - 14, y - 15, 28, 30);
-      g.strokeStyle = "#e9d59577";
+      this.glow(token.x, y, 40, TOKEN_TYPES[token.type].color, 0.35);
+      this.sprite(`token-type-${token.type}`, token.x - 17, y - 18, 34, 36);
+      g.strokeStyle = TOKEN_TYPES[token.type].color;
       g.beginPath();
       g.arc(token.x, y, 19, 0, TAU);
       g.stroke();
@@ -357,19 +362,25 @@ export class Renderer {
         g.strokeStyle = "#efc47e";
         g.lineWidth = 2;
         g.beginPath();
-        g.ellipse(b.x + 60, 499, 110 * (1 - b.timer) + 30, 10, 0, 0, TAU);
+        g.ellipse(
+          b.x + 60,
+          499,
+          110 * Math.max(0, 1 - b.timer / 1.35) + 30,
+          10,
+          0,
+          0,
+          TAU,
+        );
         g.stroke();
         g.font = "11px Manrope";
         g.textAlign = "center";
         g.fillStyle = "#f3d292";
-        g.fillText(
-          b.timer < 0.35 ? "ПРЫГАЙ!" : "ПРИГОТОВЬСЯ…",
-          b.x + 65,
-          b.y - 25,
-        );
+        g.fillText(b.label || "ПРИГОТОВЬСЯ…", b.x + 65, b.y - 25);
       }
       b.dir = p.x < b.x ? -1 : 1;
-      if (w.region !== 0 || !drawMother(this, game))
+      if (
+        !(w.region === 0 ? drawMother(this, game) : drawRegionBoss(this, game))
+      )
         drawCreature(g, this.assets, b.key, b, t, {
           size: w.region === 0 ? 235 : 195,
         });
@@ -379,7 +390,19 @@ export class Renderer {
       this.glow(a.x + 16, a.y + 12, 30, r.glow, 0.6);
       g.fillStyle = r.color;
       g.beginPath();
-      g.ellipse(a.x + 16, a.y + 12, a.w / 2, a.h / 2, 0, 0, TAU);
+      if (w.region >= 3) {
+        const cx = a.x + a.w / 2,
+          cy = a.y + a.h / 2;
+        for (let i = 0; i < 8; i++) {
+          const angle = (i * Math.PI) / 4 + t,
+            radius = i % 2 ? a.w / 4 : a.w / 2;
+          const x = cx + Math.cos(angle) * radius,
+            y = cy + Math.sin(angle) * radius;
+          i ? g.lineTo(x, y) : g.moveTo(x, y);
+        }
+        g.closePath();
+      } else
+        g.ellipse(a.x + a.w / 2, a.y + a.h / 2, a.w / 2, a.h / 2, 0, 0, TAU);
       g.fill();
     }
     const ready = w.tokens.every((a) => a.collected) && b.dead;
@@ -437,6 +460,7 @@ export class Renderer {
       g.fillRect(a.x, a.y, a.size, a.size);
     }
     g.globalAlpha = 1;
+    regionForeground(this, game);
     g.restore();
     const fog = g.createLinearGradient(0, 525, 0, 620);
     fog.addColorStop(0, "#03101800");
@@ -449,7 +473,7 @@ export class Renderer {
     shade.addColorStop(1, "#030b1600");
     g.fillStyle = shade;
     g.fillRect(0, 0, view, 170);
-    if (w.region === 0) drawForestMinimap(this, game);
+    regionMinimap(this, game);
     this.frameCount++;
     const now = performance.now();
     if (now - this.lastFps >= 1000) {

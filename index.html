@@ -76,6 +76,8 @@
           <button id="heroes-menu" class="text-button heroes-link">
             Познакомиться с героями <span>↗</span>
           </button>
+          <button id="town-menu" class="text-button heroes-link">Лагерь / Город</button>
+          <button id="growth-menu" class="text-button heroes-link">Развитие героя</button>
           <button id="bestiary-menu" class="text-button heroes-link">
             Бестиарий <span>↗</span>
           </button>
@@ -121,7 +123,7 @@
             <div id="hearts" aria-label="Здоровье"></div>
           </div>
           <div class="hud-center">
-            <span class="hud-eyebrow">СВЕТЛЯЧКИ</span>
+            <span class="hud-eyebrow">ЖЕТОНЫ МУХ</span>
             <div id="token-count"></div>
           </div>
           <div class="hud-right">
@@ -142,26 +144,56 @@
         </div>
         <div id="toast" class="toast" role="status"></div>
         <div class="game-bottom">
-          <span id="objective">Следуй за светлячками. Найди всех пятерых.</span
+          <span id="objective">Исследуй тропы. Найди пять жетонов мух.</span
           ><span id="keyboard-hint"
             >← → Движение · ↑ Прыжок / от стены · ↓ Рывок · ПРОБЕЛ Атака</span
           >
         </div>
-        <div id="touch-controls" class="touch-controls">
-          <div class="touch-move">
-            <button data-control="left" aria-label="Влево">◀</button
-            ><button data-control="right" aria-label="Вправо">▶</button>
+        <div
+          id="touch-controls"
+          class="touch-controls"
+          role="group"
+          aria-label="Экранное управление"
+        >
+          <div class="touch-move" role="group" aria-label="Движение">
+            <span class="touch-caption" aria-hidden="true">Движение</span>
+            <button data-control="left" aria-label="Влево">
+              <svg viewBox="0 0 32 32" aria-hidden="true">
+                <path d="m19 8-8 8 8 8" />
+              </svg>
+            </button>
+            <span class="touch-pivot" aria-hidden="true"></span>
+            <button data-control="right" aria-label="Вправо">
+              <svg viewBox="0 0 32 32" aria-hidden="true">
+                <path d="m13 8 8 8-8 8" />
+              </svg>
+            </button>
           </div>
-          <div class="touch-actions">
+          <div class="touch-actions" role="group" aria-label="Действия">
             <button data-control="dash" class="touch-dash" aria-label="Рывок">
-              ➟</button
-            ><button data-control="jump" aria-label="Прыжок">↑</button
-            ><button
+              <svg viewBox="0 0 32 32" aria-hidden="true">
+                <path d="M5 11h9M3 16h8M5 21h9m3-14 9 9-9 9m-2-9h11" />
+              </svg>
+              <span aria-hidden="true">Рывок</span>
+            </button>
+            <button data-control="jump" class="touch-jump" aria-label="Прыжок">
+              <svg viewBox="0 0 32 32" aria-hidden="true">
+                <path d="M16 24V7m-8 8 8-8 8 8M8 26h16" />
+              </svg>
+              <span aria-hidden="true">Прыжок</span>
+            </button>
+            <button
               data-control="attack"
               class="touch-attack"
               aria-label="Атака или действие"
             >
-              ⚔
+              <svg viewBox="0 0 40 40" aria-hidden="true">
+                <path
+                  d="m16 25 15-18 3-1v7L20 29m-8-8 12 12M16 25l-7 8m-2-2 4 4"
+                />
+                <path class="touch-spark" d="M10 7v6m-3-3h6m17 17v6m-3-3h6" />
+              </svg>
+              <span aria-hidden="true">Атака</span>
             </button>
           </div>
         </div>

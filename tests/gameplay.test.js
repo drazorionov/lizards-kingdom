@@ -16,7 +16,7 @@ globalThis.document = {
 };
 globalThis.requestAnimationFrame = () => 1;
 globalThis.cancelAnimationFrame = () => {};
-function setup(region = 0) {
+function setup(region = 0, hero = 0) {
   const messages = [];
   const completed = [];
   const renderer = { viewWidth: 1100, prepare() {} };
@@ -28,7 +28,7 @@ function setup(region = 0) {
     hud() {},
     complete: (r) => completed.push(r),
   });
-  game.start(region, sanitizeProgress({ region }));
+  game.start(region, sanitizeProgress({ region, hero }));
   return { game, messages, completed };
 }
 function ticks(g, n) {
@@ -44,57 +44,59 @@ function walk(g, x) {
   assert.ok(i < 600, "walk reaches " + x);
 }
 for (let region = 0; region < 6; region++)
-  test(`chapter ${region + 1} is traversable using movement, double jumps and attacks`, () => {
-    const { game: g, completed } = setup(region);
-    ticks(g, 30);
-    // Replay legal keyboard actions against the real production simulation.
-    // Fixtures cover each authored route, including gaps and wall-jump shafts.
-    for (const index of routes.regions[region]) {
-      const action = routes.actions[index];
-      g.release("left");
-      g.release("right");
-      if (action.dir) g.press(action.dir < 0 ? "left" : "right");
-      if (action.jump === "press") {
-        g.release("jump");
-        g.press("jump");
+  for (const hero of [0, 1])
+    test(`hero ${hero}: chapter ${region + 1} is traversable using movement, double jumps and attacks`, () => {
+      const { game: g, completed } = setup(region, hero);
+      ticks(g, 30);
+      // Replay legal keyboard actions against the real production simulation.
+      // Fixtures cover each authored route, including gaps and wall-jump shafts.
+      for (const index of (hero === 1 && routes.urmasa?.[region]) ||
+        routes.regions[region]) {
+        const action = routes.actions[index];
+        g.release("left");
+        g.release("right");
+        if (action.dir) g.press(action.dir < 0 ? "left" : "right");
+        if (action.jump === "press") {
+          g.release("jump");
+          g.press("jump");
+        }
+        g.press("attack");
+        ticks(g, routes.framesPerAction);
       }
+      assert.ok(
+        g.world.tokens.slice(0, 4).every((t) => t.collected),
+        "all four exploration tokens",
+      );
+      g.clearInput();
       g.press("attack");
-      ticks(g, routes.framesPerAction);
-    }
-    assert.ok(
-      g.world.tokens.slice(0, 4).every((t) => t.collected),
-      "all four exploration tokens",
-    );
-    g.clearInput();
-    g.press("attack");
-    for (let i = 0; i < 1200 && !g.world.boss.dead; i++) {
-      if (
-        g.world.boss.phase === 1 &&
-        g.world.boss.timer < 0.3 &&
-        g.player.grounded
-      )
-        g.press("jump");
-      if (g.player.vy > 0) g.release("jump");
-      const target = region === 0 ? g.world.boss.x - 65 : 3940;
-      g.release("left");
-      g.release("right");
-      if (g.player.x < target - 5) g.press("right");
-      else if (region === 0 && g.player.x > target + 5) g.press("left");
-      g.step(1 / 60);
-    }
-    g.clearInput();
-    assert.equal(
-      g.world.boss.dead,
-      true,
-      `guardian defeat: x=${g.player.x}, y=${g.player.y}, hp=${g.world.boss.hp}, health=${g.player.health}`,
-    );
-    walk(g, 4190);
-    ticks(g, 10);
-    assert.equal(g.world.tokens[4].collected, true, "guarded token");
-    walk(g, 4380);
-    assert.deepEqual(completed, [region]);
-    assert.deepEqual(g.progress.cleared, [region]);
-  });
+      for (let i = 0; i < 1200 && !g.world.boss.dead; i++) {
+        if (
+          g.world.boss.phase === 1 &&
+          g.world.boss.timer < 0.3 &&
+          g.player.grounded
+        )
+          g.press("jump");
+        if (g.player.vy > 0) g.release("jump");
+        const target = g.world.boss.x - 65;
+        g.release("left");
+        g.release("right");
+        if (g.player.x < target - 5) g.press("right");
+        else if (g.player.x > target + 5) g.press("left");
+        g.step(1 / 60);
+      }
+      g.clearInput();
+      assert.equal(
+        g.world.boss.dead,
+        true,
+        `guardian defeat: x=${g.player.x}, y=${g.player.y}, hp=${g.world.boss.hp}, health=${g.player.health}`,
+      );
+      walk(g, 4190);
+      ticks(g, 10);
+      assert.equal(g.world.tokens[4].collected, true, "guarded token");
+      walk(g, 4380);
+      assert.deepEqual(completed, [region]);
+      assert.deepEqual(g.progress.cleared, [region]);
+    });
 test("falling preserves tokens and respawns at an activated checkpoint", () => {
   const { game: g } = setup();
   g.checkpointUsed = true;
@@ -112,18 +114,34 @@ test("clearing a boss alone does not unlock a chapter; defeat persists separatel
   assert.equal(g.world.boss.dead, true);
   assert.equal(g.progress.cleared.length, 0);
 });
-test("each boss telegraphs before releasing a damaging wave", () => {
+test("each regional boss telegraphs all four attacks and enters a second phase", () => {
   for (let r = 1; r < 6; r++) {
     const { game: g } = setup(r);
     g.player.x = 3650;
+    g.player.y = 446;
+    g.player.invulnerable = 100;
+    const tells = new Set(),
+      strikes = new Set();
+    let hazard = false,
+      volley = false;
+    for (let i = 0; i < 2400; i++) {
+      ticks(g, 1);
+      const b = g.world.boss;
+      if (b.state === "windup") tells.add(b.moveIndex);
+      if (b.state === "strike") {
+        assert.ok(tells.has(b.moveIndex));
+        strikes.add(b.moveIndex);
+      }
+      hazard ||= g.world.hazards.length > 0;
+      volley ||= g.world.projectiles.length > 0;
+    }
+    assert.equal(tells.size, 4);
+    assert.equal(strikes.size, 4);
+    assert.ok(hazard && volley);
+    g.world.boss.hp = g.world.boss.maxHp / 2;
+    g.world.boss.state = "rest";
     ticks(g, 1);
-    assert.equal(g.world.boss.active, true);
-    assert.equal(g.world.projectiles.length, 0);
-    ticks(g, 128);
-    assert.equal(g.world.boss.phase, 1);
-    assert.equal(g.world.projectiles.length, 0);
-    ticks(g, 62);
-    assert.ok(g.world.projectiles.length > 0);
+    assert.ok(g.world.boss.enraged);
   }
 });
 test("wall slide and alternating wall kicks climb the shaft using either hero", () => {
