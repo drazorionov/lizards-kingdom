@@ -1,10 +1,6 @@
 import atlas from "./forest-cave-art.json" with { type: "json" };
 
-import {
-  caveSurfaces,
-  caveCorners,
-  caveAttachments,
-} from "./cave-decoration.js";
+import { caveSurfaces, caveCorners } from "./cave-decoration.js";
 import { surfaceFade } from "./surface-fade.js";
 
 const layouts = new WeakMap();
@@ -14,7 +10,6 @@ function layout(faces) {
     layouts.set(faces, {
       surfaces,
       corners: caveCorners(surfaces),
-      attachments: caveAttachments(surfaces),
     });
   }
   return layouts.get(faces);
@@ -162,25 +157,43 @@ export function drawCaveEdge(r, x, y, width, ceiling, seed = 0) {
     scale = ceiling ? 0.3 : 0.36;
   const tileWidth = (im.width - 90) * scale,
     height = im.height * scale;
-  g.save();
-  g.beginPath();
-  g.rect(x, y - 110, width, 260);
-  g.clip();
-  const start = Math.floor(x / tileWidth) * tileWidth;
-  for (let tx = start; tx < x + width; tx += tileWidth) {
-    g.drawImage(
-      im,
-      45,
-      0,
-      im.width - 90,
-      im.height,
-      tx,
-      y - frame.surface * scale,
-      tileWidth + 0.5,
-      height,
-    );
+  // Feather the strip into the wall material instead of cutting its ends
+  // with a hard rectangle. Cache each static span and retain world texture phase.
+  const cache = prepared.get(image);
+  const phase = x - Math.floor(x / tileWidth) * tileWidth;
+  const key = `edge:${seed % 2}:${width}:${phase}`;
+  let patch = cache.get(key);
+  if (!patch) {
+    patch = document.createElement("canvas");
+    patch.width = Math.ceil(width);
+    patch.height = Math.ceil(height);
+    const ctx = patch.getContext("2d");
+    for (let tx = -phase; tx < width; tx += tileWidth)
+      ctx.drawImage(
+        im,
+        45,
+        0,
+        im.width - 90,
+        im.height,
+        tx,
+        0,
+        tileWidth + 0.5,
+        height,
+      );
+    const fade = ctx.createLinearGradient(0, 0, width, 0);
+    const rim = Math.min(32, width * 0.45) / width;
+    for (let i = 0; i <= 12; i++) {
+      const t = i / 12,
+        alpha = t * t * (3 - 2 * t);
+      fade.addColorStop(t * rim, `rgba(0,0,0,${alpha})`);
+      fade.addColorStop(1 - t * rim, `rgba(0,0,0,${alpha})`);
+    }
+    ctx.globalCompositeOperation = "destination-in";
+    ctx.fillStyle = fade;
+    ctx.fillRect(0, 0, width, patch.height);
+    cache.set(key, patch);
   }
-  g.restore();
+  g.drawImage(patch, x, y - frame.surface * scale);
   return true;
 }
 
@@ -232,6 +245,21 @@ function cornerPatch(image, frame) {
   g.globalCompositeOperation = "destination-in";
   g.fillStyle = fade;
   g.fillRect(0, 0, w, h);
+  for (const horizontal of [true, false]) {
+    const extent = horizontal ? w : h;
+    const edge = g.createLinearGradient(
+      0,
+      0,
+      horizontal ? extent : 0,
+      horizontal ? 0 : extent,
+    );
+    edge.addColorStop(0, "#0000");
+    edge.addColorStop(0.12, "#000");
+    edge.addColorStop(0.88, "#000");
+    edge.addColorStop(1, "#0000");
+    g.fillStyle = edge;
+    g.fillRect(0, 0, w, h);
+  }
   cache.set(frame, canvas);
   return canvas;
 }
@@ -266,110 +294,6 @@ export function drawCaveConnections(r, game, faces, solid) {
     );
   }
   g.restore();
-}
-
-export function drawCaveAttachments(r, game, faces) {
-  const g = r.ctx;
-  for (const prop of layout(faces).attachments) {
-    if (
-      prop.x < game.camera - 100 ||
-      prop.x > game.camera + r.viewWidth + 100 ||
-      prop.y < game.cameraY - 100 ||
-      prop.y > game.cameraY + 720
-    )
-      continue;
-    const floor = prop.kind === "floor";
-    if (
-      floor &&
-      DETAILS.some(
-        ([x, y]) => Math.abs(x - prop.x) < 120 && Math.abs(y - prop.y) < 20,
-      )
-    )
-      continue;
-    const kind = floor ? "details" : "attachments",
-      image = r.assets["forest-cave-" + kind];
-    const frame = atlas[kind]?.[prop.frame];
-    if (!image || !frame) continue;
-    const [sx, sy, sw, sh] = frame.rect,
-      height = prop.size,
-      width = (height * sw) / sh;
-    // Keep ornaments out of the opposite wall in narrow climbing shafts.
-    const out = prop.side === "left" ? -1 : 1;
-    const bounds = floor
-      ? { x: prop.x - width / 2, y: prop.y - height, w: width, h: height - 8 }
-      : prop.kind === "ceiling"
-        ? { x: prop.x - width / 2, y: prop.y + 8, w: width, h: height - 8 }
-        : {
-            x: prop.x + (out < 0 ? -width : 8),
-            y: prop.y - height / 2,
-            w: Math.max(1, width - 8),
-            h: height,
-          };
-    if (
-      game.world.platforms.some(
-        (s) =>
-          s.solid &&
-          s.x < bounds.x + bounds.w &&
-          s.x + s.w > bounds.x &&
-          s.y < bounds.y + bounds.h &&
-          s.y + s.h > bounds.y,
-      )
-    )
-      continue;
-    g.save();
-    g.translate(prop.x, prop.y);
-    if (!floor) g.globalAlpha *= 0.5;
-    if (prop.kind === "wall") g.scale(out, 1);
-    g.drawImage(
-      image,
-      sx,
-      sy,
-      sw,
-      sh,
-      floor || prop.kind === "ceiling" ? -width / 2 : -5,
-      floor ? -height + 4 : prop.kind === "ceiling" ? -5 : -height / 2,
-      width,
-      height,
-    );
-    g.restore();
-  }
-}
-
-// Authored landmarks rest on the same solid surfaces used by the player.
-// Their silhouettes are decoration behind actors, never invisible obstacles.
-const DETAILS = [
-  [210, 500, 0, 80],
-  [600, 500, 2, 98],
-  [1280, 420, 3, 66],
-  [1650, 1050, 5, 64],
-  [2110, 1450, 6, 64],
-  [2300, 1050, 7, 90],
-  [2680, 380, 1, 115],
-  [3250, 500, 4, 86],
-  [3720, 500, 0, 108],
-];
-export function drawCaveLandmarks(r, game) {
-  const image = r.assets["forest-cave-details"];
-  if (!image) return;
-  for (const [x, y, id, height] of DETAILS) {
-    if (
-      x < game.camera - 180 ||
-      x > game.camera + r.viewWidth + 180 ||
-      y < game.cameraY ||
-      y - height > game.cameraY + 620
-    )
-      continue;
-    const rect = atlas.details[id].rect,
-      width = (rect[2] * height) / rect[3];
-    r.ctx.drawImage(
-      image,
-      ...rect,
-      x - width / 2,
-      y - height + 5,
-      width,
-      height,
-    );
-  }
 }
 
 export function caveStoneTexture(r) {

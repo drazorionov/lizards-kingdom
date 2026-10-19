@@ -6,10 +6,9 @@ import json
 root = Path(__file__).resolve().parents[1]
 atlas = {}
 for name, cols, rows in [('floors', 1, 2), ('ceilings', 1, 2),
-                         ('walls', 2, 1), ('details', 4, 2),
+                         ('walls', 2, 1),
                          ('corners-floor-left', 4, 4), ('corners-floor-right', 4, 4),
-                         ('corners-ceiling-left', 4, 4), ('corners-ceiling-right', 4, 4),
-                         ('attachments', 4, 4)]:
+                         ('corners-ceiling-left', 4, 4), ('corners-ceiling-right', 4, 4)]:
     source = root / f'art/forest-caverns/{name}-source.png'
     im = Image.open(source).convert('RGBA')
     frames = []
@@ -17,12 +16,6 @@ for name, cols, rows in [('floors', 1, 2), ('ceilings', 1, 2),
         for col in range(cols):
             left, top = round(im.width * col / cols), round(im.height * row / rows)
             right, bottom = round(im.width * (col + 1) / cols), round(im.height * (row + 1) / rows)
-            if name == 'details':
-                # The generated objects use unequal gutters; retain complete
-                # root tips rather than cutting them at an assumed grid line.
-                cuts = [0, 384, 780, 1216, 1536] if row == 0 else [0, 425, 790, 1185, 1536]
-                left, right = cuts[col], cuts[col + 1]
-                top, bottom = (0, 540) if row == 0 else (540, 1024)
             alpha = im.getchannel('A').crop((left, top, right, bottom))
             box = alpha.point(lambda v: 255 if v > 96 else 0).getbbox()
             assert box, f'Missing {name} frame {row * cols + col}'

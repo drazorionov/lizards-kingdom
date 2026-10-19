@@ -63,12 +63,10 @@ await page.evaluate(async () => {
             "cave-floors",
             "cave-ceilings",
             "cave-walls",
-            "cave-details",
             "cave-corners-floor-left",
             "cave-corners-floor-right",
             "cave-corners-ceiling-left",
             "cave-corners-ceiling-right",
-            "cave-attachments",
           ]
         : ["background", "terrain", "ledges", "boss-attacks-atlas"]
       ).map((k) => load(prefix + "-" + k)),

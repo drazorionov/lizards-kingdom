@@ -1,10 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {
-  caveSurfaces,
-  caveCorners,
-  caveAttachments,
-} from "../src/cave-decoration.js";
+import { caveSurfaces, caveCorners } from "../src/cave-decoration.js";
 import { exposedTerrainEdges } from "../src/wall-surfaces.js";
 import { surfaceFade } from "../src/surface-fade.js";
 
@@ -28,20 +24,6 @@ test("join art distinguishes all four inner and outer corner orientations", () =
   assert.equal(inner.length, 4);
   assert.equal(new Set(inner.map((c) => c.kind)).size, 4);
   assert.ok(inner.every((c) => c.frame >= 8 && c.frame < 16));
-});
-
-test("surface decoration is sparse and does not reroll with traversal order", () => {
-  const walls = Array.from({ length: 100 }, (_, i) => ({
-    side: "left",
-    axis: 100 + i * 70,
-    a: 100,
-    b: 250,
-    horizontal: false,
-  }));
-  const chosen = caveAttachments(walls);
-  assert.equal(chosen.length, 10);
-  assert.deepEqual(chosen, caveAttachments([...walls].reverse()));
-  assert.ok(new Set(chosen.map((p) => p.frame)).size >= 4);
 });
 
 test("surface fade has round end caps, a smooth falloff, and a black interior", () => {

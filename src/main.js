@@ -140,12 +140,10 @@ async function loadCreatureAssets(region) {
         "cave-floors",
         "cave-ceilings",
         "cave-walls",
-        "cave-details",
         "cave-corners-floor-left",
         "cave-corners-floor-right",
         "cave-corners-ceiling-left",
         "cave-corners-ceiling-right",
-        "cave-attachments",
       ].map(async (name) => {
         const key = "forest-" + name;
         if (assets[key]) return;

@@ -2,9 +2,7 @@ import {
   drawCaveBody,
   drawCaveEdge,
   drawCaveWalls,
-  drawCaveLandmarks,
   drawCaveConnections,
-  drawCaveAttachments,
 } from "./forest-cave-surfaces.js";
 import { exposedTerrainEdges } from "./wall-surfaces.js";
 import { hasService, TOKEN_TYPES } from "./progression.js";
@@ -119,8 +117,6 @@ export function drawCavernTerrain(r, game, ledge) {
     }
   }
   drawCaveConnections(r, game, faces, solid);
-  drawCaveAttachments(r, game, faces);
-  drawCaveLandmarks(r, game);
 }
 
 function discovered(world, point, all) {
