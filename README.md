@@ -119,3 +119,11 @@ Progression is shared between Quirel and Urmasa: `min(10, 1 + floor(tokens / 5) 
 Save schema v2 migrates the original localStorage key and existing Neon JSON records without a SQL migration. All added IDs and services are bounded and merged monotonically. Levels and combat stats are derived from discoveries rather than trusted as stored numbers.
 
 `art/expansion/` contains the references, exact built-in image-generation prompts and chosen PNG sources. `scripts/prepare-expansion.py` packs the runtime WebP sheets and records source bounds. `tests/secret-routes.json` replays all 30 secrets using production keyboard input; no teleportation or debug mutation is needed in those traversal tests. Browser scene QA uses a separate local fixture solely to inspect each rendered animation frame.
+
+Forest surface gardens use the approved six-composition sheet in
+`art/forest-caverns/overlay-concepts-v1.png`. Run
+`python3 scripts/prepare-forest-overlays.py` to encode the runtime atlas and its
+registered anchors/gutter polygons. Deterministic, spaced wall/ceiling/corner
+placements replace the tiny growth sprites. Artwork stays upright when mirrored;
+the existing thickness-aware mask preserves black interiors without changing
+collision geometry. `scripts/forest-cavern-qa.mjs` verifies rendering and dark cores.

@@ -6,6 +6,7 @@ import {
   caveSkins,
   skinOpacity,
   caveGrowth,
+  caveOverlays,
 } from "../src/cave-decoration.js";
 import { exposedTerrainEdges } from "../src/wall-surfaces.js";
 import { buildForest } from "../src/forest.js";
@@ -126,4 +127,34 @@ test("skin falloff reaches black smoothly without seams between colliders", () =
       (a, b) => a.side.localeCompare(b.side) || a.axis - b.axis,
     );
   assert.deepEqual(ordered(whole), ordered(split));
+});
+
+test("composed overlays cover all six motifs sparsely with stable anchors", () => {
+  const world = buildForest();
+  const solid = world.platforms.filter((s) => s.solid && !s.absent);
+  const faces = solid.map((s) => {
+    const edges = exposedTerrainEdges(s, solid);
+    if (s.x === 0) edges.left = [];
+    if (s.y === 0) edges.top = [];
+    if (s.x + s.w === world.width) edges.right = [];
+    if (s.y + s.h === world.height) edges.bottom = [];
+    return { s, edges };
+  });
+  const exposed = caveSurfaces(faces);
+  const gardens = caveOverlays(exposed);
+  assert.deepEqual(
+    [...new Set(gardens.map((p) => p.frame))].sort(),
+    [0, 1, 2, 3, 4, 5],
+  );
+  assert.ok(gardens.length >= 6 && gardens.length <= 12);
+  assert.ok(
+    gardens.some((p) => p.x === 760 && p.y === 500),
+    "opening room gets a corner garden",
+  );
+  assert.deepEqual(gardens, caveOverlays([...exposed].reverse()));
+  for (const [i, p] of gardens.entries()) {
+    assert.ok(p.height <= 150 && Math.abs(p.flip) === 1);
+    for (const q of gardens.slice(i + 1))
+      assert.ok(Math.hypot(p.x - q.x, p.y - q.y) >= 240);
+  }
 });

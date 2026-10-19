@@ -175,3 +175,45 @@ export function caveCorners(surfaces) {
   }
   return corners;
 }
+
+// Larger composed gardens occupy occasional stable landmarks. Mirror only
+// horizontally so mushrooms and hanging leaves always retain their gravity.
+export function caveOverlays(surfaces) {
+  const corners = caveCorners(surfaces)
+    .filter((c) => c.scale >= 0.28)
+    .map((c) => {
+      const floor = c.kind.includes("floor"),
+        left = c.kind.endsWith("left");
+      const frame = floor ? (c.inner ? 3 : 0) : c.inner ? 4 : 2;
+      return {
+        x: c.x,
+        y: c.y,
+        frame,
+        flip: floor && c.inner ? (left ? 1 : -1) : left ? -1 : 1,
+        height: floor ? 150 : 120,
+        seed: artHash("overlay", c.x, c.y),
+      };
+    });
+  const featured = corners.filter((p) => {
+    const family = corners
+      .filter((q) => q.frame === p.frame)
+      .sort((a, b) =>
+        p.frame === 0 ? a.x - b.x || a.y - b.y : a.seed - b.seed,
+      );
+    return family.indexOf(p) < Math.max(1, Math.round(family.length * 0.2));
+  });
+  const walls = caveGrowth(surfaces).map((p, i) => ({
+    ...p,
+    frame: p.ceiling ? 2 : i % 2 ? 1 : 5,
+    flip: p.side === "left" ? -1 : 1,
+    height: p.ceiling ? 100 : 150,
+  }));
+  const chosen = [];
+  for (const p of [...featured, ...walls].sort(
+    (a, b) => a.seed - b.seed || a.x - b.x || a.y - b.y,
+  )) {
+    if (chosen.every((q) => Math.hypot(q.x - p.x, q.y - p.y) >= 240))
+      chosen.push(p);
+  }
+  return chosen;
+}

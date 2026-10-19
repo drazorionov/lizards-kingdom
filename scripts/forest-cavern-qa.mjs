@@ -64,7 +64,7 @@ await page.evaluate(async () => {
             "cave-walls-v2",
             "cave-joins-floor-v2",
             "cave-joins-ceiling-v2",
-            "cave-growth-v2",
+            "cave-overlays-v1",
           ]
         : ["background", "terrain", "ledges", "boss-attacks-atlas"]
       ).map((k) => load(prefix + "-" + k)),

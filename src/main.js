@@ -142,7 +142,7 @@ async function loadCreatureAssets(region) {
         "cave-walls-v2",
         "cave-joins-floor-v2",
         "cave-joins-ceiling-v2",
-        "cave-growth-v2",
+        "cave-overlays-v1",
       ].map(async (name) => {
         const key = "forest-" + name;
         if (assets[key]) return;

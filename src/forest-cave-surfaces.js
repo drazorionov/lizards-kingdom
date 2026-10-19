@@ -1,16 +1,18 @@
 import atlas from "./forest-cave-art.json" with { type: "json" };
+import overlayArt from "./forest-overlays.json" with { type: "json" };
 import {
   artHash,
   caveSurfaces,
   caveCorners,
   caveSkins,
   skinOpacity,
-  caveGrowth,
+  caveOverlays,
 } from "./cave-decoration.js";
 
 const layouts = new WeakMap();
 const prepared = new WeakMap();
 const masks = new WeakMap();
+const overlayMasks = new WeakMap();
 const views = new WeakMap();
 
 function layout(faces) {
@@ -19,7 +21,7 @@ function layout(faces) {
     layouts.set(faces, {
       skins: caveSkins(surfaces),
       corners: caveCorners(surfaces),
-      growth: caveGrowth(surfaces),
+      growth: caveOverlays(surfaces),
     });
   }
   return layouts.get(faces);
@@ -192,58 +194,84 @@ function finishSkins(r, game, faces, view) {
   g.globalCompositeOperation = "source-over";
   r.ctx.drawImage(view, game.camera, game.cameraY);
 }
+function overlayPatch(image, frame) {
+  const cache = cacheFor(image);
+  if (cache.has(frame)) return cache.get(frame);
+  const [x, y, w, h] = frame.rect;
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const g = canvas.getContext("2d");
+  g.beginPath();
+  frame.polygon.forEach(([px, py], i) =>
+    i ? g.lineTo(px, py) : g.moveTo(px, py),
+  );
+  g.closePath();
+  g.clip();
+  g.drawImage(image, x, y, w, h, 0, 0, w, h);
+  cache.set(frame, canvas);
+  return canvas;
+}
+function overlayMask(world, faces, solid) {
+  const cached = overlayMasks.get(world);
+  if (cached?.faces === faces) return cached.canvas;
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.ceil(world.width / 2);
+  canvas.height = Math.ceil(world.height / 2);
+  const g = canvas.getContext("2d");
+  g.fillStyle = "#000";
+  g.fillRect(0, 0, canvas.width, canvas.height);
+  // Keep the complete silhouette in open air. Inside terrain, reuse the
+  // thickness-aware fade so even a decorated narrow wall keeps a dark core.
+  g.save();
+  g.scale(0.5, 0.5);
+  for (const s of solid) g.clearRect(s.x, s.y, s.w, s.h);
+  g.restore();
+  g.drawImage(skinMask(world, faces), 0, 0);
+  overlayMasks.set(world, { faces, canvas });
+  return canvas;
+}
 function drawGrowth(r, game, faces, solid) {
-  const image = r.assets["forest-cave-growth-v2"];
+  const image = r.assets["forest-cave-overlays-v1"];
   if (!image) return;
+  const view = viewFor(r),
+    g = view.getContext("2d");
+  g.clearRect(0, 0, view.width, view.height);
+  g.save();
+  g.translate(-game.camera, -game.cameraY);
   for (const p of layout(faces).growth) {
     if (
-      p.x < game.camera - 50 ||
-      p.x > game.camera + r.viewWidth + 50 ||
-      p.y < game.cameraY - 50 ||
-      p.y > game.cameraY + 670
+      p.x < game.camera - 200 ||
+      p.x > game.camera + r.viewWidth + 200 ||
+      p.y < game.cameraY - 200 ||
+      p.y > game.cameraY + 820
     )
       continue;
-    const frame = atlas["growth-v2"][p.frame];
-    const [sx, sy, sw, sh] = frame.rect;
-    const scale = p.height / sh,
-      width = sw * scale;
-    const out = p.side === "left" ? -1 : 1;
-    const bounds = p.ceiling
-      ? { x: p.x - width / 2, y: p.y + 2, w: width, h: p.height }
-      : {
-          x: out > 0 ? p.x + 2 : p.x - width,
-          y: p.y - p.height / 2,
-          w: width - 2,
-          h: p.height,
-        };
-    if (
-      solid.some(
-        (s) =>
-          s.x < bounds.x + bounds.w &&
-          s.x + s.w > bounds.x &&
-          s.y < bounds.y + bounds.h &&
-          s.y + s.h > bounds.y,
-      )
-    )
-      continue;
-    const g = r.ctx;
+    const frame = overlayArt[p.frame],
+      patch = overlayPatch(image, frame);
+    const scale = p.height / frame.rect[3];
     g.save();
     g.translate(p.x, p.y);
-    g.scale(p.ceiling ? 1 : out, 1);
-    g.globalAlpha *= 0.78;
-    g.drawImage(
-      image,
-      sx,
-      sy,
-      sw,
-      sh,
-      -frame.anchor[0] * scale,
-      -frame.anchor[1] * scale,
-      width,
-      p.height,
-    );
+    g.scale(p.flip * scale, scale);
+    g.globalAlpha = 0.9;
+    g.drawImage(patch, -frame.anchor[0], -frame.anchor[1]);
     g.restore();
   }
+  g.restore();
+  g.globalCompositeOperation = "destination-in";
+  g.drawImage(
+    overlayMask(game.world, faces, solid),
+    game.camera / 2,
+    game.cameraY / 2,
+    r.viewWidth / 2,
+    310,
+    0,
+    0,
+    r.viewWidth,
+    620,
+  );
+  g.globalCompositeOperation = "source-over";
+  r.ctx.drawImage(view, game.camera, game.cameraY);
 }
 export function drawCaveTerrain(r, game, faces, solid) {
   // Pass 1: black, non-reachable earth, drawn as one collision union.
