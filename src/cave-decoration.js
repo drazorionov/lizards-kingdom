@@ -95,6 +95,38 @@ export function skinOpacity(distance, depth) {
   return (1 - t * t * (3 - 2 * t)) ** 2;
 }
 
+export function caveGrowth(surfaces) {
+  const chosen = [];
+  for (const ceiling of [false, true]) {
+    const candidates = surfaces
+      .filter(
+        (s) =>
+          (ceiling ? s.side === "bottom" : !s.horizontal) && s.b - s.a >= 110,
+      )
+      .flatMap((s) => {
+        const count = Math.max(1, Math.floor((s.b - s.a) / 240));
+        return Array.from({ length: count }, (_, i) => {
+          const a = s.a + ((s.b - s.a) * i) / count;
+          const b = s.a + ((s.b - s.a) * (i + 1)) / count;
+          const seed = artHash("growth", s.side, s.axis, a, b);
+          const along = a + 36 + ((b - a - 72) * ((seed >>> 8) % 1000)) / 1000;
+          return {
+            side: s.side,
+            ceiling,
+            seed,
+            x: ceiling ? along : s.axis,
+            y: ceiling ? s.axis : along,
+            frame: (ceiling ? 4 : 0) + (seed % 4),
+            height: ceiling ? 28 + (seed % 9) : 20 + (seed % 7),
+          };
+        });
+      });
+    candidates.sort((a, b) => a.seed - b.seed || a.x - b.x || a.y - b.y);
+    chosen.push(...candidates.slice(0, Math.round(candidates.length * 0.1)));
+  }
+  return chosen;
+}
+
 export function caveCorners(surfaces) {
   const vertical = surfaces.filter((s) => !s.horizontal);
   const corners = [];

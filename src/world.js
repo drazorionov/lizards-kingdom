@@ -291,6 +291,9 @@ export function sanitizeProgress(value) {
   ].sort();
   return {
     version: 2,
+    resetAt: Number.isFinite(value.resetAt)
+      ? Math.max(0, Math.min(Math.floor(value.resetAt), Date.now() + 60000))
+      : 0,
     secrets: cleanRegions(value.secrets, 5),
     revealed: cleanRegions(value.revealed, 5),
     broken: cleanRegions(value.broken, 80),
@@ -327,6 +330,9 @@ export function mergeProgress(local, remote) {
   if (!local) return sanitizeProgress(remote);
   const a = sanitizeProgress(local),
     b = sanitizeProgress(remote);
+  // A new journey replaces every achievement from the previous journey,
+  // even if an old tab saved later or the reset was performed offline.
+  if (a.resetAt !== b.resetAt) return a.resetAt > b.resetAt ? a : b;
   const newer = a.updatedAt >= b.updatedAt ? a : b;
   return {
     ...newer,

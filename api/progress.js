@@ -52,7 +52,7 @@ export default async function handler(req, res) {
     }
     const progress = sanitizeProgress(req.body);
     if (!progress) return res.status(400).json({ error: "Invalid progress" });
-    await sql`INSERT INTO journeys(id,progress) VALUES(${id},${JSON.stringify(progress)}::jsonb) ON CONFLICT(id) DO UPDATE SET progress=EXCLUDED.progress, updated_at=NOW() WHERE COALESCE((journeys.progress->>'updatedAt')::bigint,0) <= (EXCLUDED.progress->>'updatedAt')::bigint`;
+    await sql`INSERT INTO journeys(id,progress) VALUES(${id},${JSON.stringify(progress)}::jsonb) ON CONFLICT(id) DO UPDATE SET progress=EXCLUDED.progress, updated_at=NOW() WHERE (COALESCE((journeys.progress->>'resetAt')::bigint,0), COALESCE((journeys.progress->>'updatedAt')::bigint,0)) <= ((EXCLUDED.progress->>'resetAt')::bigint, (EXCLUDED.progress->>'updatedAt')::bigint)`;
     return res.status(200).json({ saved: true });
   } catch (error) {
     console.error("Journey database unavailable:", error.code || error.name);

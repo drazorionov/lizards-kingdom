@@ -6,7 +6,7 @@ import { CreatureShowcase } from "./creature-showcase.js";
 import { CREATURES, REGION_CREATURES, BOSSES } from "./creatures.js";
 import { HeroShowcase } from "./hero-showcase.js";
 import { REGIONS, sanitizeProgress } from "./world.js";
-import { SaveStore } from "./save.js";
+import { SaveStore, SAVE_KEY } from "./save.js";
 import { Sound } from "./audio.js";
 import { Renderer } from "./renderer.js";
 import { Game } from "./engine.js";
@@ -28,8 +28,9 @@ let heroShowcase,
 const unlocked = (i) =>
   i === 0 || progress.cleared.includes(i - 1) || progress.visited.includes(i);
 function save(p = progress) {
-  progress = { ...p, hero: selectedHero };
-  store.update(progress);
+  const value = store.update({ ...p, hero: selectedHero });
+  if (value.resetAt > (p.resetAt || 0)) returnToNewJourney(value);
+  else progress = value;
 }
 function updateMenu() {
   $("#region-cards").innerHTML = REGIONS.map(
@@ -141,6 +142,7 @@ async function loadCreatureAssets(region) {
         "cave-walls-v2",
         "cave-joins-floor-v2",
         "cave-joins-ceiling-v2",
+        "cave-growth-v2",
       ].map(async (name) => {
         const key = "forest-" + name;
         if (assets[key]) return;
@@ -320,6 +322,7 @@ function showModal(kind, html) {
   $("#pause").inert = true;
   $("#pause").setAttribute("aria-expanded", "true");
   modalKind = kind;
+  $("#reset-progress").classList.toggle("hidden", kind === "reset");
   $("#modal-content").innerHTML = html;
   $("#modal").classList.remove("hidden");
   requestAnimationFrame(() => $("#modal-close").focus());
@@ -331,6 +334,7 @@ function closeModal(resume = true) {
   heroShowcase = null;
   $("#modal").classList.add("hidden");
   modalKind = "";
+  $("#reset-progress").classList.remove("hidden");
   $("#menu").inert = false;
   $("#game").inert = false;
   $("#pause").inert = false;
@@ -395,6 +399,41 @@ function goHome() {
   $("#menu").classList.remove("hidden");
   updateMenu();
   $("#start").focus();
+}
+function returnToNewJourney(value) {
+  ++startSerial;
+  game?.stop();
+  progress = value;
+  selectedHero = value.hero;
+  if (game) game.progress = value;
+  closeModal(false);
+  $("#game").classList.add("hidden");
+  $("#menu").classList.remove("hidden");
+  $("#start").disabled = false;
+  updateMenu();
+  $("#start").focus();
+}
+function showResetProgress() {
+  if (modalKind === "reset") return;
+  showModal(
+    "reset",
+    `<div class="eyebrow">НОВОЕ ПРИКЛЮЧЕНИЕ</div><h2 id="modal-title">Сбросить весь прогресс?</h2><p>Открытые главы, жетоны, тайны, побеждённые стражи, улучшения и поручения города будут удалены для обоих героев. Отменить сброс нельзя.</p><p>Выбранный герой, сложность и звук сохранятся. Сброс синхронизируется с облаком при подключении.</p><div class="modal-actions"><button id="reset-cancel" class="primary-button">Оставить мой прогресс</button><button id="reset-confirm" class="secondary-button danger-button">Сбросить прогресс</button></div>`,
+  );
+  $("#reset-cancel").onclick = showPause;
+  $("#reset-confirm").onclick = () => {
+    game?.stop();
+    returnToNewJourney(store.reset());
+  };
+  requestAnimationFrame(() => $("#reset-cancel")?.focus());
+}
+function acceptStoreValue(value) {
+  const activeReset = game?.running ? game.progress.resetAt : progress.resetAt;
+  if (value.resetAt > activeReset) returnToNewJourney(value);
+  else if (!game?.running) {
+    progress = value;
+    selectedHero = value.hero;
+    updateMenu();
+  }
 }
 async function showHeroes() {
   showModal(
@@ -576,6 +615,7 @@ $("#sound").onclick = () => {
     enabled ? "Выключить звук" : "Включить звук",
   );
 };
+$("#reset-progress").onclick = showResetProgress;
 $("#fullscreen").onclick = async () => {
   $("#fullscreen-status").textContent = "";
   try {
@@ -651,22 +691,23 @@ window.addEventListener("pagehide", () => {
   store.flush();
 });
 window.addEventListener("online", () => {
-  store.connect().then((value) => {
-    if (!game?.running) {
-      progress = value;
-      selectedHero = value.hero;
-      updateMenu();
+  store.connect().then(acceptStoreValue);
+});
+window.addEventListener("storage", (event) => {
+  if (event.key !== SAVE_KEY) return;
+  try {
+    const value = sanitizeProgress(JSON.parse(event.newValue));
+    const activeReset = game?.running
+      ? game.progress.resetAt
+      : progress.resetAt;
+    if (value && value.resetAt > activeReset) {
+      store.value = value;
+      returnToNewJourney(value);
     }
-  });
+  } catch {}
 });
 updateMenu();
-store.connect().then((value) => {
-  if (!game?.running) {
-    progress = value;
-    selectedHero = value.hero;
-    updateMenu();
-  }
-});
+store.connect().then(acceptStoreValue);
 // Read-only diagnostic surface for browser QA; no gameplay mutation hooks in production.
 Object.defineProperty(window, "__kingdom", {
   value: {

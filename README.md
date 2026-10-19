@@ -32,6 +32,10 @@ Each surface skin reaches at most 36 world pixels inward, or 38% of the distance
 
 The four active skin atlases, generated with built-in image generation, are `art/forest-caverns/{edges,walls,joins-floor,joins-ceiling}-v2-source.png`; exact prompts are in `art/forest-caverns/skin-prompts.json`. `scripts/prepare-cavern-assets.py` preserves generated transparency and records sprite planes/anchors. `scripts/forest-cavern-qa.mjs` checks both textured faces and black centers of thin walls/roofs, compact joins, all forest chambers and destructible-wall phases.
 
+Sparse wall mushrooms and short neon ceiling leaves use a fifth atlas, `growth-v2-source.png`, with its built-in image-generation prompt in `growth-prompt.json`. Placement is deterministic, selects about 10% of eligible long surface stretches, and skips growth that would intersect another solid. Sprites are 20–36 world pixels tall and preserve the terrain's dark core.
+
+The general menu includes **Сбросить прогресс** with a separate confirmation. It resets both heroes' shared progression and returns to the first chapter while retaining hero, difficulty and sound preferences. Saves carry a `resetAt` marker: cloud merges and database writes compare this before ordinary timestamps, so stale saves cannot resurrect an earlier journey. Offline resets synchronize on reconnect, and another open tab stops its old journey when it receives the reset. No database migration is needed. `scripts/reset-qa.mjs` verifies the UI with isolated browser storage and mocked cloud responses; it never resets a real cloud journey.
+
 ## Development
 
 Requires Node 20.19+ (Node 22 recommended).

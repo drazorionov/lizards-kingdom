@@ -5,6 +5,7 @@ import {
   caveCorners,
   caveSkins,
   skinOpacity,
+  caveGrowth,
 } from "./cave-decoration.js";
 
 const layouts = new WeakMap();
@@ -18,6 +19,7 @@ function layout(faces) {
     layouts.set(faces, {
       skins: caveSkins(surfaces),
       corners: caveCorners(surfaces),
+      growth: caveGrowth(surfaces),
     });
   }
   return layouts.get(faces);
@@ -190,6 +192,59 @@ function finishSkins(r, game, faces, view) {
   g.globalCompositeOperation = "source-over";
   r.ctx.drawImage(view, game.camera, game.cameraY);
 }
+function drawGrowth(r, game, faces, solid) {
+  const image = r.assets["forest-cave-growth-v2"];
+  if (!image) return;
+  for (const p of layout(faces).growth) {
+    if (
+      p.x < game.camera - 50 ||
+      p.x > game.camera + r.viewWidth + 50 ||
+      p.y < game.cameraY - 50 ||
+      p.y > game.cameraY + 670
+    )
+      continue;
+    const frame = atlas["growth-v2"][p.frame];
+    const [sx, sy, sw, sh] = frame.rect;
+    const scale = p.height / sh,
+      width = sw * scale;
+    const out = p.side === "left" ? -1 : 1;
+    const bounds = p.ceiling
+      ? { x: p.x - width / 2, y: p.y + 2, w: width, h: p.height }
+      : {
+          x: out > 0 ? p.x + 2 : p.x - width,
+          y: p.y - p.height / 2,
+          w: width - 2,
+          h: p.height,
+        };
+    if (
+      solid.some(
+        (s) =>
+          s.x < bounds.x + bounds.w &&
+          s.x + s.w > bounds.x &&
+          s.y < bounds.y + bounds.h &&
+          s.y + s.h > bounds.y,
+      )
+    )
+      continue;
+    const g = r.ctx;
+    g.save();
+    g.translate(p.x, p.y);
+    g.scale(p.ceiling ? 1 : out, 1);
+    g.globalAlpha *= 0.78;
+    g.drawImage(
+      image,
+      sx,
+      sy,
+      sw,
+      sh,
+      -frame.anchor[0] * scale,
+      -frame.anchor[1] * scale,
+      width,
+      p.height,
+    );
+    g.restore();
+  }
+}
 export function drawCaveTerrain(r, game, faces, solid) {
   // Pass 1: black, non-reachable earth, drawn as one collision union.
   const g = r.ctx;
@@ -225,6 +280,7 @@ export function drawCaveTerrain(r, game, faces, solid) {
   drawConnections(surface, r.assets, game, faces, r.viewWidth);
   surface.restore();
   finishSkins(r, game, faces, view);
+  drawGrowth(r, game, faces, solid);
 }
 // Isolated pass used by visual regression checks.
 export function drawCaveConnections(r, game, faces) {

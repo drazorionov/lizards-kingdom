@@ -1182,6 +1182,14 @@ summary {
 .menu-settings .save-status {
   margin-left: auto;
 }
+.danger-button {
+  color: #e8a99f;
+  border-color: #a35e5666;
+}
+.danger-button:hover {
+  background: #713a3338;
+  border-color: #ca8a7d;
+}
 
 #fullscreen-status:empty {
   display: none;

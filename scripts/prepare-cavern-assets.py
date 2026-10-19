@@ -10,7 +10,8 @@ import json
 root = Path(__file__).resolve().parents[1]
 atlas = {}
 for name, cols, rows in [('edges-v2', 1, 4), ('walls-v2', 4, 1),
-                         ('joins-floor-v2', 4, 4), ('joins-ceiling-v2', 4, 4)]:
+                         ('joins-floor-v2', 4, 4), ('joins-ceiling-v2', 4, 4),
+                         ('growth-v2', 4, 2)]:
     source = root / f'art/forest-caverns/{name}-source.png'
     im = Image.open(source).convert('RGBA')
     frames = []
@@ -35,6 +36,9 @@ for name, cols, rows in [('edges-v2', 1, 4), ('walls-v2', 4, 1),
                             if sum(a.crop((0, y, a.width, y + 1)).histogram()[181:]) > a.width * .65]
                 assert occupied, f'No material band in {name}'
                 frame['surface'] = occupied[0]
+            elif name == 'growth-v2':
+                frame['anchor'] = [(x1 - x0) * (.12 if row == 0 else .5),
+                                   (y1 - y0) * (.5 if row == 0 else .02)]
             else:
                 # The generator places turns relative to the painted bounds,
                 # not consistently at cell center. Register that actual turn.

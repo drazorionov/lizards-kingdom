@@ -5,6 +5,7 @@ import {
   caveCorners,
   caveSkins,
   skinOpacity,
+  caveGrowth,
 } from "../src/cave-decoration.js";
 import { exposedTerrainEdges } from "../src/wall-surfaces.js";
 import { buildForest } from "../src/forest.js";
@@ -13,6 +14,24 @@ const surfaces = (solids) =>
   caveSurfaces(
     solids.map((s) => ({ s, edges: exposedTerrainEdges(s, solids) })),
   );
+test("forest growth stays sparse, avoids floors and remains stable on redraw", () => {
+  const eligible = Array.from({ length: 100 }, (_, i) => ({
+    side: i % 2 ? "left" : "bottom",
+    axis: i * 200,
+    a: 0,
+    b: 180,
+    horizontal: i % 2 === 0,
+  }));
+  const chosen = caveGrowth(eligible);
+  assert.equal(chosen.length, 10);
+  assert.equal(chosen.filter((p) => p.ceiling).length, 5);
+  assert.ok(chosen.every((p) => p.height <= 36 && p.side !== "top"));
+  assert.deepEqual(chosen, caveGrowth([...eligible].reverse()));
+  assert.deepEqual(
+    caveGrowth([{ side: "top", axis: 100, a: 0, b: 1000, horizontal: true }]),
+    [],
+  );
+});
 test("join art distinguishes all four inner and outer corner orientations", () => {
   const block = [{ x: 100, y: 100, w: 300, h: 300, solid: true }];
   const outer = caveCorners(surfaces(block));
