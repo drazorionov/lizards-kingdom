@@ -552,6 +552,7 @@ export class Game {
         w.checkpoint = camp;
         this.checkpointUsed = true;
         if (w.region === 0) this.progress.forestCamp = camp.id || "hearth";
+        else (this.progress.regionCamps ||= {})[w.region] = camp.id;
         p.health = this.maxHealth();
         this.emit(p.x, p.y, this.region.color, 20);
         this.cb.sound("checkpoint");
@@ -582,6 +583,7 @@ export class Game {
     const all = w.tokens.every((t) => t.collected);
     if (
       p.x > 4370 + (w.arenaOffset || 0) &&
+      p.y < 560 &&
       all &&
       w.boss.dead &&
       !this.finished
@@ -594,7 +596,12 @@ export class Game {
       this.cb.sound("win");
       this.pause();
       this.cb.complete(w.region);
-    } else if (p.x > 4330 + (w.arenaOffset || 0) && !all && !this.gateHint) {
+    } else if (
+      p.x > 4330 + (w.arenaOffset || 0) &&
+      p.y < 560 &&
+      !all &&
+      !this.gateHint
+    ) {
       this.gateHint = true;
       this.cb.toast(
         "Для врат нужны пять жетонов. Вернись по тропе за остальными.",
@@ -630,7 +637,7 @@ export class Game {
       return;
     }
     if (
-      p.x > (w.region === 0 ? 3500 + w.arenaOffset : 3600) &&
+      p.x > (w.region === 0 ? 3500 : 3600) + w.arenaOffset &&
       p.y < 560 &&
       !b.active
     ) {
@@ -681,7 +688,7 @@ export class Game {
       return;
     }
     stepRegionBoss(this, dt);
-    p.x = clamp(p.x, 3480, 4400 - p.w);
+    p.x = clamp(p.x, 3480 + w.arenaOffset, 4400 + w.arenaOffset - p.w);
   }
 
   rematchMother() {
@@ -694,7 +701,7 @@ export class Game {
     w.projectiles = [];
     w.hazards = [];
     this.finished = false;
-    this.player.x = w.region === 0 ? 3560 + w.arenaOffset : 3660;
+    this.player.x = (w.region === 0 ? 3560 : 3660) + w.arenaOffset;
     this.player.y = 446;
     this.player.vx = 0;
     this.player.vy = 0;

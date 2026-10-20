@@ -1,0 +1,35 @@
+{
+  "generator": "Built-in image_gen",
+  "assets": [
+    {
+      "region": 1,
+      "key": "marsh",
+      "source": "marsh-surface-v1.png",
+      "prompt": "Use case: stylized-concept. Asset: a seamless square material texture for the walls, ceilings, floors and corners of a richly painted dark fantasy 2D platform game. wet near-black slate, deeply entwined olive roots, sparse emerald moss, subtle jade bioluminescent veins, drowned ancient stonework. Single continuous surface filling the ENTIRE image, front-on orthographic texture, not a landscape or an object. Painterly realistic material detail with strong organic forms, muted indigo-black shadow palette; mineral accents cover less than 5 percent, no huge luminous streaks. Even scale across image, no focal point, no border, no text, no perspective, no white, no ornaments or standalone objects. Seamlessly tileable left/right and top/bottom. All four edges full material. The game masks this texture to narrow exposed surfaces with smoothly darkened interiors. Texture must feel handcrafted and match detailed side-view fantasy platforms. 1024 square."
+    },
+    {
+      "region": 2,
+      "key": "storm",
+      "source": "storm-surface-v1.png",
+      "prompt": "Use case: stylized-concept. Asset: a seamless square material texture for the walls, ceilings, floors and corners of a richly painted dark fantasy 2D platform game. fractured midnight-blue mountain granite, blue-grey slate layers, sparse pale silver lichen, very fine icy cyan mineral seams, storm-weathered stone. Single continuous surface filling the ENTIRE image, front-on orthographic texture, not a landscape or an object. Painterly realistic material detail with strong organic forms, muted indigo-black shadow palette; mineral accents cover less than 5 percent, no huge luminous streaks. Even scale across image, no focal point, no border, no text, no perspective, no white, no ornaments or standalone objects. Seamlessly tileable left/right and top/bottom. All four edges full material. The game masks this texture to narrow exposed surfaces with smoothly darkened interiors. Texture must feel handcrafted and match detailed side-view fantasy platforms. 1024 square."
+    },
+    {
+      "region": 3,
+      "key": "belfry",
+      "source": "belfry-surface-v1.png",
+      "prompt": "Use case: stylized-concept. Asset: a seamless square material texture for the walls, ceilings, floors and corners of a richly painted dark fantasy 2D platform game. weathered charcoal gothic masonry, broken dark sandstone blocks, thin oxidized bronze joints and subtle warm ember fissures, sparse rust-red roots. Single continuous surface filling the ENTIRE image, front-on orthographic texture, not a landscape or an object. Painterly realistic material detail with strong organic forms, muted indigo-black shadow palette; mineral accents cover less than 5 percent, no huge luminous streaks. Even scale across image, no focal point, no border, no text, no perspective, no white, no ornaments or standalone objects. Seamlessly tileable left/right and top/bottom. All four edges full material. The game masks this texture to narrow exposed surfaces with smoothly darkened interiors. Texture must feel handcrafted and match detailed side-view fantasy platforms. 1024 square."
+    },
+    {
+      "region": 4,
+      "key": "depths",
+      "source": "depths-surface-v1.png",
+      "prompt": "Use case: stylized-concept. Asset: a seamless square material texture for the walls, ceilings, floors and corners of a richly painted dark fantasy 2D platform game. deep navy cavern basalt, ancient blue stone fragments and thin cobalt mineral veins, faint cool blue lichen, abyssal rock. Single continuous surface filling the ENTIRE image, front-on orthographic texture, not a landscape or an object. Painterly realistic material detail with strong organic forms, muted indigo-black shadow palette; mineral accents cover less than 5 percent, no huge luminous streaks. Even scale across image, no focal point, no border, no text, no perspective, no white, no ornaments or standalone objects. Seamlessly tileable left/right and top/bottom. All four edges full material. The game masks this texture to narrow exposed surfaces with smoothly darkened interiors. Texture must feel handcrafted and match detailed side-view fantasy platforms. 1024 square."
+    },
+    {
+      "region": 5,
+      "key": "lake",
+      "source": "lake-surface-v1.png",
+      "prompt": "Use case: stylized-concept. Asset: a seamless square material texture for the walls, ceilings, floors and corners of a richly painted dark fantasy 2D platform game. dark violet geode rock, restrained amethyst crystal facets embedded in black stone, tiny lavender mineral veins and subtle purple moss. Single continuous surface filling the ENTIRE image, front-on orthographic texture, not a landscape or an object. Painterly realistic material detail with strong organic forms, muted indigo-black shadow palette; mineral accents cover less than 5 percent, no huge luminous streaks. Even scale across image, no focal point, no border, no text, no perspective, no white, no ornaments or standalone objects. Seamlessly tileable left/right and top/bottom. All four edges full material. The game masks this texture to narrow exposed surfaces with smoothly darkened interiors. Texture must feel handcrafted and match detailed side-view fantasy platforms. 1024 square."
+    }
+  ]
+}

@@ -1,3 +1,4 @@
+import { REGION_CAMP_IDS } from "./expanded-regions.js";
 import { FOREST_CAMPS } from "./forest-expansion.js";
 import { SERVICES } from "./progression.js";
 import { buildLevel } from "./levels.js";
@@ -59,6 +60,12 @@ export const REGIONS = [
   },
 ];
 export const WORLD_WIDTH = 4550;
+const roomIds = new Map();
+function validRoomIds(region) {
+  if (!roomIds.has(region))
+    roomIds.set(region, new Set(buildLevel(region).rooms.map((r) => r.id)));
+  return roomIds.get(region);
+}
 export const PHYSICS = {
   speed: 270,
   gravity: 1500,
@@ -78,7 +85,11 @@ export function createWorld(region = 0, progress = {}) {
   const arenaOffset = level.arenaOffset || 0;
   const checkpoints = level.checkpoints || [level.checkpoint];
   const checkpoint =
-    checkpoints.find((c) => c.id === progress.forestCamp) || level.checkpoint;
+    checkpoints.find(
+      (c) =>
+        c.id ===
+        (region === 0 ? progress.forestCamp : progress.regionCamps?.[region]),
+    ) || level.checkpoint;
   const platforms = level.platforms.filter(
     (s) => !s.breakable || !(progress.broken?.[region] || []).includes(s.id),
   );
@@ -98,9 +109,10 @@ export function createWorld(region = 0, progress = {}) {
   const enemies = [];
   for (const platform of platforms) {
     if (
+      (level.nodes && !platform.encounter) ||
       platform.wall ||
       platform.ceiling ||
-      (region !== 0 && platform.x > 3500) ||
+      (region !== 0 && platform.x > 3430 + arenaOffset && platform.y < 700) ||
       (region === 0 &&
         ((platform.x >= 3430 && platform.x < 4550) ||
           platform.x >= 3430 + arenaOffset)) ||
@@ -117,11 +129,10 @@ export function createWorld(region = 0, progress = {}) {
       if (
         x < 540 ||
         Math.abs(x - 2240) < 160 ||
-        (region === 0 &&
-          checkpoints.some(
-            (c) =>
-              Math.abs(x - c.x) < 160 && Math.abs(platform.y - c.y - 50) < 100,
-          )) ||
+        checkpoints.some(
+          (c) =>
+            Math.abs(x - c.x) < 160 && Math.abs(platform.y - c.y - 50) < 100,
+        ) ||
         platforms.some(
           (s) => s.wall && !s.terrain && x + 100 > s.x && x < s.x + s.w + 40,
         )
@@ -166,6 +177,8 @@ export function createWorld(region = 0, progress = {}) {
     height: level.height || 690,
     rooms: level.rooms,
     caverns: level.caverns,
+    openSky: level.openSky,
+    routeSummary: level.routeSummary,
     signs: level.signs || [],
     spawn: level.spawn || { x: 110, y: 410 },
     discovered: new Set(progress.discovered?.[region] || []),
@@ -185,7 +198,7 @@ export function createWorld(region = 0, progress = {}) {
     title: level.title,
     platforms,
     tokens,
-    enemies: region === 0 ? enemies : enemies.filter((e) => e.x < 3430),
+    enemies,
     checkpoint: checkpoint || { x: 2240, y: 450 },
     elder: { x: 240, y: level.spawn.y },
     boss: {
@@ -321,7 +334,7 @@ export function sanitizeProgress(value) {
             (Array.isArray(value.discovered?.[i])
               ? value.discovered[i]
               : []
-            ).filter((id) => buildLevel(i).rooms.some((r) => r.id === id)),
+            ).filter((id) => validRoomIds(i).has(id)),
           ),
         ],
       ]),
@@ -335,6 +348,14 @@ export function sanitizeProgress(value) {
     cleared,
     defeated,
     checkpoint: value.checkpoint === true,
+    regionCamps: Object.fromEntries(
+      REGIONS.map((_, i) => [
+        i,
+        REGION_CAMP_IDS.includes(value.regionCamps?.[i])
+          ? value.regionCamps[i]
+          : "crossroads",
+      ]),
+    ),
     forestCamp: FOREST_CAMPS.some((c) => c.id === value.forestCamp)
       ? value.forestCamp
       : "hearth",

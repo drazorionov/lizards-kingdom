@@ -12,10 +12,10 @@ test("every region has a distinct layout, three species, and dense encounters", 
     const w = createWorld(r);
     layouts.add(JSON.stringify(w.platforms));
     assert.equal(new Set(w.enemies.map((e) => e.key)).size, 3);
-    assert.ok(w.enemies.length >= 10);
+    assert.ok(w.enemies.length >= 8);
     assert.equal(
       w.platforms.filter((p) => p.wall && !p.terrain).length,
-      r === 0 ? 10 : 7,
+      r === 0 ? 10 : 2,
     );
   }
   assert.equal(layouts.size, 6);

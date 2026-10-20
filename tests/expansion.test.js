@@ -217,7 +217,13 @@ for (let r = 0; r < 6; r++)
   test(`all five secrets in region ${r + 1} are reachable with legal keyboard actions`, () => {
     const g = game(r);
     tick(g, 30);
-    for (const index of r === 0 ? forestRoute.route : secretRoutes.regions[r]) {
+    for (const index of r === 0
+      ? forestRoute.route
+      : JSON.parse(
+          readFileSync(
+            new URL(`./region-${r}-hero-0-route.json`, import.meta.url),
+          ),
+        ).route) {
       const a = (r === 0 ? forestRoute.actions : secretRoutes.actions)[index];
       g.release("left");
       g.release("right");

@@ -67,7 +67,13 @@ await page.evaluate(async () => {
             "cave-joins-ceiling-v2",
             "cave-overlays-v1",
           ]
-        : ["background", "terrain", "ledges", "boss-attacks-atlas"]
+        : [
+            "background",
+            "terrain",
+            "ledges",
+            "boss-attacks-atlas",
+            "surface-v1",
+          ]
       ).map((k) => load(prefix + "-" + k)),
     );
     await Promise.all(

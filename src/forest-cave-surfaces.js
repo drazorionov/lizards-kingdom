@@ -298,6 +298,28 @@ function drawUncachedTerrain(r, game, faces, solid) {
   surface.clearRect(0, 0, view.width, view.height);
   surface.save();
   surface.translate(-game.camera, -game.cameraY);
+  if (game.world.region !== 0) {
+    const material = r.assets[game.world.artKey + "-surface-v1"];
+    if (material) {
+      // One world-aligned material continues around every bend. The shared
+      // thickness mask feathers all faces and their joins into the dark core.
+      const size = 320;
+      for (
+        let y = Math.floor(game.cameraY / size) * size;
+        y < game.cameraY + 620;
+        y += size
+      )
+        for (
+          let x = Math.floor(game.camera / size) * size;
+          x < game.camera + r.viewWidth;
+          x += size
+        )
+          surface.drawImage(material, x, y, size, size);
+    }
+    surface.restore();
+    finishSkins(r, game, faces, view);
+    return;
+  }
   // Pass 2: independently oriented narrow floor, wall and ceiling skins.
   for (const s of layout(faces).skins) {
     const x = s.horizontal ? s.a : s.axis,
@@ -330,7 +352,10 @@ export function drawCaveTerrain(r, game, faces, solid) {
     "joins-ceiling-v2",
     "overlays-v1",
   ];
-  const images = keys.map((k) => r.assets["forest-cave-" + k]);
+  const images =
+    game.world.region === 0
+      ? keys.map((k) => r.assets["forest-cave-" + k])
+      : [r.assets[game.world.artKey + "-surface-v1"]];
   let cached = terrainTiles.get(game.world);
   if (
     cached?.faces !== faces ||
@@ -383,6 +408,14 @@ export function drawCaveConnections(r, game, faces) {
   finishSkins(r, game, faces, view);
 }
 export function caveStoneTexture(r) {
+  if (r.regionIndex > 0)
+    return (
+      r.assets[
+        ["forest", "marsh", "storm", "belfry", "depths", "lake"][
+          r.regionIndex
+        ] + "-surface-v1"
+      ] || null
+    );
   const image = r.assets["forest-cave-walls-v2"];
   if (!image) return null;
   const cache = cacheFor(image);

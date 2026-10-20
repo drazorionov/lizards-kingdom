@@ -166,6 +166,7 @@ async function loadCreatureAssets(region) {
   if (region !== 0)
     await loadExtra(assets, [
       `${REGION_KEYS[region]}-background`,
+      `${REGION_KEYS[region]}-surface-v1`,
       `${REGION_KEYS[region]}-ledges`,
       `${REGION_KEYS[region]}-terrain`,
       `${REGION_KEYS[region]}-boss-attacks-atlas`,
@@ -193,6 +194,7 @@ async function loadCreatureAssets(region) {
         "background",
         "ledges",
         "terrain",
+        "surface-v1",
         "boss-attacks-atlas",
       ])
         delete assets[`${prefix}-${suffix}`];

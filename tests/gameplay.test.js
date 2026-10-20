@@ -1,6 +1,18 @@
 import forestUrmasa from "./forest-expanded-urmasa-route.json" with { type: "json" };
 import forestRoute from "./forest-expanded-route.json" with { type: "json" };
 import { readFileSync } from "node:fs";
+const expandedRoutes = Object.fromEntries(
+  Array.from({ length: 5 }, (_, i) => [
+    i + 1,
+    [0, 1].map((hero) =>
+      JSON.parse(
+        readFileSync(
+          new URL(`./region-${i + 1}-hero-${hero}-route.json`, import.meta.url),
+        ),
+      ),
+    ),
+  ]),
+);
 const routes = JSON.parse(
   readFileSync(new URL("./routes.json", import.meta.url)),
 );
@@ -56,10 +68,12 @@ for (let region = 0; region < 6; region++)
         ? hero
           ? forestUrmasa.route
           : forestRoute.route
-        : (hero === 1 && routes.urmasa?.[region]) || routes.regions[region]) {
-        const action = (region === 0 ? forestRoute.actions : routes.actions)[
-          index
-        ];
+        : expandedRoutes[region][hero].route) {
+        const action = (
+          region === 0
+            ? forestRoute.actions
+            : expandedRoutes[region][hero].actions
+        )[index];
         g.release("left");
         g.release("right");
         if (action.dir) g.press(action.dir < 0 ? "left" : "right");
@@ -124,7 +138,7 @@ test("clearing a boss alone does not unlock a chapter; defeat persists separatel
 test("each regional boss telegraphs all four attacks and enters a second phase", () => {
   for (let r = 1; r < 6; r++) {
     const { game: g } = setup(r);
-    g.player.x = 3650;
+    g.player.x = 3650 + g.world.arenaOffset;
     g.player.y = 446;
     g.player.invulnerable = 100;
     const tells = new Set(),

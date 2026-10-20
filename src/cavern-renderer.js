@@ -139,7 +139,7 @@ export function cavernMapMarkup(game) {
       ),
     )
     .join(" ");
-  return `<div class="forest-map"><div class="map-viewport" tabindex="0" aria-label="Карта леса: прокрути, чтобы увидеть дальние тропы" data-focus-x="${(p.x + 15) / w.width}" data-focus-y="${(p.y + 27) / w.height}"><svg viewBox="-70 -70 ${w.width + 140} ${w.height + 140}" role="img" aria-label="Дремучий грибной лес: реальные пещеры, тоннели и развилки"><defs><clipPath id="forest-discovery">${w.rooms
+  return `<div class="forest-map"><div class="map-viewport" tabindex="0" aria-label="Карта области: прокрути, чтобы увидеть дальние тропы" data-focus-x="${(p.x + 15) / w.width}" data-focus-y="${(p.y + 27) / w.height}"><svg viewBox="-70 -70 ${w.width + 140} ${w.height + 140}" role="img" aria-label="${game.region.name}: тропы и развилки"><defs><clipPath id="forest-discovery">${w.rooms
     .filter((r) => all || w.discovered.has(r.id))
     .map((r) => rect(r))
     .join("")}</clipPath></defs>
@@ -167,6 +167,6 @@ export function cavernMapMarkup(game) {
     .map((c) => `<path d="M${c.x} ${c.y - 35}l-28 48h56Z" fill="#f3c788"/>`)
     .join("")}
   <circle cx="${p.x + 15}" cy="${p.y + 27}" r="26" fill="#fff7d9" stroke="#6ce2bc" stroke-width="9"/></svg></div>
-  <p>Споровые поля → Старое сердце → крона / Зал фонарей → Висячие сады → Забытое дерево. Глубинные петли соединяют колодцы и привалы. ▲ Тёплый камень сохраняет место возвращения.</p>
-  <div class="secret-list">${w.secrets.map((s) => `<span class="${s.found ? "found" : ""}">1.${s.id + 1} ${s.found ? "✓ " + s.name : hasService(game.progress, "compass") ? s.name : "Неизвестная тайна"}</span>`).join("")}</div></div>`;
+  <p>${w.routeSummary || "Глубинные петли соединяют колодцы и привалы."} ▲ Привал сохраняет место возвращения.</p>
+  <div class="secret-list">${w.secrets.map((s) => `<span class="${s.found ? "found" : ""}">${w.region + 1}.${s.id + 1} ${s.found ? "✓ " + s.name : hasService(game.progress, "compass") ? s.name : "Неизвестная тайна"}</span>`).join("")}</div></div>`;
 }

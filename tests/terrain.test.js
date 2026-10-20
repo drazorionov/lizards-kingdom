@@ -4,7 +4,7 @@ import { Game } from "../src/engine.js";
 import { createWorld, sanitizeProgress } from "../src/world.js";
 import { exposedTerrainEdges } from "../src/wall-surfaces.js";
 import { movePlayer } from "../src/world.js";
-import { stepWallDebris } from "../src/terrain.js";
+import { stepWallDebris, wallFragments } from "../src/terrain.js";
 
 globalThis.window = { addEventListener() {} };
 globalThis.document = {
@@ -44,7 +44,8 @@ for (let region = 0; region < 6; region++) {
     g.press("attack");
     g.step(1 / 60);
     assert.ok(!g.world.platforms.includes(wall));
-    assert.ok(g.wallDebris.length >= 12);
+    assert.equal(g.wallDebris.length, wallFragments(wall).length);
+    assert.ok(g.wallDebris.length >= 8);
     assert.ok(g.particles.some((p) => p.dust));
     assert.ok(
       !createWorld(region, g.progress).platforms.some((s) => s.id === wall.id),

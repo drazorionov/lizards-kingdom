@@ -23,13 +23,13 @@ export function regionBackground(r, game) {
   g.fillStyle = game.region.sky;
   g.fillRect(0, 0, r.viewWidth, 620);
   if (!im) return;
-  const h = 760,
+  const h = 900,
     w = (h * im.width) / im.height;
   g.drawImage(
     im,
     -Math.max(0, w - r.viewWidth) *
       (game.camera / Math.max(1, game.world.width - r.viewWidth)),
-    -60 - game.cameraY * 0.04,
+    -40 - (200 * game.cameraY) / Math.max(1, game.world.height - 620),
     w,
     h,
   );

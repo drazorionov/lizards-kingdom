@@ -36,7 +36,10 @@ export function stepRegionBoss(game, dt) {
     b.elapsed = 0;
     b.timer = game.progress.mode === "gentle" ? 1.35 : 1;
     b.targetY = p.y + 27;
-    b.targetX = Math.max(3540, Math.min(4240, p.x));
+    b.targetX = Math.max(
+      3540 + w.arenaOffset,
+      Math.min(4240 + w.arenaOffset, p.x),
+    );
     b.fromX = b.x;
     b.label = BOSS_MOVES[r][b.moveIndex];
     if (b.moveIndex === 0 || b.moveIndex === 2) {
@@ -46,7 +49,9 @@ export function stepRegionBoss(game, dt) {
           : [p.x + 15, ...(b.enraged ? [p.x - 165, p.x + 195] : [])];
       for (const x of spots)
         w.hazards.push({
-          x: Math.max(3510, Math.min(4310, x)) - 35,
+          x:
+            Math.max(3510 + w.arenaOffset, Math.min(4310 + w.arenaOffset, x)) -
+            35,
           y: 380,
           w: b.moveIndex === 2 ? 145 : 70,
           h: 120,

@@ -44,11 +44,22 @@ test("expanded regions have vertical climbs, sealed chambers and return tunnels"
   assert.ok(ascent > 180);
   for (let i = 0; i < 6; i++) {
     const w = createWorld(i);
-    assert.equal(w.height, i === 0 ? 2400 : 1600);
-    assert.equal(w.rooms.length, i === 0 ? 24 : 8);
-    assert.ok(w.platforms.some((p) => p.y >= 1400 && p.w > 1000));
-    assert.ok(w.platforms.some((p) => p.breakable && p.secret));
-    assert.ok(w.platforms.filter((p) => p.wall && p.h >= 500).length >= 2);
+    assert.equal(w.height, [2400, 2500, 5400, 6800, 3000, 3400][i]);
+    assert.equal(w.rooms.length, [24, 22, 8, 8, 28, 34][i]);
+    assert.equal(w.checkpoints.length, 5);
+    if ([2, 3].includes(i)) {
+      assert.ok(w.openSky);
+      assert.equal(w.caverns.length, 0);
+      assert.ok(w.platforms.filter((p) => !p.solid).length > 80);
+    } else {
+      assert.ok(w.caverns.length > 30);
+      assert.ok(w.platforms.some((p) => p.breakable && p.shortcut));
+      assert.ok(w.platforms.some((p) => p.terrain && p.solid));
+    }
+    if (i > 0) {
+      const prev = createWorld(i - 1);
+      assert.ok(w.width * w.height > prev.width * prev.height);
+    }
     assert.equal(w.secrets.length, 5);
   }
 });
