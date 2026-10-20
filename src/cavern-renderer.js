@@ -2,6 +2,8 @@ import { drawCaveTerrain } from "./forest-cave-surfaces.js";
 import { exposedTerrainEdges } from "./wall-surfaces.js";
 import { hasService, TOKEN_TYPES } from "./progression.js";
 
+import { minimapLayout, drawMinimapMarkers } from "./minimap.js";
+
 const geometry = new WeakMap();
 const miniatures = new WeakMap();
 function boundaries(world) {
@@ -51,28 +53,30 @@ function discovered(world, point, all) {
 }
 export function drawCavernMinimap(r, game) {
   const g = r.ctx,
-    w = game.world,
-    sw = 170,
-    sh = 68,
-    x = r.viewWidth - 190,
-    y = 100;
+    w = game.world;
   const all = game.progress.quests?.includes("stranger");
-  const signature = `${all}:${[...w.discovered].join(":")}:${w.platforms.length}`;
+  const layout = minimapLayout(r, w, all);
+  const { x, y, width: sw, height: sh, zoom, left, top, unit } = layout;
+  const signature = `${all}:${[...w.discovered].join(":")}:${w.platforms.length}:${sw}:${sh}`;
   let cached = miniatures.get(w);
   if (cached?.signature !== signature) {
     const canvas = document.createElement("canvas");
     // Two pixels per map unit keeps the cached outline crisp on high-DPI screens.
-    canvas.width = sw * 2;
-    canvas.height = sh * 2;
+    canvas.width = Math.ceil(sw * 2);
+    canvas.height = Math.ceil(sh * 2);
     const map = canvas.getContext("2d");
-    map.scale(canvas.width / w.width, canvas.height / w.height);
+    map.scale(canvas.width / sw, canvas.height / sh);
+    map.scale(zoom, zoom);
+    map.translate(-left, -top);
     map.beginPath();
     for (const room of w.rooms)
       if (all || w.discovered.has(room.id))
         map.rect(room.x, room.y, room.w, room.h);
     map.clip();
     map.strokeStyle = "#b5e7ce";
-    map.lineWidth = w.width / (sw * 1.5);
+    map.lineWidth = (1.25 * unit) / zoom;
+    map.lineJoin = "round";
+    map.lineCap = "round";
     map.beginPath();
     for (const { s, edges } of boundaries(w).faces) {
       for (const side of ["top", "bottom", "left", "right"]) {
@@ -90,20 +94,23 @@ export function drawCavernMinimap(r, game) {
       }
     }
     map.stroke();
+    // Interior ledges and broken-wall openings retain their real traversal shape.
+    for (const s of w.platforms) {
+      if (s.solid && !s.breakable) continue;
+      map.strokeStyle = s.breakable ? "#efc581" : "#81c6b0";
+      map.beginPath();
+      if (s.breakable) map.rect(s.x, s.y, s.w, s.h);
+      else {
+        map.moveTo(s.x, s.y);
+        map.lineTo(s.x + s.w, s.y);
+      }
+      map.stroke();
+    }
     cached = { signature, canvas };
     miniatures.set(w, cached);
   }
   g.drawImage(cached.canvas, x, y, sw, sh);
-  g.fillStyle = "#fff2c9";
-  g.beginPath();
-  g.arc(
-    x + ((game.player.x + 15) * sw) / w.width,
-    y + ((game.player.y + 27) * sh) / w.height,
-    3,
-    0,
-    Math.PI * 2,
-  );
-  g.fill();
+  drawMinimapMarkers(r, game, layout, (point) => discovered(w, point, all));
 }
 export function cavernMapMarkup(game) {
   const w = game.world,

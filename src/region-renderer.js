@@ -9,6 +9,7 @@ import {
 } from "./forest-renderer.js";
 import { TOKEN_TYPES, growth, hasService } from "./progression.js";
 import { roomAt } from "./regions.js";
+import { minimapLayout, minimapPoint, drawMinimapMarkers } from "./minimap.js";
 const TAU = Math.PI * 2;
 export function regionBackground(r, game) {
   if (game.world.region === 0) return drawForestBackground(r, game);
@@ -174,44 +175,34 @@ function visibleRoom(w, s) {
 export function regionMinimap(r, game) {
   if (game.world.caverns) return drawCavernMinimap(r, game);
   const g = r.ctx,
-    w = game.world,
-    sw = 170,
-    sh = 60,
-    x = r.viewWidth - 190,
-    y = 100;
+    w = game.world;
+  const all = game.progress.quests?.includes("stranger");
+  const seen = (point) => all || visibleRoom(w, point);
+  const layout = minimapLayout(r, w, all);
+  g.save();
+  g.lineWidth = 1.25 * layout.unit;
   for (const s of w.platforms) {
-    if (!visibleRoom(w, s)) continue;
-    g.fillStyle = s.breakable ? "#dbb879" : game.region.color + "88";
-    g.fillRect(
-      x + (s.x / w.width) * sw,
-      y + (s.y / w.height) * sh,
-      Math.max(1, (s.w / w.width) * sw),
-      Math.max(1, (s.h / w.height) * sh),
-    );
-  }
-  for (const t of w.tokens)
-    if (t.revealed && !t.collected) {
-      g.fillStyle = TOKEN_TYPES[t.type].color;
-      g.fillRect(
-        x + (t.x / w.width) * sw - 1,
-        y + (t.y / w.height) * sh - 1,
-        3,
-        3,
-      );
+    if (!seen(s)) continue;
+    const [x, y] = minimapPoint(layout, s.x, s.y);
+    g.strokeStyle = s.breakable ? "#efc581" : "#b5e7ce";
+    g.beginPath();
+    if (s.solid) g.rect(x, y, s.w * layout.zoom, s.h * layout.zoom);
+    else {
+      g.moveTo(x, y);
+      g.lineTo(x + s.w * layout.zoom, y);
     }
-  g.fillStyle = "#fff5c9";
-  g.beginPath();
-  g.arc(
-    x + ((game.player.x + 15) / w.width) * sw,
-    y + ((game.player.y + 27) / w.height) * sh,
-    3,
-    0,
-    TAU,
-  );
-  g.fill();
-  g.font = "10px Arial";
-  g.textAlign = "center";
-  g.fillText(roomAt(w, game.player)?.name || "", x + sw / 2, y + 77);
+    g.stroke();
+  }
+  for (const t of w.tokens) {
+    if (!t.revealed || t.collected) continue;
+    const [x, y] = minimapPoint(layout, t.x, t.y);
+    g.fillStyle = TOKEN_TYPES[t.type].color;
+    g.beginPath();
+    g.arc(x, y, 2 * layout.unit, 0, TAU);
+    g.fill();
+  }
+  drawMinimapMarkers(r, game, layout, seen);
+  g.restore();
 }
 export function regionMapMarkup(game) {
   if (game.world.caverns) return cavernMapMarkup(game);

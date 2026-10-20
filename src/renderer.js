@@ -58,6 +58,7 @@ export class Renderer {
     this.canvas.height = Math.round(r.height * dpr);
     this.viewWidth = clamp((r.width / r.height) * 620, 820, 1550);
     this.scale = this.canvas.height / 620;
+    this.cssScale = r.height / 620;
     this.viewWidth = this.canvas.width / this.scale;
   }
   prepare(region, world) {
