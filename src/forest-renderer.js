@@ -84,7 +84,7 @@ export function drawForestDetails(renderer, game) {
       Math.abs(sign.y - game.cameraY - 310) > 400
     )
       continue;
-    g.font = "500 20px Manrope, Arial";
+    g.font = "500 12px Manrope, Arial";
     g.textAlign = "center";
     g.shadowColor = "#020b14";
     g.shadowBlur = 5;

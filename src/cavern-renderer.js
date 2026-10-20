@@ -2,7 +2,7 @@ import { drawCaveTerrain } from "./forest-cave-surfaces.js";
 import { exposedTerrainEdges } from "./wall-surfaces.js";
 import { hasService, TOKEN_TYPES } from "./progression.js";
 
-import { minimapLayout, drawMinimapMarkers } from "./minimap.js";
+import { MINIMAP_INK, minimapLayout, drawMinimapMarkers } from "./minimap.js";
 
 const geometry = new WeakMap();
 const miniatures = new WeakMap();
@@ -73,7 +73,7 @@ export function drawCavernMinimap(r, game) {
       if (all || w.discovered.has(room.id))
         map.rect(room.x, room.y, room.w, room.h);
     map.clip();
-    map.strokeStyle = "#b5e7ce";
+    map.strokeStyle = MINIMAP_INK;
     map.lineWidth = (1.25 * unit) / zoom;
     map.lineJoin = "round";
     map.lineCap = "round";
@@ -97,7 +97,7 @@ export function drawCavernMinimap(r, game) {
     // Interior ledges and broken-wall openings retain their real traversal shape.
     for (const s of w.platforms) {
       if (s.solid && !s.breakable) continue;
-      map.strokeStyle = s.breakable ? "#efc581" : "#81c6b0";
+      map.strokeStyle = MINIMAP_INK;
       map.beginPath();
       if (s.breakable) map.rect(s.x, s.y, s.w, s.h);
       else {
@@ -152,14 +152,14 @@ export function cavernMapMarkup(game) {
     .filter((r) => all || w.discovered.has(r.id))
     .map(
       (r) =>
-        `<text x="${r.x + r.w / 2}" y="${r.y + r.h / 2}" text-anchor="middle" dominant-baseline="middle" fill="#f0e7ca" font-size="80">${r.name}</text>`,
+        `<text x="${r.x + r.w / 2}" y="${r.y + r.h / 2}" text-anchor="middle" dominant-baseline="middle" fill="#f0e7ca" font-size="60">${r.name}</text>`,
     )
     .join("")}
   ${w.tokens
     .filter((t) => t.revealed || t.collected)
     .map(
       (t) =>
-        `<circle cx="${t.x}" cy="${t.y}" r="22" fill="${t.collected ? "#49675a" : TOKEN_TYPES[t.type].color}"/>`,
+        `<circle cx="${t.x}" cy="${t.y}" r="22" opacity="${t.collected ? 0.35 : 1}" fill="${t.collected ? "#49675a" : TOKEN_TYPES[t.type].color}"/>`,
     )
     .join("")}
   ${(w.checkpoints || [w.checkpoint])

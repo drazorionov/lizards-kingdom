@@ -1,3 +1,5 @@
+export const MINIMAP_INK = "#d1bf98";
+
 // HUD dimensions are in CSS pixels, independent of the game's world scale.
 export function minimapLayout(renderer, world, all = false) {
   const unit = 1 / (renderer.cssScale || 1);
@@ -63,8 +65,8 @@ export function drawMinimapMarkers(renderer, game, layout, seen) {
     if (!camp || !seen(camp)) return;
     const [x, y] = minimapPoint(layout, camp.x, camp.y);
     const active = game.checkpointUsed && camp === w.checkpoint;
-    g.strokeStyle = active ? "#fff0bb" : "#efc581";
-    g.fillStyle = active ? "#ffe2a0" : "#efc581";
+    g.strokeStyle = MINIMAP_INK;
+    g.fillStyle = MINIMAP_INK;
     g.beginPath();
     g.moveTo(x, y - 5 * u);
     g.lineTo(x - 5 * u, y + 4 * u);
@@ -80,8 +82,8 @@ export function drawMinimapMarkers(renderer, game, layout, seen) {
     if (camps.length > 1) g.fillText(String(index + 1), x, y - 10 * u);
   });
   const [px, py] = minimapPoint(layout, game.player.x + 15, game.player.y + 27);
-  g.fillStyle = "#f5fff9";
-  g.strokeStyle = "#66e8ce";
+  g.fillStyle = MINIMAP_INK;
+  g.strokeStyle = MINIMAP_INK;
   g.beginPath();
   g.arc(px, py, 3 * u, 0, Math.PI * 2);
   g.fill();
@@ -96,10 +98,10 @@ export function drawMinimapMarkers(renderer, game, layout, seen) {
       game.player.y + 27 < room.y + room.h,
   );
   g.font = `500 ${9 * u}px Manrope, Arial`;
-  g.fillStyle = "#d9eee2";
+  g.fillStyle = MINIMAP_INK;
   g.fillText(room?.name || "", layout.x + layout.width / 2, layout.y - 9 * u);
   g.font = `${8 * u}px Manrope, Arial`;
-  g.fillStyle = "#d1dbce";
+  g.fillStyle = MINIMAP_INK;
   g.fillText(
     "● Ты здесь   △ Привал   ◉ Возврат",
     layout.x + layout.width / 2,

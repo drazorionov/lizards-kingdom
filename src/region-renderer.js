@@ -9,7 +9,12 @@ import {
 } from "./forest-renderer.js";
 import { TOKEN_TYPES, growth, hasService } from "./progression.js";
 import { roomAt } from "./regions.js";
-import { minimapLayout, minimapPoint, drawMinimapMarkers } from "./minimap.js";
+import {
+  MINIMAP_INK,
+  minimapLayout,
+  minimapPoint,
+  drawMinimapMarkers,
+} from "./minimap.js";
 const TAU = Math.PI * 2;
 export function regionBackground(r, game) {
   if (game.world.region === 0) return drawForestBackground(r, game);
@@ -77,7 +82,7 @@ export function regionDetails(r, game) {
         Math.abs(s.y - game.cameraY - 310) > 400
       )
         continue;
-      g.font = "18px Manrope, Arial";
+      g.font = "12px Manrope, Arial";
       g.textAlign = "center";
       g.fillStyle = "#eddfbd";
       g.fillText(s.text, s.x, s.y);
@@ -85,7 +90,7 @@ export function regionDetails(r, game) {
     g.restore();
   }
   for (const spring of w.springs || [])
-    r.beacon(spring.x, spring.y, game.time, false);
+    r.beacon(spring.x, spring.y, game.time, false, 110);
   for (const s of w.secrets || []) {
     if (s.found) continue;
     const near = Math.hypot(s.x - game.player.x, s.y - game.player.y) < 250;
@@ -184,7 +189,7 @@ export function regionMinimap(r, game) {
   for (const s of w.platforms) {
     if (!seen(s)) continue;
     const [x, y] = minimapPoint(layout, s.x, s.y);
-    g.strokeStyle = s.breakable ? "#efc581" : "#b5e7ce";
+    g.strokeStyle = MINIMAP_INK;
     g.beginPath();
     if (s.solid) g.rect(x, y, s.w * layout.zoom, s.h * layout.zoom);
     else {
@@ -196,7 +201,7 @@ export function regionMinimap(r, game) {
   for (const t of w.tokens) {
     if (!t.revealed || t.collected) continue;
     const [x, y] = minimapPoint(layout, t.x, t.y);
-    g.fillStyle = TOKEN_TYPES[t.type].color;
+    g.fillStyle = MINIMAP_INK;
     g.beginPath();
     g.arc(x, y, 2 * layout.unit, 0, TAU);
     g.fill();
@@ -215,7 +220,7 @@ export function regionMapMarkup(game) {
     .filter((r) => all || w.discovered.has(r.id))
     .map(
       (r) =>
-        `<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" fill="none" stroke="#8cbaa7" stroke-width="4"/><text x="${r.x + r.w / 2}" y="${r.y + r.h / 2}" text-anchor="middle" dominant-baseline="middle" fill="#f0e7ca" font-size="64">${r.name}</text>`,
+        `<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" fill="none" stroke="#8cbaa7" stroke-width="4"/><text x="${r.x + r.w / 2}" y="${r.y + r.h / 2}" text-anchor="middle" dominant-baseline="middle" fill="#f0e7ca" font-size="48">${r.name}</text>`,
     )
     .join("")}${w.platforms
     .filter(seen)
@@ -227,7 +232,7 @@ export function regionMapMarkup(game) {
     .filter((t) => t.revealed || t.collected)
     .map(
       (t) =>
-        `<circle cx="${t.x}" cy="${t.y}" r="24" fill="${t.collected ? "#52635e" : TOKEN_TYPES[t.type].color}"/>`,
+        `<circle cx="${t.x}" cy="${t.y}" r="24" opacity="${t.collected ? 0.35 : 1}" fill="${t.collected ? "#52635e" : TOKEN_TYPES[t.type].color}"/>`,
     )
     .join("")}${w.secrets
     .filter((s) => s.found)

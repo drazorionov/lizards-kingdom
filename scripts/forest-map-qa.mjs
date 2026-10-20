@@ -48,7 +48,11 @@ for (const [width, height] of [
   });
   assert.ok(ui.controls >= 0.65 && ui.caption >= 0.7 && ui.menu >= 0.7);
   assert.equal(ui.toastBackground, "rgba(0, 0, 0, 0)");
-  assert.ok(ui.toastSize >= 22 && Math.abs(ui.toastCenter - width / 2) < 1);
+  assert.ok(
+    ui.toastSize >= 14 &&
+      ui.toastSize <= 20 &&
+      Math.abs(ui.toastCenter - width / 2) < 1,
+  );
   await page.click("#pause");
   await page.click("#map-pause");
   await page.waitForFunction(

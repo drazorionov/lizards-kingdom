@@ -311,7 +311,7 @@ export class Renderer {
           86,
         );
       g.fillStyle = "#d4c4a0";
-      g.font = "16px Georgia";
+      g.font = "11px Georgia";
       g.textAlign = "center";
       g.save();
       g.globalAlpha *= 0.65;
@@ -497,7 +497,7 @@ export class Renderer {
     g.fillStyle = shade;
     g.fillRect(0, 0, view, 170);
     g.save();
-    g.globalAlpha *= 0.85;
+    g.globalAlpha *= 0.62;
     regionMinimap(this, game);
     g.restore();
     this.frameCount++;
@@ -561,7 +561,7 @@ export class Renderer {
     }
     g.globalAlpha = 1;
   }
-  beacon(x, y, t, active) {
+  beacon(x, y, t, active, captionOffset = 84) {
     const g = this.ctx;
     this.glow(x, y - 35, 70, active ? "#efcd8f" : "#70dfec", 0.18);
     g.fillStyle = "#334546";
@@ -572,12 +572,12 @@ export class Renderer {
     g.bezierCurveTo(x + 27, y - 29, x + 12, y - 13, x, y - 14);
     g.bezierCurveTo(x - 23, y - 16, x - 12, y - 38, x, y - 65);
     g.fill();
-    g.font = "15px Manrope";
+    g.font = "9px Manrope";
     g.textAlign = "center";
     g.fillStyle = "#b9d0c7";
     g.save();
     g.globalAlpha *= 0.65;
-    g.fillText(active ? "ПУТЬ СОХРАНЁН" : "ТЁПЛЫЙ СВЕТ", x, y - 84);
+    g.fillText(active ? "ПУТЬ СОХРАНЁН" : "ТЁПЛЫЙ СВЕТ", x, y - captionOffset);
     g.restore();
   }
   gate(x, y, t, ready) {
