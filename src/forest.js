@@ -184,7 +184,7 @@ export function buildForest() {
   ledge(3230, 500, 220);
   solid(3430, 500, 1120, 180);
   // Tunnel roofs have collision; the art and the navigable space agree.
-  solid(0, 35, 640, 85, { ceiling: true, ground: false });
+  solid(0, 35, 640, 12, { ceiling: true, ground: false });
   solid(1020, 800, 230, 70, { ceiling: true, ground: false });
   solid(1510, 1120, 70, 330, {
     wall: true,

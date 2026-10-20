@@ -25,14 +25,14 @@ const hero = process.argv.includes("--urmasa") ? 1 : 0;
 g.start(0, sanitizeProgress({ checkpoint: returning, hero }));
 const solids = g.world.platforms,
   seals = solids.filter((s) => s.breakable);
-if (!expanded || survey) {
+if (survey) {
   g.world.enemies = [];
   g.world.tokens = [];
   g.world.secrets = [];
   g.world.springs = [];
 }
 g.world.boss.dead = true;
-if (!expanded || survey) g.player.invulnerable = 100000;
+if (survey) g.player.invulnerable = 100000;
 for (let i = 0; i < 30; i++) g.step(1 / 60);
 const actions = [-1, 0, 1].flatMap((dir) => [
   { dir, jump: "hold" },
@@ -172,7 +172,7 @@ function snapshot() {
   };
 }
 function advance(state, index) {
-  if (expanded && state.enemies) {
+  if (state.enemies) {
     g.world.enemies = state.enemies.map((e) => ({ ...e }));
     g.world.projectiles = state.projectiles.map((e) => ({ ...e }));
     g.world.tokens = state.tokens.map((t) => ({ ...t }));
@@ -211,9 +211,7 @@ function advance(state, index) {
     0,
   );
   return {
-    ...(expanded
-      ? snapshot()
-      : { p: { ...g.player, animation: { ...g.player.animation } } }),
+    ...snapshot(),
     mask,
   };
 }
@@ -256,7 +254,7 @@ const key = (s) =>
     s.p.wall,
     s.p.wallKick > 0 ? 1 : 0,
     s.mask,
-    expanded ? s.p.health : 0,
+    s.p.health,
   ].join(",");
 function plan(state, [x, y]) {
   const h = (s) => Math.abs(s.p.x - x) / 45 + Math.abs(s.p.y - y) / 38;
@@ -282,10 +280,8 @@ function plan(state, [x, y]) {
       const s = advance(n.s, i);
       if (
         s.p.y > g.world.height - 50 ||
-        (!expanded && s.p.health < n.s.p.health) ||
-        (expanded &&
-          (Math.abs(s.p.x - n.s.p.x) > 110 ||
-            Math.abs(s.p.y - n.s.p.y) > 200)) ||
+        Math.abs(s.p.x - n.s.p.x) > 110 ||
+        Math.abs(s.p.y - n.s.p.y) > 200 ||
         s.p.x < 40 ||
         s.p.x > g.world.width - 200
       )
@@ -301,13 +297,13 @@ function plan(state, [x, y]) {
     `No route to ${x},${y}; closest ${best?.s.p.x},${best?.s.p.y}; ${iterations} states`,
   );
 }
-let state = { ...(expanded ? snapshot() : { p: { ...g.player } }), mask: 0 };
+let state = { ...snapshot(), mask: 0 };
 const route = [];
 if (expanded) {
   const first = JSON.parse(
     readFileSync(new URL("../tests/forest-route.json", import.meta.url)),
   );
-  for (const i of first.route) {
+  for (const i of (hero && first.urmasa) || first.route) {
     state = advance(state, i);
     route.push(i);
   }
@@ -329,63 +325,21 @@ for (const goal of goals) {
   );
 }
 const fixture = { actions, framesPerAction: 10, route, goals };
-// Check Quirel's slower sweep against live enemy patrols as well as geometry.
-// A brief safe wait at the refuge changes encounter timing without changing physics.
-if (returning) {
-  for (let wait = 0; wait <= 24; wait++) {
-    const real = new Game(
-      { focus() {} },
-      {},
-      { viewWidth: 1100, prepare() {} },
-      {
-        toast() {},
-        sound() {},
-        save() {},
-        hud() {},
-        pause() {},
-        complete() {},
-      },
-    );
-    real.start(0, sanitizeProgress({ hero: 0, checkpoint: true }));
-    for (let i = 0; i < 30; i++) real.step(1 / 60);
-    const inputs = [...Array(wait).fill(2), ...route];
-    for (const index of inputs) {
-      const a = actions[index];
-      real.release("left");
-      real.release("right");
-      if (a.dir) real.press(a.dir < 0 ? "left" : "right");
-      if (a.jump === "press") {
-        real.release("jump");
-        real.press("jump");
-      }
-      real.press("attack");
-      for (let i = 0; i < 10; i++) real.step(1 / 60);
-    }
-    if (
-      Math.abs(real.player.x - 505) < 35 &&
-      Math.abs(real.player.y - 446) < 10
-    ) {
-      fixture.quirel = inputs;
-      break;
-    }
-  }
-  if (!fixture.quirel)
-    throw new Error("Return route fails with live encounters");
-}
-
-writeFileSync(
-  new URL(
-    survey
-      ? "../tests/forest-branches-route.json"
-      : expanded
-        ? hero
-          ? "../tests/forest-expanded-urmasa-route.json"
-          : "../tests/forest-expanded-route.json"
-        : returning
-          ? "../tests/forest-return-route.json"
-          : "../tests/forest-route.json",
-    import.meta.url,
-  ),
-  JSON.stringify(fixture, null, 2) + "\n",
+const output = new URL(
+  survey
+    ? "../tests/forest-branches-route.json"
+    : expanded
+      ? hero
+        ? "../tests/forest-expanded-urmasa-route.json"
+        : "../tests/forest-expanded-route.json"
+      : returning
+        ? "../tests/forest-return-route.json"
+        : "../tests/forest-route.json",
+  import.meta.url,
 );
+if (hero && !expanded) {
+  const previous = JSON.parse(readFileSync(output));
+  previous.urmasa = route;
+  writeFileSync(output, JSON.stringify(previous, null, 2) + "\n");
+} else writeFileSync(output, JSON.stringify(fixture, null, 2) + "\n");
 console.log("Saved", route.length, "legal input actions.");

@@ -1,3 +1,4 @@
+import { caveContours } from "./cave-contours.js";
 import { drawCaveTerrain } from "./forest-cave-surfaces.js";
 import { exposedTerrainEdges } from "./wall-surfaces.js";
 import { hasService, TOKEN_TYPES } from "./progression.js";
@@ -78,20 +79,10 @@ export function drawCavernMinimap(r, game) {
     map.lineJoin = "round";
     map.lineCap = "round";
     map.beginPath();
-    for (const { s, edges } of boundaries(w).faces) {
-      for (const side of ["top", "bottom", "left", "right"]) {
-        for (const [a, b] of edges[side]) {
-          if (side === "top" || side === "bottom") {
-            const y = s.y + (side === "bottom" ? s.h : 0);
-            map.moveTo(s.x + a, y);
-            map.lineTo(s.x + b, y);
-          } else {
-            const x = s.x + (side === "right" ? s.w : 0);
-            map.moveTo(x, s.y + a);
-            map.lineTo(x, s.y + b);
-          }
-        }
-      }
+    for (const { points } of caveContours(boundaries(w).faces)) {
+      points.forEach((p, i) =>
+        i ? map.lineTo(p.x, p.y) : map.moveTo(p.x, p.y),
+      );
     }
     map.stroke();
     // Interior ledges and broken-wall openings retain their real traversal shape.
@@ -120,23 +111,9 @@ export function cavernMapMarkup(game) {
   const rect = (r, extra = "") =>
     `<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" ${extra}/>`;
   const { faces } = boundaries(w);
-  const contour = faces
-    .flatMap(({ s, edges }) =>
-      ["top", "bottom", "left", "right"].flatMap((side) =>
-        edges[side].map(([a, b]) => {
-          const horizontal = side === "top" || side === "bottom";
-          const x = s.x + (side === "right" ? s.w : 0),
-            y = s.y + (side === "bottom" ? s.h : 0);
-          if (
-            (horizontal && (y === 0 || y === w.height)) ||
-            (!horizontal && (x === 0 || x === w.width))
-          )
-            return "";
-          return horizontal
-            ? `M${s.x + a},${y}H${s.x + b}`
-            : `M${x},${s.y + a}V${s.y + b}`;
-        }),
-      ),
+  const contour = caveContours(faces)
+    .map(({ points }) =>
+      points.map((p, i) => `${i ? "L" : "M"}${p.x},${p.y}`).join(" "),
     )
     .join(" ");
   return `<div class="forest-map"><div class="map-viewport" tabindex="0" aria-label="Карта области: прокрути, чтобы увидеть дальние тропы" data-focus-x="${(p.x + 15) / w.width}" data-focus-y="${(p.y + 27) / w.height}"><svg viewBox="-70 -70 ${w.width + 140} ${w.height + 140}" role="img" aria-label="${game.region.name}: тропы и развилки"><defs><clipPath id="forest-discovery">${w.rooms

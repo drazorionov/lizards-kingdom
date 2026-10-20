@@ -226,13 +226,46 @@ export function createWorld(region = 0, progress = {}) {
 // Keep shallow platform lips from grabbing a passing jump; full-height solid
 // faces support climbing regardless of whether the map labels them as walls.
 const climbableFace = (s) => s.wall || (s.solid && s.h >= 200);
+function slideCurvedWall(p, platforms) {
+  // Following a curved wall can enter the next narrow collision band during
+  // vertical movement. Slide sideways along that contour instead of snagging
+  // on its tiny ledge or leaving the player's shoulder embedded in the rock.
+  for (let pass = 0; pass < 3; pass++) {
+    const hit = platforms.find((s) => s.solid && overlaps(p, s));
+    if (!hit) break;
+    const shifts = [hit.x - p.x - p.w, hit.x + hit.w - p.x]
+      .filter((dx) => Math.abs(dx) <= 12)
+      .sort((a, b) => Math.abs(a) - Math.abs(b));
+    const dx = shifts.find(
+      (dx) =>
+        !platforms.some((s) => s.solid && overlaps({ ...p, x: p.x + dx }, s)),
+    );
+    if (dx === undefined) break;
+    p.x += dx;
+    p.wall = dx < 0 ? 1 : -1;
+  }
+}
 export function movePlayer(p, platforms, dt, width = WORLD_WIDTH) {
   const oldX = p.x,
     oldY = p.y;
   p.x = clamp(p.x + p.vx * dt, 0, width - p.w);
   p.wall = 0;
+  let steppedY;
   for (const s of platforms) {
     if (!(s.solid || s.ground) || !overlaps(p, s)) continue;
+    const rise = p.y + p.h - s.y;
+    if (
+      p.grounded &&
+      p.vy >= 0 &&
+      s.terrain &&
+      rise > 0 &&
+      rise <= 12 &&
+      !platforms.some((n) => n.solid && overlaps({ ...p, y: s.y - p.h }, n))
+    ) {
+      p.y = s.y - p.h;
+      steppedY = p.y;
+      continue;
+    }
     if (oldX + p.w <= s.x + 1) {
       p.x = s.x - p.w;
       p.vx = 0;
@@ -254,10 +287,11 @@ export function movePlayer(p, platforms, dt, width = WORLD_WIDTH) {
     p.vy + PHYSICS.gravity * dt,
   );
   p.y += p.vy * dt;
+  if (p.wall && !p.grounded) slideCurvedWall(p, platforms);
   p.grounded = false;
   for (const s of platforms) {
-    if (p.x + p.w <= s.x + 1 || p.x >= s.x + s.w - 1) continue;
-    if (p.vy >= 0 && oldY + p.h <= s.y + 4 && p.y + p.h >= s.y) {
+    if (p.x + p.w <= s.x + 0.01 || p.x >= s.x + s.w - 0.01) continue;
+    if (p.vy >= 0 && (steppedY ?? oldY) + p.h <= s.y + 4 && p.y + p.h >= s.y) {
       p.y = s.y - p.h;
       p.vy = 0;
       p.grounded = true;
@@ -273,6 +307,7 @@ export function movePlayer(p, platforms, dt, width = WORLD_WIDTH) {
       p.vy = 0;
     }
   }
+  slideCurvedWall(p, platforms);
   if (p.grounded) p.wall = 0;
   if (p.wall) {
     p.wallCoyote = 0.12;

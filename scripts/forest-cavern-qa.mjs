@@ -151,6 +151,7 @@ for (const side of ["left", "right", "floor", "ceiling"])
   assert.ok(thinTerrain[side] > 30, `${side} has its own visible texture`);
 const joins = await page.evaluate(async () => {
   const { drawCaveConnections } = await import("/src/forest-cave-surfaces.js");
+  const { caveCorners, caveSurfaces } = await import("/src/cave-decoration.js");
   const { exposedTerrainEdges } = await import("/src/wall-surfaces.js");
   const { game, assets } = window.fixture;
   const solid = game.world.platforms.filter((s) => s.solid);
@@ -172,22 +173,26 @@ const joins = await page.evaluate(async () => {
     for (let i = 3; i < pixels.length; i += 4) if (pixels[i] > 32) count++;
     return count;
   };
-  return {
-    shortStep: coverage(1525, 495, 24, 40),
-    horizontalArm: coverage(1170, 420, 25, 20),
-    verticalArm: coverage(1140, 450, 20, 25),
-    paintedRim: coverage(1136, 438, 4, 25),
-  };
+  const visible = caveCorners(caveSurfaces(faces)).filter(
+    (c) => c.x > 1040 && c.x < 1960 && c.y > 40 && c.y < 580,
+  );
+  return Object.fromEntries(
+    ["floor", "ceiling"].map((kind) => [
+      kind,
+      Math.max(
+        0,
+        ...visible
+          .filter((c) => c.kind.includes(kind))
+          .map((c) => coverage(c.x - 35, c.y - 35, 70, 70)),
+      ),
+    ]),
+  );
 });
-assert.ok(joins.shortStep > 60, "the short step actually draws corner artwork");
-assert.ok(
-  joins.horizontalArm > 100 && joins.verticalArm > 100,
-  "join artwork remains visible along both connecting surfaces",
-);
-assert.ok(
-  joins.paintedRim > 10,
-  "the painted rim is not clipped at the collider rectangle",
-);
+for (const kind of ["floor", "ceiling"])
+  assert.ok(
+    joins[kind] > 100,
+    `${kind} junctions draw visible corner artwork at their new positions`,
+  );
 for (const [scene, x, y, camera, cameraY] of [
   ["fields", 280, 446, 0, 0],
   ["upper-loop", 1260, 360, 820, 0],

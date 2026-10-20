@@ -1,4 +1,4 @@
-import { carveCaverns } from "./caverns.js";
+import { carveCaverns, sculptIsland } from "./caverns.js";
 
 const DUNGEON_NAMES = {
   1: [
@@ -189,6 +189,7 @@ function dungeon(region) {
         nx = xs[col + 1],
         floor = floors[row];
       addAir(x + 300, floor - 215, nx - x - 600, 215);
+      openings.at(-1).rolling = true;
       connect(row * columns + col, row * columns + col + 1, [
         point(x + 400, floor),
         point(nx - 400, floor),
@@ -361,16 +362,18 @@ function ascent(region) {
   const ledge = (x, y, w = 210, extra = {}) =>
     platforms.push({ x, y, w, h: 22, solid: false, ground: false, ...extra });
   const island = (x, y, w, h = 120) =>
-    platforms.push({
-      x,
-      y,
-      w,
-      h,
-      solid: true,
-      ground: true,
-      terrain: true,
-      wall: true,
-    });
+    platforms.push(
+      ...sculptIsland({
+        x,
+        y,
+        w,
+        h,
+        solid: true,
+        ground: true,
+        terrain: true,
+        wall: true,
+      }),
+    );
   for (let i = 0; i < 8; i++) {
     const x = centers[i],
       floor = floors[i];

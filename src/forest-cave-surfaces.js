@@ -1,10 +1,11 @@
+import { exposedTerrainEdges } from "./wall-surfaces.js";
+import { contourSkins, caveContours } from "./cave-contours.js";
 import overlayArt from "./forest-overlays.json" with { type: "json" };
 import { terrainArt, terrainArtKeys } from "./terrain-art.js";
 import {
   artHash,
   caveSurfaces,
   caveCorners,
-  caveSkins,
   skinOpacity,
   caveOverlays,
 } from "./cave-decoration.js";
@@ -16,11 +17,29 @@ const overlayMasks = new WeakMap();
 const views = new WeakMap();
 const terrainTiles = new WeakMap();
 
+const masses = new WeakMap();
+function traceMass(g, faces, solid) {
+  if (!masses.has(faces)) {
+    const earth = solid.filter((s) => !s.breakable);
+    masses.set(
+      faces,
+      caveContours(
+        earth.map((s) => ({ s, edges: exposedTerrainEdges(s, earth) })),
+      ),
+    );
+  }
+  g.beginPath();
+  for (const { points } of masses.get(faces)) {
+    points.forEach((p, i) => (i ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y)));
+    g.closePath();
+  }
+}
+
 function layout(faces) {
   if (!layouts.has(faces)) {
     const surfaces = caveSurfaces(faces);
     layouts.set(faces, {
-      skins: caveSkins(surfaces),
+      skins: contourSkins(faces),
       corners: caveCorners(surfaces),
       growth: caveOverlays(surfaces),
     });
@@ -45,6 +64,10 @@ function viewFor(r) {
 // Canonical coordinates: x follows the surface, y points into solid earth.
 // The inverse transform used to prepare sprites preserves root gravity.
 function orient(g, s) {
+  if (s.curved) {
+    g.transform(s.tx, s.ty, s.nx, s.ny, s.x, s.y);
+    return;
+  }
   if (s.side === "top") g.transform(1, 0, 0, 1, s.a, s.axis);
   if (s.side === "bottom") g.transform(1, 0, 0, -1, s.a, s.axis);
   if (s.side === "left") g.transform(0, 1, 1, 0, s.axis, s.a);
@@ -61,18 +84,18 @@ function skinMask(world, faces) {
   for (const s of layout(faces).skins) {
     g.save();
     orient(g, s);
-    const fade = g.createLinearGradient(0, -5, 0, s.depth);
+    const fade = g.createLinearGradient(0, -8, 0, s.depth);
     fade.addColorStop(0, "#0000");
-    fade.addColorStop(5 / (s.depth + 5), "#000");
+    fade.addColorStop(8 / (s.depth + 8), "#000");
     for (let i = 1; i <= 16; i++) {
       const t = i / 16;
       fade.addColorStop(
-        (5 + s.depth * t) / (s.depth + 5),
+        (8 + s.depth * t) / (s.depth + 8),
         `rgba(0,0,0,${skinOpacity(s.depth * t, s.depth)})`,
       );
     }
     g.fillStyle = fade;
-    g.fillRect(0, -5, s.b - s.a, s.depth + 5);
+    g.fillRect(-0.5, -8, s.b - s.a + 1, s.depth + 8);
     g.restore();
   }
   masks.set(world, { faces, canvas });
@@ -101,7 +124,7 @@ function drawSkin(g, assets, s, art) {
   const image = assets[art.prefix + kind];
   if (!image) return;
   const frames = art.frames[kind];
-  const variant = artHash(s.side, s.axis) % 2;
+  const variant = artHash(s.side, Math.floor((s.phase ?? s.axis) / 600)) % 2;
   const frame =
     frames[variant + (s.side === "bottom" || s.side === "right" ? 2 : 0)];
   const im = strip(image, frame, s.side);
@@ -113,10 +136,11 @@ function drawSkin(g, assets, s, art) {
   g.save();
   orient(g, s);
   g.beginPath();
-  g.rect(0, -5, length, s.depth + 5);
+  g.rect(-0.5, -8, length + 1, s.depth + 8);
   g.clip();
   const inset = Math.min(35, im.width * 0.08);
-  const phase = s.a - Math.floor(s.a / tileLength) * tileLength;
+  const along = s.phase ?? s.a;
+  const phase = along - Math.floor(along / tileLength) * tileLength;
   for (let x = -phase; x < length; x += tileLength)
     g.drawImage(
       im,
@@ -226,7 +250,9 @@ function overlayMask(world, faces, solid) {
   // thickness-aware fade so even a decorated narrow wall keeps a dark core.
   g.save();
   g.scale(0.5, 0.5);
-  for (const s of solid) g.clearRect(s.x, s.y, s.w, s.h);
+  g.globalCompositeOperation = "destination-out";
+  traceMass(g, faces, solid);
+  g.fill("evenodd");
   g.restore();
   g.drawImage(skinMask(world, faces), 0, 0);
   overlayMasks.set(world, { faces, canvas });
@@ -278,19 +304,9 @@ function drawUncachedTerrain(r, game, faces, solid) {
   // Pass 1: black, non-reachable earth, drawn as one collision union.
   const g = r.ctx;
   g.save();
-  g.beginPath();
-  for (const s of solid)
-    if (
-      !s.breakable &&
-      s.x + s.w >= game.camera &&
-      s.x <= game.camera + r.viewWidth &&
-      s.y + s.h >= game.cameraY &&
-      s.y <= game.cameraY + 620
-    )
-      g.rect(s.x, s.y, s.w, s.h);
-  g.clip();
+  traceMass(g, faces, solid);
   g.fillStyle = "#02050c";
-  g.fillRect(game.camera, game.cameraY, r.viewWidth, 620);
+  g.fill("evenodd");
   g.restore();
 
   const view = viewFor(r),
@@ -323,10 +339,22 @@ function drawUncachedTerrain(r, game, faces, solid) {
   }
   // Pass 2: independently oriented narrow floor, wall and ceiling skins.
   for (const s of layout(faces).skins) {
-    const x = s.horizontal ? s.a : s.axis,
-      y = s.horizontal ? s.axis : s.a;
-    const w = s.horizontal ? s.b - s.a : 40,
-      h = s.horizontal ? 40 : s.b - s.a;
+    const x = s.curved
+        ? Math.min(s.x, s.x + s.tx * s.b)
+        : s.horizontal
+          ? s.a
+          : s.axis,
+      y = s.curved
+        ? Math.min(s.y, s.y + s.ty * s.b)
+        : s.horizontal
+          ? s.axis
+          : s.a;
+    const w = s.curved
+        ? Math.abs(s.tx * s.b) + 40
+        : s.horizontal
+          ? s.b - s.a
+          : 40,
+      h = s.curved ? Math.abs(s.ty * s.b) + 40 : s.horizontal ? 40 : s.b - s.a;
     if (
       x + w < game.camera - 50 ||
       x > game.camera + r.viewWidth + 50 ||

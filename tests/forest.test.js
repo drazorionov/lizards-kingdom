@@ -32,7 +32,8 @@ const tick = (g, n = 1) => {
 };
 function replay(g) {
   tick(g, 30);
-  for (const index of forestRoute.route) {
+  for (const index of (g.player.hero === 1 && forestRoute.urmasa) ||
+    forestRoute.route) {
     const a = forestRoute.actions[index];
     g.release("left");
     g.release("right");

@@ -26,7 +26,7 @@ function game(hero, checkpoint = false) {
   return g;
 }
 function replay(g, fixture) {
-  for (const index of (g.player.hero === 0 && fixture.quirel) ||
+  for (const index of (g.player.hero === 1 && fixture.urmasa) ||
     fixture.route) {
     const a = fixture.actions[index];
     g.release("left");

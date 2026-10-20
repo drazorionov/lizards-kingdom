@@ -16,6 +16,13 @@ export function exposedTerrainEdges(s, platforms) {
   };
   for (const n of platforms) {
     if (n === s || !n.solid || n.absent || n.broken) continue;
+    if (
+      n.x > s.x + s.w ||
+      n.x + n.w < s.x ||
+      n.y > s.y + s.h ||
+      n.y + n.h < s.y
+    )
+      continue;
     if (n.y < s.y && n.y + n.h >= s.y)
       edges.top = subtract(edges.top, n.x - s.x, n.x + n.w - s.x);
     if (n.y <= s.y + s.h && n.y + n.h > s.y + s.h)
