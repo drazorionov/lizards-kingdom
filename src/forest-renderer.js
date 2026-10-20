@@ -75,24 +75,6 @@ export function drawForestTerrain(renderer, s, game) {
 export function drawForestDetails(renderer, game) {
   const g = renderer.ctx,
     w = game.world;
-  g.save();
-  g.globalAlpha *= 0.6;
-  for (const sign of w.signs) {
-    if (
-      sign.x < game.camera - 150 ||
-      sign.x > game.camera + renderer.viewWidth + 150 ||
-      Math.abs(sign.y - game.cameraY - 310) > 400
-    )
-      continue;
-    g.font = "500 12px Manrope, Arial";
-    g.textAlign = "center";
-    g.shadowColor = "#020b14";
-    g.shadowBlur = 5;
-    g.shadowOffsetY = 2;
-    g.fillStyle = "#d1d8b4";
-    g.fillText(sign.text, sign.x, sign.y);
-  }
-  g.restore();
   for (const a of w.hazards) {
     const cx = a.x + a.w / 2;
     if (a.delay > 0) {

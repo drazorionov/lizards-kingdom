@@ -1,3 +1,4 @@
+import shrineAnchors from "./save-shrine-anchors.json" with { type: "json" };
 import { drawWallDebris } from "./terrain.js";
 import {
   regionBackground,
@@ -561,23 +562,45 @@ export class Renderer {
     }
     g.globalAlpha = 1;
   }
-  beacon(x, y, t, active, captionOffset = 84) {
+  beacon(x, y, t, active, spring = false) {
     const g = this.ctx;
-    this.glow(x, y - 35, 70, active ? "#efcd8f" : "#70dfec", 0.18);
-    g.fillStyle = "#334546";
-    g.fillRect(x - 22, y - 11, 44, 11);
-    g.fillStyle = active ? "#f9d69c" : "#8ee7ef";
-    g.beginPath();
-    g.moveTo(x, y - 65 - Math.sin(t * 3) * 3);
-    g.bezierCurveTo(x + 27, y - 29, x + 12, y - 13, x, y - 14);
-    g.bezierCurveTo(x - 23, y - 16, x - 12, y - 38, x, y - 65);
-    g.fill();
-    g.font = "9px Manrope";
-    g.textAlign = "center";
-    g.fillStyle = "#b9d0c7";
+    const im = this.assets[`save-shrine-${this.regionIndex}-v1`];
+    if (!im) return;
+    const width = spring ? 90 : 116;
+    const height = (width * im.height) / im.width;
+    const glow = spring ? this.region.glow : "#edc181";
     g.save();
-    g.globalAlpha *= 0.65;
-    g.fillText(active ? "ПУТЬ СОХРАНЁН" : "ТЁПЛЫЙ СВЕТ", x, y - captionOffset);
+    this.glow(
+      x,
+      y - height * 0.4,
+      width * 0.5,
+      glow,
+      active ? 0.12 + Math.sin(t * 1.5) * 0.02 : 0.035,
+    );
+    g.drawImage(
+      im,
+      x - width / 2,
+      y - height * shrineAnchors[this.regionIndex].foot + 3,
+      width,
+      height,
+    );
+    // Quiet drifting embers distinguish the active return point without a label.
+    if (active) {
+      for (let i = 0; i < 3; i++) {
+        const phase = (t * 0.23 + i / 3) % 1;
+        g.globalAlpha = Math.sin(phase * Math.PI) * 0.55;
+        g.fillStyle = "#eed3a1";
+        g.beginPath();
+        g.arc(
+          x + Math.sin(t * 0.7 + i * 2) * 12,
+          y - height * 0.35 - phase * 35,
+          1.2,
+          0,
+          Math.PI * 2,
+        );
+        g.fill();
+      }
+    }
     g.restore();
   }
   gate(x, y, t, ready) {

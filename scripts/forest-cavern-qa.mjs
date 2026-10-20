@@ -51,6 +51,7 @@ await page.evaluate(async () => {
   window.fixture = { renderer, load, assets };
   window.fixture.start = async (r) => {
     const prefix = REGION_KEYS[r];
+    await load(`save-shrine-${r}-v1`);
     await Promise.all(
       (r === 0
         ? [

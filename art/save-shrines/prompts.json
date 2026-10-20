@@ -1,0 +1,41 @@
+{
+  "generator": "Built-in image_gen, transparent_background=true",
+  "assets": [
+    {
+      "region": 0,
+      "key": "forest",
+      "source": "/Users/Dmitry_Razorionov/.codex/generated_images/01a155b0-47f4-71e0-a963-5097bb2ff3e6/exec-7f17bdb4-624e-4d30-bd22-0f8eb39bf589.png",
+      "prompt": "Use case: stylized-concept. Production transparent sprite for a painted dark-fantasy 2D side-view platform game inhabited by small lizard wanderers. Mushroom forest: a low hollow twisting dark indigo root shelter encircling one tiny warm amber seed lantern, moss and two small purple mushroom caps, subtle turquoise leaf tips. Broad stable root base. Hand-painted detailed natural material, organic silhouette, deep navy shadows, restrained bioluminescence. Match lush atmospheric mushroom platformer environments. SINGLE compact save shrine only, full object centered with generous transparent margins, true side elevation, no isometric perspective. Wider than tall, about 3:2 silhouette, ground contact at bottom, readable at 100 pixels wide. Muted cool materials; the single warm core is a very small accent. No characters, no pedestal rectangle, no giant teardrop flame, no text, no labels, no UI, no scenery or ground plane, no background, no cast shadow outside the object. Genuine transparent alpha background."
+    },
+    {
+      "region": 1,
+      "key": "swamp",
+      "source": "/Users/Dmitry_Razorionov/.codex/generated_images/01a155b0-47f4-71e0-a963-5097bb2ff3e6/exec-1ed2d3b8-bff2-4652-a6d0-6304fdeb32b3.png",
+      "prompt": "Use case: stylized-concept. Production transparent sprite for a painted dark-fantasy 2D side-view platform game inhabited by small lizard wanderers. Sunken swamp: a squat weathered green-black standing stone with a small hollow housing one tiny warm amber seed lantern, sparse reeds and wet moss around its wide base, restrained olive jade accents. Hand-painted detailed natural material, organic silhouette, deep navy shadows, restrained bioluminescence. Match lush atmospheric mushroom platformer environments. SINGLE compact save shrine only, full object centered with generous transparent margins, true side elevation, no isometric perspective. Wider than tall, about 3:2 silhouette, ground contact at bottom, readable at 100 pixels wide. Muted cool materials; the single warm core is a very small accent. No characters, no pedestal rectangle, no giant teardrop flame, no text, no labels, no UI, no scenery or ground plane, no background, no cast shadow outside the object. Genuine transparent alpha background."
+    },
+    {
+      "region": 2,
+      "key": "storm",
+      "source": "/Users/Dmitry_Razorionov/.codex/generated_images/01a155b0-47f4-71e0-a963-5097bb2ff3e6/exec-d6690c20-71d8-4992-a404-27a6596bc3af.png",
+      "prompt": "Use case: stylized-concept. Production transparent sprite for a painted dark-fantasy 2D side-view platform game inhabited by small lizard wanderers. Storm mountain: a compact blue-slate cairn arch suspending a small antique bronze wind bell with one tiny warm amber light inside, sparse silver-blue lichen, weather-worn stone broad base. Hand-painted detailed natural material, organic silhouette, deep navy shadows, restrained bioluminescence. Match lush atmospheric mushroom platformer environments. SINGLE compact save shrine only, full object centered with generous transparent margins, true side elevation, no isometric perspective. Wider than tall, about 3:2 silhouette, ground contact at bottom, readable at 100 pixels wide. Muted cool materials; the single warm core is a very small accent. No characters, no pedestal rectangle, no giant teardrop flame, no text, no labels, no UI, no scenery or ground plane, no background, no cast shadow outside the object. Genuine transparent alpha background."
+    },
+    {
+      "region": 3,
+      "key": "wasteland",
+      "source": "/Users/Dmitry_Razorionov/.codex/generated_images/01a155b0-47f4-71e0-a963-5097bb2ff3e6/exec-8a396ae9-a512-4189-8db8-ee460380d3c7.png",
+      "prompt": "Use case: stylized-concept. Production transparent sprite for a painted dark-fantasy 2D side-view platform game inhabited by small lizard wanderers. Ruined wasteland belfry: a small broken charcoal stone bell alcove holding one small warm amber ember lantern inside an ancient bronze bell, sparse rust-colored roots, broad rocky base. Hand-painted detailed natural material, organic silhouette, deep navy shadows, restrained bioluminescence. Match lush atmospheric mushroom platformer environments. SINGLE compact save shrine only, full object centered with generous transparent margins, true side elevation, no isometric perspective. Wider than tall, about 3:2 silhouette, ground contact at bottom, readable at 100 pixels wide. Muted cool materials; the single warm core is a very small accent. No characters, no pedestal rectangle, no giant teardrop flame, no text, no labels, no UI, no scenery or ground plane, no background, no cast shadow outside the object. Genuine transparent alpha background."
+    },
+    {
+      "region": 4,
+      "key": "depths",
+      "source": "/Users/Dmitry_Razorionov/.codex/generated_images/01a155b0-47f4-71e0-a963-5097bb2ff3e6/exec-17b03d2c-93ee-481e-9d88-ab0e84e6bb91.png",
+      "prompt": "Use case: stylized-concept. Production transparent sprite for a painted dark-fantasy 2D side-view platform game inhabited by small lizard wanderers. Forgotten depths: a low arch of dark navy mineral stone around one tiny warm amber seed lantern, subtle blue crystal veins and two small pale blue cave fungi, broad low stone base. Hand-painted detailed natural material, organic silhouette, deep navy shadows, restrained bioluminescence. Match lush atmospheric mushroom platformer environments. SINGLE compact save shrine only, full object centered with generous transparent margins, true side elevation, no isometric perspective. Wider than tall, about 3:2 silhouette, ground contact at bottom, readable at 100 pixels wide. Muted cool materials; the single warm core is a very small accent. No characters, no pedestal rectangle, no giant teardrop flame, no text, no labels, no UI, no scenery or ground plane, no background, no cast shadow outside the object. Genuine transparent alpha background."
+    },
+    {
+      "region": 5,
+      "key": "amethyst",
+      "source": "/Users/Dmitry_Razorionov/.codex/generated_images/01a155b0-47f4-71e0-a963-5097bb2ff3e6/exec-b4200bcb-a64b-45d7-b083-8eace35d3fc5.png",
+      "prompt": "Use case: stylized-concept. Production transparent sprite for a painted dark-fantasy 2D side-view platform game inhabited by small lizard wanderers. Amethyst lake: a compact dark violet geode split into a protective arch around one tiny warm amber seed lantern, small lavender crystal facets and dark roots around its broad base. Hand-painted detailed natural material, organic silhouette, deep navy shadows, restrained bioluminescence. Match lush atmospheric mushroom platformer environments. SINGLE compact save shrine only, full object centered with generous transparent margins, true side elevation, no isometric perspective. Wider than tall, about 3:2 silhouette, ground contact at bottom, readable at 100 pixels wide. Muted cool materials; the single warm core is a very small accent. No characters, no pedestal rectangle, no giant teardrop flame, no text, no labels, no UI, no scenery or ground plane, no background, no cast shadow outside the object. Genuine transparent alpha background."
+    }
+  ]
+}

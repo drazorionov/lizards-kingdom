@@ -111,7 +111,10 @@ const creatureLoads = new Map();
 const loadedRegions = [];
 async function loadCreatureAssets(region) {
   const assets = await loadAssets();
-  await loadExtra(assets, ["vertical-walls-painted"]);
+  await loadExtra(assets, [
+    "vertical-walls-painted",
+    `save-shrine-${region}-v1`,
+  ]);
   const keys = [...REGION_CREATURES[region], BOSSES[region]];
   await Promise.all(
     keys.map(async (key) => {
@@ -206,11 +209,14 @@ async function loadExtra(assets, keys) {
     }),
   );
 }
-function toast(message) {
+function toast(message, duration = 2600) {
   $("#toast").textContent = message;
   $("#toast").classList.add("visible");
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => $("#toast").classList.remove("visible"), 4200);
+  toastTimer = setTimeout(
+    () => $("#toast").classList.remove("visible"),
+    duration,
+  );
 }
 async function start(region = progress.region, town = false) {
   if (!unlocked(region)) region = 0;

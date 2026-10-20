@@ -74,23 +74,14 @@ export function regionDetails(r, game) {
     w = game.world;
   if (w.region !== 0) {
     for (const a of w.hazards) drawRegionalHazard(r, a, game);
-    g.save();
-    g.globalAlpha *= 0.6;
-    for (const s of w.signs) {
-      if (
-        Math.abs(s.x - game.camera - r.viewWidth / 2) > r.viewWidth / 2 + 150 ||
-        Math.abs(s.y - game.cameraY - 310) > 400
-      )
-        continue;
-      g.font = "12px Manrope, Arial";
-      g.textAlign = "center";
-      g.fillStyle = "#eddfbd";
-      g.fillText(s.text, s.x, s.y);
-    }
-    g.restore();
   }
-  for (const spring of w.springs || [])
-    r.beacon(spring.x, spring.y, game.time, false, 110);
+  // Healing at a checkpoint shares its shrine; only remote springs get an object.
+  for (const spring of w.springs || []) {
+    const shared = (w.checkpoints || [w.checkpoint]).some(
+      (camp) => Math.hypot(camp.x - spring.x, camp.y + 50 - spring.y) < 1,
+    );
+    if (!shared) r.beacon(spring.x, spring.y, game.time, false, true);
+  }
   for (const s of w.secrets || []) {
     if (s.found) continue;
     const near = Math.hypot(s.x - game.player.x, s.y - game.player.y) < 250;
@@ -114,7 +105,11 @@ export function regionDetails(r, game) {
     g.textAlign = "center";
     g.save();
     g.globalAlpha *= 0.6;
-    g.fillText(portal.name, portal.x, portal.y - 65);
+    if (
+      Math.hypot(portal.x - game.player.x - 15, portal.y - game.player.y - 27) <
+      120
+    )
+      g.fillText(portal.name, portal.x, portal.y - 65);
     g.restore();
     if (
       Math.hypot(portal.x - game.player.x - 15, portal.y - game.player.y - 27) <

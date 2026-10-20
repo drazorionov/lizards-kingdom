@@ -145,3 +145,34 @@ for (const hero of [0, 1])
       "survey returns to the eastern fork",
     );
   });
+
+test("each biome shares healing and saving in one shrine instead of neighboring duplicates", () => {
+  for (let region = 0; region < 6; region++) {
+    const w = createWorld(region);
+    for (const camp of w.checkpoints || [w.checkpoint]) {
+      const nearby = w.springs.filter(
+        (spring) => Math.hypot(camp.x - spring.x, camp.y + 50 - spring.y) < 150,
+      );
+      assert.equal(
+        nearby.length,
+        1,
+        `region ${region}: one healing effect per shrine`,
+      );
+      assert.equal(nearby[0].x, camp.x);
+      assert.equal(nearby[0].y, camp.y + 50);
+    }
+  }
+});
+
+test("merged forest shrine still heals on return and preserves the saved camp", () => {
+  const g = game({ checkpoint: true, forestCamp: "lanterns" });
+  const camp = g.world.checkpoint;
+  g.player.x = camp.x;
+  g.player.y = camp.y + 50 - g.player.h;
+  g.player.health = 1;
+  g.player.invulnerable = 2;
+  ticks(g);
+  assert.equal(g.player.health, g.maxHealth());
+  assert.equal(g.world.checkpoint, camp);
+  assert.equal(g.progress.forestCamp, "lanterns");
+});

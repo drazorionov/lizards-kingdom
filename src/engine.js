@@ -413,7 +413,7 @@ export class Game {
       if (fresh) this.persist();
       if (w.roomId !== room.id) {
         w.roomId = room.id;
-        this.cb.toast(room.name);
+        if (fresh) this.cb.toast(room.name, 1800);
       }
       for (const s of w.platforms) {
         if (s.breakable && p.attack > 0 && overlaps(attack, s)) {
@@ -555,7 +555,7 @@ export class Game {
         p.health = this.maxHealth();
         this.emit(p.x, p.y, this.region.color, 20);
         this.cb.sound("checkpoint");
-        this.cb.toast("Тёплый свет. Здоровье восстановлено. Путь сохранён.");
+        this.cb.toast("Путь сохранён", 1800);
         this.persist();
       }
     }
