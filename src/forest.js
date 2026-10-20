@@ -1,6 +1,14 @@
+import {
+  FOREST_SIZE,
+  FOREST_ARENA_OFFSET,
+  FOREST_CAMPS,
+  NEW_FOREST_ROOMS,
+  NEW_FOREST_PASSAGES,
+  addForestExpansion,
+} from "./forest-expansion.js";
 import { carveCaverns } from "./caverns.js";
-// Forest pilot: the source board's upper route, root underpass, wall shaft,
-// secret chamber and guarded exit, authored in one continuous coordinate space.
+// The original forest connects to eastern canopy loops and deep root passages.
+// All routes share continuous collision geometry, discoveries and return camps.
 export const FOREST_ROOMS = [
   {
     id: "fields",
@@ -66,14 +74,15 @@ export const FOREST_ROOMS = [
     art: "canopy",
   },
   {
-    id: "sanctum",
-    name: "Забытое дерево",
+    id: "old-heart",
+    name: "Старое сердце",
     x: 3430,
     y: 0,
     w: 1120,
-    h: 1600,
-    art: "sanctum",
+    h: 700,
+    art: "canopy",
   },
+  ...NEW_FOREST_ROOMS,
 ];
 // Open space, following the reference's looping forest topology. These are
 // connected passages carved out of earth, not decorative room bounding boxes.
@@ -113,7 +122,9 @@ export const FOREST_PASSAGES = [
   // The Forgotten Tree is an enclosed arena, reached through the upper neck.
   [3430, 130, 1080, 370],
   [3570, 80, 770, 420],
-].map(([x, y, w, h], id) => ({ id, x, y, w, h }));
+]
+  .map(([x, y, w, h], id) => ({ id, x, y, w, h }))
+  .concat(NEW_FOREST_PASSAGES.map((p, i) => ({ ...p, id: 100 + i })));
 
 export function forestRoom(p) {
   return (
@@ -186,17 +197,21 @@ export function buildForest() {
   // Boundary roots prevent falling out of the stream chamber sideways.
   solid(710, 1070, 40, 530, { wall: true, ground: false });
   // Existing landmark IDs stay stable so discoveries and broken seals survive.
-  platforms.push(...carveCaverns(4550, 1600, FOREST_PASSAGES));
+  addForestExpansion(platforms);
+  platforms.push(
+    ...carveCaverns(FOREST_SIZE.width, FOREST_SIZE.height, FOREST_PASSAGES),
+  );
   platforms.forEach((s, id) => (s.id = id));
   return {
     platforms,
     caverns: FOREST_PASSAGES,
-    width: 4550,
-    height: 1600,
+    ...FOREST_SIZE,
+    arenaOffset: FOREST_ARENA_OFFSET,
+    checkpoints: FOREST_CAMPS,
     rooms: FOREST_ROOMS,
     tokens: [
       { x: 520, y: 455 },
-      { x: 1420, y: 1395 },
+      { x: 6350, y: 2200, hidden: true },
       { x: 1840, y: 390 },
       { x: 2690, y: 325, secret: true },
     ],
@@ -205,13 +220,18 @@ export function buildForest() {
     spawn: { x: 110, y: 446 },
     checkpoint: { x: 2240, y: 1000 },
     signs: [
+      { x: 4750, y: 450, text: "КРОНА ↗ · ГЛУБИНЫ ↓" },
+      { x: 6000, y: 1330, text: "ЗАЛ ФОНАРЕЙ · КОЛОДЕЦ ЭХА →" },
+      { x: 4400, y: 2180, text: "ГЛУБИННЫЙ ПРИВАЛ · ОБРАТНЫЕ ПУТИ ↔" },
+      { x: 6980, y: 1300, text: "↑ ВИСЯЧИЕ САДЫ · КАТАКОМБЫ ↓" },
+      { x: 7840, y: 450, text: "ЗАБЫТОЕ ДЕРЕВО →" },
       { x: 640, y: 430, text: "СВЕТЯЩИЕСЯ КОРНИ ↘" },
       { x: 1070, y: 1006, text: "↓ ПОДЗЕМНЫЙ РУЧЕЙ" },
       { x: 1680, y: 1006, text: "↑ КОЛОДЕЦ КОРНЕЙ" },
       { x: 2225, y: 335, text: "ТРЕЩИНЫ… ПРОБЕЛ" },
       { x: 2350, y: 1020, text: "ОБРАТНЫЙ ТОННЕЛЬ ↘" },
       { x: 2450, y: 880, text: "ГРИБНАЯ ЧАЩА ↗" },
-      { x: 3290, y: 460, text: "ЗАБЫТОЕ ДЕРЕВО →" },
+      { x: 3290, y: 460, text: "СТАРОЕ СЕРДЦЕ →" },
     ],
   };
 }

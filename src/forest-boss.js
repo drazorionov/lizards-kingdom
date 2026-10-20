@@ -28,7 +28,7 @@ function begin(b, state, duration) {
   b.elapsed = 0;
 }
 export function resetMother(b) {
-  b.x = 4020;
+  b.x = 4020 + (b.arenaOffset || 0);
   b.y = 380;
   b.hp = b.maxHp;
   b.enraged = false;
@@ -45,6 +45,7 @@ export function stepMother(game, dt) {
   const w = game.world,
     b = w.boss,
     p = game.player,
+    offset = w.arenaOffset || 0,
     gentle = game.progress.mode === "gentle";
   b.elapsed = (b.elapsed || 0) + dt;
   b.timer -= dt;
@@ -94,14 +95,17 @@ export function stepMother(game, dt) {
     const tell = gentle ? 1.25 : 1;
     begin(b, "windup", tell);
     b.phase = 1;
-    b.targetX = Math.max(3540, Math.min(4160, p.x - 45));
+    b.targetX = Math.max(3540 + offset, Math.min(4160 + offset, p.x - 45));
     b.relocated = false;
     if (b.move === "roots") {
       // Offset strikes leave generous safe gaps, including for the larger iPad controls.
       for (const offset of b.enraged ? [-190, 0, 190] : [0, 230])
         hazard(
           w,
-          Math.max(3500, Math.min(4350, p.x + offset - 25)),
+          Math.max(
+            3500 + w.arenaOffset,
+            Math.min(4350 + w.arenaOffset, p.x + offset - 25),
+          ),
           65,
           "root",
           tell,

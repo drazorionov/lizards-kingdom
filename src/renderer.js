@@ -327,7 +327,13 @@ export class Renderer {
       g.fillText("→", 184, 456);
       g.restore();
     }
-    this.beacon(w.checkpoint.x, w.checkpoint.y + 50, t, game.checkpointUsed);
+    for (const camp of w.checkpoints || [w.checkpoint])
+      this.beacon(
+        camp.x,
+        camp.y + 50,
+        t,
+        game.checkpointUsed && camp === w.checkpoint,
+      );
     for (const token of w.tokens) {
       if (
         token.collected ||
@@ -413,7 +419,7 @@ export class Renderer {
       g.fill();
     }
     const ready = w.tokens.every((a) => a.collected) && b.dead;
-    this.gate(4415, 500, t, ready);
+    this.gate(4415 + (w.arenaOffset || 0), 500, t, ready);
     const hero = game.progress.hero === 1 ? "urmasa" : "quirel";
     const atlas = this.assets[`hero-${hero}-painted-atlas`];
     const alpha = p.invulnerable > 0 && Math.floor(t * 12) % 2 ? 0.48 : 1;

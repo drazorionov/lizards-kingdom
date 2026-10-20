@@ -80,7 +80,11 @@ for (const hero of [0, 1]) {
     const g = game(hero);
     replay(g, route);
     assert.equal(g.world.secrets.filter((s) => s.found).length, 5);
-    assert.ok(g.world.tokens.slice(0, 4).every((t) => t.collected));
+    assert.ok(
+      g.world.tokens
+        .filter((t) => [0, 2, 3].includes(t.id))
+        .every((t) => t.collected),
+    );
     assert.ok(g.checkpointUsed);
   });
   test(`hero ${hero} can backtrack from the refuge through the shortcut to the starting fields`, () => {
@@ -88,7 +92,7 @@ for (const hero of [0, 1]) {
     replay(g, returnRoute);
     assert.ok(Math.abs(g.player.x - 505) < 35);
     assert.ok(Math.abs(g.player.y - 446) < 10);
-    assert.ok(!g.world.platforms.some((s) => s.shortcut));
+    assert.ok(!g.world.platforms.some((s) => s.shortcut && s.x === 1510));
     assert.ok(g.player.health > 0);
   });
 }

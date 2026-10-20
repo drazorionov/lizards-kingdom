@@ -1,3 +1,4 @@
+import { FOREST_CAMPS } from "./forest-expansion.js";
 import { SERVICES } from "./progression.js";
 import { buildLevel } from "./levels.js";
 import { CREATURES, REGION_CREATURES, BOSSES } from "./creatures.js";
@@ -74,28 +75,35 @@ export function overlaps(a, b) {
 }
 export function createWorld(region = 0, progress = {}) {
   const level = buildLevel(region);
+  const arenaOffset = level.arenaOffset || 0;
+  const checkpoints = level.checkpoints || [level.checkpoint];
+  const checkpoint =
+    checkpoints.find((c) => c.id === progress.forestCamp) || level.checkpoint;
   const platforms = level.platforms.filter(
     (s) => !s.breakable || !(progress.broken?.[region] || []).includes(s.id),
   );
   const found = progress.tokens?.[region] || [];
-  const tokens = [...level.tokens, { x: 4195, y: 445, boss: true }].map(
-    (t, id) => ({
-      ...t,
-      id,
-      type: id,
-      revealed:
-        found.includes(id) || (progress.revealed?.[region] || []).includes(id),
-      collected: found.includes(id),
-    }),
-  );
+  const tokens = [
+    ...level.tokens,
+    { x: 4195 + arenaOffset, y: 445, boss: true },
+  ].map((t, id) => ({
+    ...t,
+    id,
+    type: id,
+    revealed:
+      found.includes(id) || (progress.revealed?.[region] || []).includes(id),
+    collected: found.includes(id),
+  }));
   const roster = REGION_CREATURES[region];
   const enemies = [];
   for (const platform of platforms) {
     if (
       platform.wall ||
       platform.ceiling ||
-      platform.x > 3500 ||
-      (region === 0 && platform.x >= 3430) ||
+      (region !== 0 && platform.x > 3500) ||
+      (region === 0 &&
+        ((platform.x >= 3430 && platform.x < 4550) ||
+          platform.x >= 3430 + arenaOffset)) ||
       platform.w < 140
     )
       continue;
@@ -109,6 +117,11 @@ export function createWorld(region = 0, progress = {}) {
       if (
         x < 540 ||
         Math.abs(x - 2240) < 160 ||
+        (region === 0 &&
+          checkpoints.some(
+            (c) =>
+              Math.abs(x - c.x) < 160 && Math.abs(platform.y - c.y - 50) < 100,
+          )) ||
         platforms.some(
           (s) => s.wall && !s.terrain && x + 100 > s.x && x < s.x + s.w + 40,
         )
@@ -147,6 +160,8 @@ export function createWorld(region = 0, progress = {}) {
   const cleared = progress.cleared?.includes(region) || false;
   return {
     region,
+    arenaOffset,
+    checkpoints,
     width: level.width || WORLD_WIDTH,
     height: level.height || 690,
     rooms: level.rooms,
@@ -170,14 +185,15 @@ export function createWorld(region = 0, progress = {}) {
     title: level.title,
     platforms,
     tokens,
-    enemies: enemies.filter((e) => e.x < 3430),
-    checkpoint: level.checkpoint || { x: 2240, y: 450 },
+    enemies: region === 0 ? enemies : enemies.filter((e) => e.x < 3430),
+    checkpoint: checkpoint || { x: 2240, y: 450 },
     elder: { x: 240, y: level.spawn.y },
     boss: {
       key: BOSSES[region],
       dir: -1,
       deathTime: progress.defeated?.includes(region) || cleared ? 2 : 0,
-      x: 4020,
+      x: 4020 + arenaOffset,
+      arenaOffset,
       y: 380,
       w: 125,
       h: 120,
@@ -296,7 +312,7 @@ export function sanitizeProgress(value) {
       : 0,
     secrets: cleanRegions(value.secrets, 5),
     revealed: cleanRegions(value.revealed, 5),
-    broken: cleanRegions(value.broken, 80),
+    broken: cleanRegions(value.broken, 1024),
     discovered: Object.fromEntries(
       REGIONS.map((_, i) => [
         i,
@@ -319,6 +335,9 @@ export function sanitizeProgress(value) {
     cleared,
     defeated,
     checkpoint: value.checkpoint === true,
+    forestCamp: FOREST_CAMPS.some((c) => c.id === value.forestCamp)
+      ? value.forestCamp
+      : "hearth",
     mode: value.mode === "adventure" ? "adventure" : "gentle",
     updatedAt: Number.isFinite(value.updatedAt)
       ? Math.max(0, Math.min(value.updatedAt, Date.now() + 60000))

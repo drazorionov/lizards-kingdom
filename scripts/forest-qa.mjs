@@ -115,9 +115,9 @@ await page.waitForTimeout(100);
 await page.evaluate(() => window.forestQA.renderer.draw(window.forestQA.g));
 await page.screenshot({ path: "/tmp/forest-fields.png" });
 const routes = JSON.parse(
-  readFileSync(new URL("../tests/routes.json", import.meta.url)),
+  readFileSync(new URL("../tests/forest-expanded-route.json", import.meta.url)),
 );
-const checkpoints = [8, 25, 40, 57, 71, 90, 102, 127, 142];
+const checkpoints = [40, 100, 170, 220, 280, routes.route.length];
 let done = 0;
 for (const end of checkpoints) {
   const state = await page.evaluate(
@@ -139,7 +139,7 @@ for (const end of checkpoints) {
       return g.snapshot();
     },
     {
-      indices: routes.regions[0].slice(done, end),
+      indices: routes.route.slice(done, end),
       actions: routes.actions,
       frames: routes.framesPerAction,
     },
@@ -160,7 +160,7 @@ for (const [i, move] of ["roots", "spores", "burrow", "sweep"].entries()) {
     const { g, renderer } = window.forestQA;
     g.clearInput();
     g.rematchMother();
-    g.player.x = 4350;
+    g.player.x = 4350 + g.world.arenaOffset;
     g.player.invulnerable = 30;
     g.world.boss.moveIndex = i;
     for (let n = 0; n < 190; n++) g.step(1 / 60);

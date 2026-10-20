@@ -1,4 +1,5 @@
-import forestRoute from "./forest-route.json" with { type: "json" };
+import forestUrmasa from "./forest-expanded-urmasa-route.json" with { type: "json" };
+import forestRoute from "./forest-expanded-route.json" with { type: "json" };
 import { readFileSync } from "node:fs";
 const routes = JSON.parse(
   readFileSync(new URL("./routes.json", import.meta.url)),
@@ -52,7 +53,9 @@ for (let region = 0; region < 6; region++)
       // Replay legal keyboard actions against the real production simulation.
       // Fixtures cover each authored route, including gaps and wall-jump shafts.
       for (const index of region === 0
-        ? forestRoute.route
+        ? hero
+          ? forestUrmasa.route
+          : forestRoute.route
         : (hero === 1 && routes.urmasa?.[region]) || routes.regions[region]) {
         const action = (region === 0 ? forestRoute.actions : routes.actions)[
           index
@@ -94,10 +97,10 @@ for (let region = 0; region < 6; region++)
         true,
         `guardian defeat: x=${g.player.x}, y=${g.player.y}, hp=${g.world.boss.hp}, health=${g.player.health}`,
       );
-      walk(g, 4190);
+      walk(g, 4190 + g.world.arenaOffset);
       ticks(g, 10);
       assert.equal(g.world.tokens[4].collected, true, "guarded token");
-      walk(g, 4380);
+      walk(g, 4380 + g.world.arenaOffset);
       assert.deepEqual(completed, [region]);
       assert.deepEqual(g.progress.cleared, [region]);
     });

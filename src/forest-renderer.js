@@ -8,7 +8,11 @@ export function drawForestBackground(renderer, game) {
     view = renderer.viewWidth,
     assets = renderer.assets;
   const root = clamp((game.cameraY - 180) / 320, 0, 1);
-  const sanctum = clamp((game.camera - 2860) / 400, 0, 1);
+  const sanctum = clamp(
+    (game.camera - (2860 + (game.world.arenaOffset || 0))) / 400,
+    0,
+    1,
+  );
   const layers = [
     ["canopy", (1 - root) * (1 - sanctum)],
     ["roots", root * (1 - sanctum)],
@@ -22,7 +26,9 @@ export function drawForestBackground(renderer, game) {
     const h = 700,
       wi = (h * im.width) / im.height;
     const travel = Math.max(0, wi - view);
-    const x = -travel * ((game.camera / (4550 - view)) * 0.7 + 0.15);
+    const x =
+      -travel *
+      ((game.camera / Math.max(1, game.world.width - view)) * 0.7 + 0.15);
     g.globalAlpha = alpha;
     g.drawImage(im, x, -25 - (game.cameraY % 400) * 0.04, wi, h);
   }
@@ -128,7 +134,7 @@ export function drawForestDetails(renderer, game) {
   if (w.boss.active && !w.boss.dead) {
     g.strokeStyle = "#9675bbaa";
     g.lineWidth = 7;
-    for (const x of [3475, 4405]) {
+    for (const x of [3475 + w.arenaOffset, 4405 + w.arenaOffset]) {
       g.beginPath();
       g.moveTo(x, 500);
       g.bezierCurveTo(x - 20, 420, x + 15, 360, x, 325);
@@ -198,23 +204,28 @@ export function drawForestMinimap(renderer, game) {
   for (const s of w.platforms) {
     g.fillStyle = s.breakable ? "#cba775" : "#7bab9b88";
     g.fillRect(
-      x + (s.x / 4550) * sw,
-      y + (s.y / 1600) * sh,
-      Math.max(1, (s.w / 4550) * sw),
-      Math.max(1, (s.h / 1600) * sh),
+      x + (s.x / w.width) * sw,
+      y + (s.y / w.height) * sh,
+      Math.max(1, (s.w / w.width) * sw),
+      Math.max(1, (s.h / w.height) * sh),
     );
   }
   for (const t of w.tokens) {
     if (!t.collected && (!t.secret || w.discovered.has("secret"))) {
       g.fillStyle = "#f3c981";
-      g.fillRect(x + (t.x / 4550) * sw - 1, y + (t.y / 1600) * sh - 1, 3, 3);
+      g.fillRect(
+        x + (t.x / w.width) * sw - 1,
+        y + (t.y / w.height) * sh - 1,
+        3,
+        3,
+      );
     }
   }
   g.fillStyle = "#fff5c9";
   g.beginPath();
   g.arc(
-    x + ((game.player.x + 15) / 4550) * sw,
-    y + ((game.player.y + 27) / 1600) * sh,
+    x + ((game.player.x + 15) / w.width) * sw,
+    y + ((game.player.y + 27) / w.height) * sh,
     3,
     0,
     Math.PI * 2,

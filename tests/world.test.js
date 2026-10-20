@@ -44,8 +44,8 @@ test("expanded regions have vertical climbs, sealed chambers and return tunnels"
   assert.ok(ascent > 180);
   for (let i = 0; i < 6; i++) {
     const w = createWorld(i);
-    assert.equal(w.height, 1600);
-    assert.equal(w.rooms.length, 8);
+    assert.equal(w.height, i === 0 ? 2400 : 1600);
+    assert.equal(w.rooms.length, i === 0 ? 24 : 8);
     assert.ok(w.platforms.some((p) => p.y >= 1400 && p.w > 1000));
     assert.ok(w.platforms.some((p) => p.breakable && p.secret));
     assert.ok(w.platforms.filter((p) => p.wall && p.h >= 500).length >= 2);

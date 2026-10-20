@@ -115,7 +115,7 @@ const thinTerrain = await page.evaluate(async () => {
       maximum = Math.max(maximum, pixels[i], pixels[i + 1], pixels[i + 2]);
     return maximum;
   };
-  return {
+  const readings = {
     wallCore: peak(125, 180, 5, 240),
     roofCore: peak(380, 125, 240, 5),
     left: peak(100, 180, 5, 240),
@@ -123,7 +123,27 @@ const thinTerrain = await page.evaluate(async () => {
     floor: peak(380, 100, 240, 5),
     ceiling: peak(380, 150, 240, 5),
   };
+  // A changed collision union must evict static terrain from cached tiles.
+  const remaining = [solid[1]];
+  const changed = remaining.map((s) => ({
+    s,
+    edges: exposedTerrainEdges(s, remaining),
+  }));
+  ctx.clearRect(0, 0, 800, 620);
+  drawCaveTerrain(
+    { ctx, assets: window.fixture.assets, viewWidth: 800 },
+    { world, camera: 0, cameraY: 0 },
+    changed,
+    remaining,
+  );
+  readings.removedWallAlpha = ctx.getImageData(110, 300, 1, 1).data[3];
+  return readings;
 });
+assert.equal(
+  thinTerrain.removedWallAlpha,
+  0,
+  "removed walls leave no stale cached terrain",
+);
 assert.equal(thinTerrain.wallCore, 12, "a thin wall retains its black center");
 assert.equal(thinTerrain.roofCore, 12, "a thin roof retains its black center");
 for (const side of ["left", "right", "floor", "ceiling"])
@@ -175,7 +195,14 @@ for (const [scene, x, y, camera, cameraY] of [
   ["stream", 2050, 1396, 1700, 980],
   ["refuge", 2250, 996, 1900, 680],
   ["thicket", 2800, 605, 2450, 350],
-  ["tree", 3650, 446, 3400, 0],
+  ["old-heart", 4100, 446, 3400, 0],
+  ["gallery", 5100, 486, 4550, 0],
+  ["crown", 5900, 280, 5500, 0],
+  ["lanterns", 6030, 1346, 5650, 950],
+  ["deep-garden", 1150, 2180, 750, 1780],
+  ["reservoir", 6350, 2196, 5900, 1780],
+  ["echo", 7050, 950, 6650, 650],
+  ["tree", 8200, 446, 7900, 0],
 ]) {
   await page.evaluate(
     ({ x, y, camera, cameraY }) => {
@@ -257,6 +284,8 @@ await page.evaluate(async () => {
     cavernMapMarkup(g) +
     "</main>";
   document.querySelector(".secret-list")?.remove();
+  document.querySelector(".map-viewport").style.overflow = "visible";
+  document.querySelector("svg").style.minWidth = "0";
   document.querySelector("svg").style.maxHeight = "620px";
 });
 await page.screenshot({ path: "art/forest/forest-layout-preview.png" });

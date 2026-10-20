@@ -14,6 +14,7 @@ const prepared = new WeakMap();
 const masks = new WeakMap();
 const overlayMasks = new WeakMap();
 const views = new WeakMap();
+const terrainTiles = new WeakMap();
 
 function layout(faces) {
   if (!layouts.has(faces)) {
@@ -273,12 +274,20 @@ function drawGrowth(r, game, faces, solid) {
   g.globalCompositeOperation = "source-over";
   r.ctx.drawImage(view, game.camera, game.cameraY);
 }
-export function drawCaveTerrain(r, game, faces, solid) {
+function drawUncachedTerrain(r, game, faces, solid) {
   // Pass 1: black, non-reachable earth, drawn as one collision union.
   const g = r.ctx;
   g.save();
   g.beginPath();
-  for (const s of solid) if (!s.breakable) g.rect(s.x, s.y, s.w, s.h);
+  for (const s of solid)
+    if (
+      !s.breakable &&
+      s.x + s.w >= game.camera &&
+      s.x <= game.camera + r.viewWidth &&
+      s.y + s.h >= game.cameraY &&
+      s.y <= game.cameraY + 620
+    )
+      g.rect(s.x, s.y, s.w, s.h);
   g.clip();
   g.fillStyle = "#02050c";
   g.fillRect(game.camera, game.cameraY, r.viewWidth, 620);
@@ -309,6 +318,58 @@ export function drawCaveTerrain(r, game, faces, solid) {
   surface.restore();
   finishSkins(r, game, faces, view);
   drawGrowth(r, game, faces, solid);
+}
+// Terrain art is static between broken seals. Cache only a small neighborhood
+// of world tiles; camera motion then composites images instead of repainting
+// every skin, corner and alpha mask. The LRU bounds memory on tablets.
+export function drawCaveTerrain(r, game, faces, solid) {
+  const keys = [
+    "edges-v2",
+    "walls-v2",
+    "joins-floor-v2",
+    "joins-ceiling-v2",
+    "overlays-v1",
+  ];
+  const images = keys.map((k) => r.assets["forest-cave-" + k]);
+  let cached = terrainTiles.get(game.world);
+  if (
+    cached?.faces !== faces ||
+    images.some((im, i) => cached?.images[i] !== im)
+  ) {
+    cached = { faces, images, tiles: new Map() };
+    terrainTiles.set(game.world, cached);
+  }
+  const tw = 1024,
+    th = 620;
+  const firstX = Math.max(0, Math.floor(game.camera / tw));
+  const lastX = Math.floor((game.camera + r.viewWidth) / tw);
+  const firstY = Math.max(0, Math.floor(game.cameraY / th));
+  const lastY = Math.floor((game.cameraY + 620) / th);
+  for (let row = firstY; row <= lastY; row++)
+    for (let col = firstX; col <= lastX; col++) {
+      const key = `${col}:${row}`,
+        x = col * tw,
+        y = row * th;
+      let tile = cached.tiles.get(key);
+      if (!tile) {
+        tile = document.createElement("canvas");
+        tile.width = tw;
+        tile.height = th;
+        const ctx = tile.getContext("2d");
+        ctx.translate(-x, -y);
+        drawUncachedTerrain(
+          { ctx, assets: r.assets, viewWidth: tw },
+          { ...game, camera: x, cameraY: y },
+          faces,
+          solid,
+        );
+      }
+      cached.tiles.delete(key);
+      cached.tiles.set(key, tile);
+      if (cached.tiles.size > 12)
+        cached.tiles.delete(cached.tiles.keys().next().value);
+      r.ctx.drawImage(tile, x, y);
+    }
 }
 // Isolated pass used by visual regression checks.
 export function drawCaveConnections(r, game, faces) {

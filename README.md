@@ -127,3 +127,22 @@ registered anchors/gutter polygons. Deterministic, spaced wall/ceiling/corner
 placements replace the tiny growth sprites. Artwork stays upright when mirrored;
 the existing thickness-aware mask preserves black interiors without changing
 collision geometry. `scripts/forest-cavern-qa.mjs` verifies rendering and dark cores.
+
+Mushroom Forest now spans 9,100 × 2,400 (three times its former map area), with
+24 rooms and 77 overlapping passage shapes. `src/forest-expansion.js` authors the
+canopy branch, lantern route, deep return loops, five rest points and the relocated
+arena. One exploration token now rewards the deep reservoir; already-collected
+IDs remain credited. The saved `forestCamp` selects the last touched rest point;
+older checkpoint saves still return to the original hearth.
+
+Rebuild legal-input fixtures with `node scripts/plan-forest-route.mjs --expanded`,
+`--expanded --urmasa`, and `--survey` (optional-loop geometry). The full chapter
+fixtures include live enemies; the survey disables enemies only to verify every
+optional room and return climb. `tests/forest-expansion.test.js` checks all 24 rooms,
+checkpoint reload/death, legacy tokens, new shortcut persistence, and moved arena
+bounds. The atlas scrolls to the player's current position and remains readable
+on small screens.
+
+Static cavern artwork uses a bounded cache of 12 terrain tiles; breaking a seal
+invalidates it. The minimap is cached until discoveries or terrain change. Browser
+QA covers cache invalidation, full-route rendering, and desktop/mobile map centering.

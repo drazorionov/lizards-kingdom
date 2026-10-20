@@ -9,7 +9,6 @@ import { createHeroAnimation, updateHeroAnimation } from "./hero-animation.js";
 import {
   REGIONS,
   PHYSICS,
-  WORLD_WIDTH,
   createWorld,
   movePlayer,
   overlaps,
@@ -544,17 +543,21 @@ export class Game {
         }
       }
     }
-    if (
-      !this.checkpointUsed &&
-      Math.abs(p.x - w.checkpoint.x) < 70 &&
-      Math.abs(p.y + p.h - (w.checkpoint.y + 50)) < 85
-    ) {
-      this.checkpointUsed = true;
-      p.health = this.maxHealth();
-      this.emit(p.x, p.y, this.region.color, 20);
-      this.cb.sound("checkpoint");
-      this.cb.toast("Тёплый свет. Здоровье восстановлено. Путь сохранён.");
-      this.persist();
+    for (const camp of w.checkpoints || [w.checkpoint]) {
+      if (
+        (!this.checkpointUsed || camp !== w.checkpoint) &&
+        Math.abs(p.x - camp.x) < 70 &&
+        Math.abs(p.y + p.h - (camp.y + 50)) < 85
+      ) {
+        w.checkpoint = camp;
+        this.checkpointUsed = true;
+        if (w.region === 0) this.progress.forestCamp = camp.id || "hearth";
+        p.health = this.maxHealth();
+        this.emit(p.x, p.y, this.region.color, 20);
+        this.cb.sound("checkpoint");
+        this.cb.toast("Тёплый свет. Здоровье восстановлено. Путь сохранён.");
+        this.persist();
+      }
     }
     this.stepBoss(dt, attack);
     stepForestHazards(this, dt);
@@ -577,7 +580,12 @@ export class Game {
         w.projectiles.splice(i, 1);
     }
     const all = w.tokens.every((t) => t.collected);
-    if (p.x > 4370 && all && w.boss.dead && !this.finished) {
+    if (
+      p.x > 4370 + (w.arenaOffset || 0) &&
+      all &&
+      w.boss.dead &&
+      !this.finished
+    ) {
       this.finished = true;
       this.progress.cleared = [
         ...new Set([...this.progress.cleared, w.region]),
@@ -586,7 +594,7 @@ export class Game {
       this.cb.sound("win");
       this.pause();
       this.cb.complete(w.region);
-    } else if (p.x > 4330 && !all && !this.gateHint) {
+    } else if (p.x > 4330 + (w.arenaOffset || 0) && !all && !this.gateHint) {
       this.gateHint = true;
       this.cb.toast(
         "Для врат нужны пять жетонов. Вернись по тропе за остальными.",
@@ -621,7 +629,11 @@ export class Game {
       b.deathTime += dt;
       return;
     }
-    if (p.x > (w.region === 0 ? 3500 : 3600) && p.y < 560 && !b.active) {
+    if (
+      p.x > (w.region === 0 ? 3500 + w.arenaOffset : 3600) &&
+      p.y < 560 &&
+      !b.active
+    ) {
       b.active = true;
       b.timer = 2.1;
       this.cb.toast(
@@ -665,7 +677,7 @@ export class Game {
       if (!b.active) return;
       stepMother(this, dt);
       // A living-root seal keeps the encounter inside the broad arena.
-      p.x = clamp(p.x, 3480, 4400 - p.w);
+      p.x = clamp(p.x, 3480 + w.arenaOffset, 4400 + w.arenaOffset - p.w);
       return;
     }
     stepRegionBoss(this, dt);
@@ -682,7 +694,7 @@ export class Game {
     w.projectiles = [];
     w.hazards = [];
     this.finished = false;
-    this.player.x = w.region === 0 ? 3560 : 3660;
+    this.player.x = w.region === 0 ? 3560 + w.arenaOffset : 3660;
     this.player.y = 446;
     this.player.vx = 0;
     this.player.vy = 0;
@@ -704,7 +716,11 @@ export class Game {
     this.clearInput();
     this.player.health = this.maxHealth();
     this.player.invulnerable = 2;
-    this.camera = clamp(3260, 0, w.width - this.renderer.viewWidth);
+    this.camera = clamp(
+      3260 + (w.arenaOffset || 0),
+      0,
+      w.width - this.renderer.viewWidth,
+    );
     this.cameraY = 0;
     this.cb.toast(
       "Повторный бой. Найденные жетоны и открытые земли сохранены.",
@@ -756,7 +772,7 @@ export class Game {
       this.world.boss.timer = 2.1;
     } else {
       p.vy = -220;
-      const x = clamp(p.x - p.dir * 30, 0, WORLD_WIDTH - p.w);
+      const x = clamp(p.x - p.dir * 30, 0, this.world.width - p.w);
       if (
         !this.world.platforms.some(
           (s) => (s.solid || s.ground) && overlaps({ ...p, x }, s),

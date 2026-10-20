@@ -480,6 +480,11 @@ export function buildRegion(region) {
     { x: 2350, y: l.checkpoint.y + 15, text: "ИСТОЧНИК · ПУТЬ К ВЕРШИНЕ ↗" },
   );
   l.springs = [
+    ...(region === 0
+      ? l.checkpoints
+          .slice(1)
+          .map((c) => ({ x: c.x + 70, y: c.y + 50, refuge: true }))
+      : []),
     { x: l.checkpoint.x + 105, y: l.checkpoint.y + 50 },
     { x: 3385, y: 500, refuge: true },
   ];

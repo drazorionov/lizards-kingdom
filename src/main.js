@@ -325,7 +325,16 @@ function showModal(kind, html) {
   $("#reset-progress").classList.toggle("hidden", kind === "reset");
   $("#modal-content").innerHTML = html;
   $("#modal").classList.remove("hidden");
-  requestAnimationFrame(() => $("#modal-close").focus());
+  requestAnimationFrame(() => {
+    $("#modal-close").focus();
+    const map = $("#modal-content .map-viewport");
+    if (map) {
+      map.scrollLeft =
+        Number(map.dataset.focusX) * map.scrollWidth - map.clientWidth / 2;
+      map.scrollTop =
+        Number(map.dataset.focusY) * map.scrollHeight - map.clientHeight / 2;
+    }
+  });
 }
 function closeModal(resume = true) {
   creatureShowcase?.stop();

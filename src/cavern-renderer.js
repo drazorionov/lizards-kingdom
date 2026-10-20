@@ -3,6 +3,7 @@ import { exposedTerrainEdges } from "./wall-surfaces.js";
 import { hasService, TOKEN_TYPES } from "./progression.js";
 
 const geometry = new WeakMap();
+const miniatures = new WeakMap();
 function boundaries(world) {
   const signature = world.platforms
     .filter((s) => s.solid)
@@ -56,21 +57,30 @@ export function drawCavernMinimap(r, game) {
     x = r.viewWidth - 190,
     y = 100;
   const all = game.progress.quests?.includes("stranger");
-  g.save();
+  const signature = `${all}:${[...w.discovered].join(":")}:${w.platforms.length}`;
+  let cached = miniatures.get(w);
+  if (cached?.signature !== signature) {
+    const canvas = document.createElement("canvas");
+    // Two pixels per map unit keeps the cached outline crisp on high-DPI screens.
+    canvas.width = sw * 2;
+    canvas.height = sh * 2;
+    const map = canvas.getContext("2d");
+    map.scale(canvas.width / w.width, canvas.height / w.height);
+    map.beginPath();
+    for (const room of w.rooms)
+      if (all || w.discovered.has(room.id))
+        map.rect(room.x, room.y, room.w, room.h);
+    map.clip();
+    map.fillStyle = "#508c75";
+    for (const a of w.caverns) map.fillRect(a.x, a.y, a.w, a.h);
+    map.fillStyle = "#041011";
+    for (const s of w.platforms) if (s.solid) map.fillRect(s.x, s.y, s.w, s.h);
+    cached = { signature, canvas };
+    miniatures.set(w, cached);
+  }
   g.fillStyle = "#041011e8";
   g.fillRect(x - 8, y - 8, sw + 16, sh + 22);
-  g.translate(x, y);
-  g.scale(sw / w.width, sh / w.height);
-  g.beginPath();
-  for (const room of w.rooms)
-    if (all || w.discovered.has(room.id))
-      g.rect(room.x, room.y, room.w, room.h);
-  g.clip();
-  g.fillStyle = "#508c75";
-  for (const a of w.caverns) g.fillRect(a.x, a.y, a.w, a.h);
-  g.fillStyle = "#041011";
-  for (const s of w.platforms) if (s.solid) g.fillRect(s.x, s.y, s.w, s.h);
-  g.restore();
+  g.drawImage(cached.canvas, x, y, sw, sh);
   g.fillStyle = "#fff2c9";
   g.beginPath();
   g.arc(
@@ -109,7 +119,7 @@ export function cavernMapMarkup(game) {
       ),
     )
     .join(" ");
-  return `<div class="forest-map"><svg viewBox="-70 -70 ${w.width + 140} ${w.height + 140}" role="img" aria-label="Дремучий грибной лес: реальные пещеры, тоннели и развилки"><defs><clipPath id="forest-discovery">${w.rooms
+  return `<div class="forest-map"><div class="map-viewport" tabindex="0" aria-label="Карта леса: прокрути, чтобы увидеть дальние тропы" data-focus-x="${(p.x + 15) / w.width}" data-focus-y="${(p.y + 27) / w.height}"><svg viewBox="-70 -70 ${w.width + 140} ${w.height + 140}" role="img" aria-label="Дремучий грибной лес: реальные пещеры, тоннели и развилки"><defs><clipPath id="forest-discovery">${w.rooms
     .filter((r) => all || w.discovered.has(r.id))
     .map((r) => rect(r))
     .join("")}</clipPath></defs>
@@ -128,7 +138,7 @@ export function cavernMapMarkup(game) {
     .filter((r) => all || w.discovered.has(r.id))
     .map(
       (r) =>
-        `<text x="${r.x + 40}" y="${r.y + 80}" fill="#d9d5b5" stroke="#051112" stroke-width="8" paint-order="stroke" font-size="38">${r.name}</text>`,
+        `<text x="${r.x + 40}" y="${r.y + 80}" fill="#d9d5b5" stroke="#051112" stroke-width="8" paint-order="stroke" font-size="64">${r.name}</text>`,
     )
     .join("")}
   ${w.tokens
@@ -138,8 +148,11 @@ export function cavernMapMarkup(game) {
         `<circle cx="${t.x}" cy="${t.y}" r="22" fill="${t.collected ? "#49675a" : TOKEN_TYPES[t.type].color}"/>`,
     )
     .join("")}
-  ${seen(w.checkpoint) ? `<path d="M${w.checkpoint.x} ${w.checkpoint.y - 35}l-28 48h56Z" fill="#f3c788"/>` : ""}
-  <circle cx="${p.x + 15}" cy="${p.y + 27}" r="26" fill="#fff7d9" stroke="#6ce2bc" stroke-width="9"/></svg>
-  <p>Споровые поля → верхняя тропа / спуск к корням → колодец и тёплый камень → грибная чаща → Забытое дерево. Нижний тоннель замыкает обратный путь.</p>
+  ${(w.checkpoints || [w.checkpoint])
+    .filter(seen)
+    .map((c) => `<path d="M${c.x} ${c.y - 35}l-28 48h56Z" fill="#f3c788"/>`)
+    .join("")}
+  <circle cx="${p.x + 15}" cy="${p.y + 27}" r="26" fill="#fff7d9" stroke="#6ce2bc" stroke-width="9"/></svg></div>
+  <p>Споровые поля → Старое сердце → крона / Зал фонарей → Висячие сады → Забытое дерево. Глубинные петли соединяют колодцы и привалы. ▲ Тёплый камень сохраняет место возвращения.</p>
   <div class="secret-list">${w.secrets.map((s) => `<span class="${s.found ? "found" : ""}">1.${s.id + 1} ${s.found ? "✓ " + s.name : hasService(game.progress, "compass") ? s.name : "Неизвестная тайна"}</span>`).join("")}</div></div>`;
 }

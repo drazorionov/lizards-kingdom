@@ -50,7 +50,11 @@ test("both heroes traverse the forest, discover both routes and break the secret
   for (const hero of [0, 1]) {
     const g = setup(hero);
     replay(g);
-    assert.ok(g.world.tokens.slice(0, 4).every((t) => t.collected));
+    assert.ok(
+      g.world.tokens
+        .filter((t) => [0, 2, 3].includes(t.id))
+        .every((t) => t.collected),
+    );
     for (const id of [
       "fields",
       "roots",
@@ -59,7 +63,7 @@ test("both heroes traverse the forest, discover both routes and break the secret
       "secret",
       "hearth",
       "canopy",
-      "sanctum",
+      "old-heart",
     ])
       assert.ok(g.world.discovered.has(id), id);
     assert.ok(!g.world.platforms.some((s) => s.secret && s.breakable));
@@ -76,7 +80,7 @@ test("a lower-tunnel ceiling blocks a jump and checkpoint restores the correct f
   assert.equal(g.player.y, 1140);
   assert.equal(g.player.vy, 0);
   g.checkpointUsed = true;
-  g.player.y = 1700;
+  g.player.y = g.world.height + 100;
   tick(g);
   assert.equal(g.player.x, 2240);
   assert.equal(g.player.y, 946);
@@ -94,13 +98,13 @@ test("root shortcut opens only after an attack and stays open through a fall", (
   g.press("attack");
   tick(g);
   assert.ok(!g.world.platforms.includes(seal));
-  g.player.y = 1700;
+  g.player.y = g.world.height + 100;
   tick(g);
   assert.ok(!g.world.platforms.includes(seal));
 });
 test("Mother cycles four different telegraphed attacks, moves underground and exposes recovery frames", () => {
   const g = setup();
-  g.player.x = 4350;
+  g.player.x = 4350 + g.world.arenaOffset;
   g.player.y = 446;
   g.player.invulnerable = 100;
   const warned = new Set(),
@@ -122,7 +126,7 @@ test("Mother cycles four different telegraphed attacks, moves underground and ex
       strikes.add(b.move);
     }
     if (b.pose != null) poses.add(b.pose);
-    if (b.x !== 4020) moved = true;
+    if (b.x !== 4020 + g.world.arenaOffset) moved = true;
     if (g.world.projectiles.some((a) => a.kind === "spore")) fan = true;
     if (g.world.projectiles.some((a) => a.kind === "wave")) wave = true;
     assert.ok(g.world.projectiles.length <= 24);
@@ -135,7 +139,7 @@ test("Mother cycles four different telegraphed attacks, moves underground and ex
 });
 test("half-health awakening has four poses and increases root pattern without removing warnings", () => {
   const g = setup();
-  g.player.x = 3650;
+  g.player.x = 3650 + g.world.arenaOffset;
   g.player.y = 446;
   g.player.invulnerable = 100;
   g.world.boss.hp = 12;
@@ -173,7 +177,7 @@ test("both heroes can defeat the pilot boss in both difficulty modes without los
         if (p.grounded && b.phase === 1 && b.timer < 0.3) g.press("jump");
         if (p.vy > 0) g.release("jump");
         tick(g);
-        if (p.x < 3400) {
+        if (p.x < 3400 + g.world.arenaOffset) {
           respawned = true;
           break;
         }

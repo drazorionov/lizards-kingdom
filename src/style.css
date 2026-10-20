@@ -1194,3 +1194,17 @@ summary {
 #fullscreen-status:empty {
   display: none;
 }
+
+/* The enlarged forest atlas remains readable and pans to the current room. */
+.map-viewport {
+  overflow: auto;
+  max-height: 60vh;
+  overscroll-behavior: contain;
+}
+.map-viewport svg {
+  min-width: 1600px;
+}
+.map-viewport:focus-visible {
+  outline: 2px solid #84bba0;
+  outline-offset: -2px;
+}

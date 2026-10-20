@@ -146,7 +146,7 @@ test("composed overlays cover all six motifs sparsely with stable anchors", () =
     [...new Set(gardens.map((p) => p.frame))].sort(),
     [0, 1, 2, 3, 4, 5],
   );
-  assert.ok(gardens.length >= 6 && gardens.length <= 12);
+  assert.ok(gardens.length >= 6 && gardens.length <= 36);
   assert.ok(
     gardens.some((p) => p.x === 760 && p.y === 500),
     "opening room gets a corner garden",
