@@ -51,6 +51,8 @@ await page.evaluate(async () => {
   window.fixture = { renderer, load, assets };
   window.fixture.start = async (r) => {
     const prefix = REGION_KEYS[r];
+    const { terrainArtKeys } = await import("/src/terrain-art.js");
+    await Promise.all(terrainArtKeys(r).map((key) => load(key)));
     await Promise.all(
       (r === 0
         ? [

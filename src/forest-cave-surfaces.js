@@ -1,5 +1,5 @@
-import atlas from "./forest-cave-art.json" with { type: "json" };
 import overlayArt from "./forest-overlays.json" with { type: "json" };
+import { terrainArt, terrainArtKeys } from "./terrain-art.js";
 import {
   artHash,
   caveSurfaces,
@@ -95,12 +95,12 @@ function strip(image, frame, side) {
   cache.set(frame, canvas);
   return canvas;
 }
-function drawSkin(g, assets, s) {
+function drawSkin(g, assets, s, art) {
   const horizontal = s.horizontal;
-  const image =
-    assets[horizontal ? "forest-cave-edges-v2" : "forest-cave-walls-v2"];
+  const kind = `${horizontal ? "edges" : "walls"}-${art.version}`;
+  const image = assets[art.prefix + kind];
   if (!image) return;
-  const frames = atlas[horizontal ? "edges-v2" : "walls-v2"];
+  const frames = art.frames[kind];
   const variant = artHash(s.side, s.axis) % 2;
   const frame =
     frames[variant + (s.side === "bottom" || s.side === "right" ? 2 : 0)];
@@ -153,6 +153,8 @@ function cornerPatch(image, frame) {
   return canvas;
 }
 function drawConnections(g, assets, game, faces, width) {
+  const art = terrainArt(game.world.region);
+  if (!art) return;
   for (const corner of layout(faces).corners) {
     if (
       corner.x < game.camera - 100 ||
@@ -161,11 +163,9 @@ function drawConnections(g, assets, game, faces, width) {
       corner.y > game.cameraY + 720
     )
       continue;
-    const kind = corner.kind.includes("ceiling")
-      ? "joins-ceiling-v2"
-      : "joins-floor-v2";
-    const image = assets["forest-cave-" + kind],
-      frame = atlas[kind]?.[corner.frame];
+    const kind = `${corner.kind.includes("ceiling") ? "joins-ceiling" : "joins-floor"}-${art.version}`;
+    const image = assets[art.prefix + kind],
+      frame = art.frames[kind]?.[corner.frame];
     if (!image || !frame) continue;
     const patch = cornerPatch(image, frame);
     g.save();
@@ -298,7 +298,8 @@ function drawUncachedTerrain(r, game, faces, solid) {
   surface.clearRect(0, 0, view.width, view.height);
   surface.save();
   surface.translate(-game.camera, -game.cameraY);
-  if (game.world.region !== 0) {
+  const art = terrainArt(game.world.region);
+  if (!art) {
     const material = r.assets[game.world.artKey + "-surface-v1"];
     if (material) {
       // One world-aligned material continues around every bend. The shared
@@ -333,29 +334,22 @@ function drawUncachedTerrain(r, game, faces, solid) {
       y > game.cameraY + 670
     )
       continue;
-    drawSkin(surface, r.assets, s);
+    drawSkin(surface, r.assets, s, art);
   }
   // Pass 3: compact deterministic joins, constrained by the same depth mask.
   drawConnections(surface, r.assets, game, faces, r.viewWidth);
   surface.restore();
   finishSkins(r, game, faces, view);
-  drawGrowth(r, game, faces, solid);
+  if (game.world.region === 0) drawGrowth(r, game, faces, solid);
 }
 // Terrain art is static between broken seals. Cache only a small neighborhood
 // of world tiles; camera motion then composites images instead of repainting
 // every skin, corner and alpha mask. The LRU bounds memory on tablets.
 export function drawCaveTerrain(r, game, faces, solid) {
-  const keys = [
-    "edges-v2",
-    "walls-v2",
-    "joins-floor-v2",
-    "joins-ceiling-v2",
-    "overlays-v1",
-  ];
-  const images =
-    game.world.region === 0
-      ? keys.map((k) => r.assets["forest-cave-" + k])
-      : [r.assets[game.world.artKey + "-surface-v1"]];
+  const keys = terrainArtKeys(game.world.region);
+  if (game.world.region === 0) keys.push("forest-cave-overlays-v1");
+  if (!keys.length) keys.push(game.world.artKey + "-surface-v1");
+  const images = keys.map((key) => r.assets[key]);
   let cached = terrainTiles.get(game.world);
   if (
     cached?.faces !== faces ||
@@ -408,7 +402,8 @@ export function drawCaveConnections(r, game, faces) {
   finishSkins(r, game, faces, view);
 }
 export function caveStoneTexture(r) {
-  if (r.regionIndex > 0)
+  const art = terrainArt(r.regionIndex);
+  if (!art)
     return (
       r.assets[
         ["forest", "marsh", "storm", "belfry", "depths", "lake"][
@@ -416,7 +411,8 @@ export function caveStoneTexture(r) {
         ] + "-surface-v1"
       ] || null
     );
-  const image = r.assets["forest-cave-walls-v2"];
+  const kind = `walls-${art.version}`;
+  const image = r.assets[art.prefix + kind];
   if (!image) return null;
   const cache = cacheFor(image);
   if (!cache.has("stone")) {
@@ -426,7 +422,7 @@ export function caveStoneTexture(r) {
     const g = canvas.getContext("2d");
     g.fillStyle = "#02050c";
     g.fillRect(0, 0, 256, 512);
-    const [x, y, w, h] = atlas["walls-v2"][1].rect;
+    const [x, y, w, h] = art.frames[kind][1].rect;
     g.drawImage(image, x + w * 0.25, y, w * 0.5, h, 0, 0, 256, 512);
     cache.set("stone", canvas);
   }

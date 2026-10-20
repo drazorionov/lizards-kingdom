@@ -1,5 +1,6 @@
 import { regionMapMarkup, townMapMarkup } from "./region-renderer.js";
 import { REGION_KEYS } from "./regions.js";
+import { terrainArtKeys } from "./terrain-art.js";
 import { growth, LEVELS, TOKEN_TYPES } from "./progression.js";
 import { RESIDENTS, residentProgress } from "./town.js";
 import { CreatureShowcase } from "./creature-showcase.js";
@@ -114,6 +115,7 @@ async function loadCreatureAssets(region) {
   await loadExtra(assets, [
     "vertical-walls-painted",
     `save-shrine-${region}-v1`,
+    ...(region === 0 ? [] : terrainArtKeys(region)),
   ]);
   const keys = [...REGION_CREATURES[region], BOSSES[region]];
   await Promise.all(
@@ -189,7 +191,8 @@ async function loadCreatureAssets(region) {
     for (const key of Object.keys(assets))
       if (key.startsWith("forest-")) delete assets[key];
   for (const [i, prefix] of REGION_KEYS.entries())
-    if (i > 0 && !keepRegions.has(i))
+    if (i > 0 && !keepRegions.has(i)) {
+      for (const key of terrainArtKeys(i)) delete assets[key];
       for (const suffix of [
         "background",
         "ledges",
@@ -198,6 +201,7 @@ async function loadCreatureAssets(region) {
         "boss-attacks-atlas",
       ])
         delete assets[`${prefix}-${suffix}`];
+    }
   return assets;
 }
 async function loadExtra(assets, keys) {
