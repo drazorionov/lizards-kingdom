@@ -391,7 +391,7 @@ canvas {
   text-shadow: 0 2px 8px #000;
 }
 .hud-eyebrow {
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: 3px;
   color: #c7c7b3;
 }
@@ -403,7 +403,7 @@ canvas {
   margin: 5px 0 8px;
 }
 .hud-left #hearts {
-  opacity: 0.5;
+  opacity: 0.85;
   font-size: 18px;
   letter-spacing: 4px;
   color: #e4bb79;
@@ -413,7 +413,7 @@ canvas {
 }
 .hud-center {
   text-align: center;
-  opacity: 0.2;
+  opacity: 0.8;
   padding-top: 6px;
 }
 .hud-center #token-count {
@@ -439,7 +439,8 @@ canvas {
   box-shadow: 0 0 20px #f6d18a45;
 }
 .game-bottom {
-  opacity: 0.12;
+  opacity: 0.85;
+  text-shadow: 0 2px 5px #020b14, 0 0 10px #020b14;
   position: absolute;
   bottom: 17px;
   left: 34px;
@@ -447,35 +448,36 @@ canvas {
   display: flex;
   justify-content: space-between;
   color: #b9cbc3;
-  font-size: 10px;
+  font-size: 12px;
   pointer-events: none;
 }
 #keyboard-hint {
-  color: #91a9a2;
-  font-size: 9px;
+  color: #d4e4dc;
+  font-size: 11px;
 }
 .toast {
   position: absolute;
   left: 50%;
-  top: 130px;
-  transform: translate(-50%, -12px);
-  background: #0b1929ed;
-  border: 1px solid #a1b1a655;
-  border-radius: 4px;
-  color: #ebdfbd;
-  font-size: 12px;
-  padding: 12px 23px;
-  max-width: 70%;
+  top: 50%;
+  transform: translate(-50%, calc(-50% + 8px));
+  background: transparent;
+  border: 0;
+  color: #f0e7ca;
+  font-size: clamp(22px, 3vw, 36px);
+  font-weight: 500;
+  line-height: 1.4;
+  padding: 0;
+  width: max-content;
+  max-width: 78%;
   text-align: center;
+  text-shadow: 0 2px 8px #020b14, 0 0 18px #020b14;
   opacity: 0;
-  transition:
-    opacity 0.25s,
-    transform 0.25s;
+  transition: opacity 0.25s, transform 0.25s;
   pointer-events: none;
 }
 .toast.visible {
-  opacity: 0.75;
-  transform: translate(-50%, 0);
+  opacity: 0.72;
+  transform: translate(-50%, -50%);
 }
 .boss-hud {
   opacity: 0.7;
@@ -532,7 +534,7 @@ canvas {
     0 5px 18px #020b1640;
   -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
-  opacity: 0.16;
+  opacity: 0.7;
   pointer-events: auto;
   touch-action: none;
   transition:
@@ -564,8 +566,8 @@ canvas {
   filter: drop-shadow(0 2px 3px #020d17b3);
 }
 .touch-controls button > span {
-  opacity: 0.35;
-  font-size: 9px;
+  opacity: 0.95;
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: 1px;
   text-transform: uppercase;
@@ -593,7 +595,7 @@ canvas {
   background: transparent;
 }
 .touch-caption {
-  opacity: 0.1;
+  opacity: 0.8;
   position: absolute;
   bottom: calc(100% + 12px);
   left: 0;
@@ -601,8 +603,8 @@ canvas {
   text-align: center;
   color: #c0d6ce;
   text-shadow: 0 2px 5px #021019;
-  font-size: 8px;
-  letter-spacing: 2.5px;
+  font-size: 10px;
+  letter-spacing: 2px;
   text-transform: uppercase;
 }
 .touch-move button {
@@ -616,7 +618,7 @@ canvas {
   border-radius: 18px 40px 40px 18px;
 }
 .touch-pivot {
-  opacity: 0.12;
+  opacity: 0.65;
   position: absolute;
   left: 50%;
   top: 50%;
@@ -1119,9 +1121,8 @@ canvas {
 
 .forest-map {
   margin: 20px 0;
-  border: 1px solid #46706677;
-  background: #06131d;
-  border-radius: 12px;
+  border: 0;
+  background: transparent;
   overflow: hidden;
 }
 .forest-map svg {
@@ -1154,7 +1155,7 @@ summary {
   background: #08152055;
   color: var(--paper);
   font-size: 20px;
-  opacity: 0.3;
+  opacity: 0.8;
   touch-action: manipulation;
   transition: opacity 150ms;
 }
@@ -1165,10 +1166,10 @@ summary {
 }
 .hud-left .hud-eyebrow,
 .hud-left h2 {
-  opacity: 0.12;
+  opacity: 0.8;
 }
 .hud-left h2 {
-  font-size: 18px;
+  font-size: 24px;
 }
 .menu-settings {
   display: flex;
@@ -1207,4 +1208,26 @@ summary {
 .map-viewport:focus-visible {
   outline: 2px solid #84bba0;
   outline-offset: -2px;
+}
+
+/* Maps and their captions float directly over the paused world. */
+.modal[data-kind="map"] {
+  background: transparent;
+  backdrop-filter: blur(8px) brightness(0.45);
+}
+.modal[data-kind="map"] .modal-panel {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.forest-map .secret-list span {
+  background: transparent;
+  padding: 7px 0;
+  color: #c3d6cc;
+}
+.forest-map .secret-list .found {
+  color: #f0a5cb;
+}
+.forest-map svg text {
+  opacity: 0.78;
 }

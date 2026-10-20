@@ -69,14 +69,14 @@ export function regionDetails(r, game) {
   if (w.region !== 0) {
     for (const a of w.hazards) drawRegionalHazard(r, a, game);
     g.save();
-    g.globalAlpha *= 0.12;
+    g.globalAlpha *= 0.6;
     for (const s of w.signs) {
       if (
         Math.abs(s.x - game.camera - r.viewWidth / 2) > r.viewWidth / 2 + 150 ||
         Math.abs(s.y - game.cameraY - 310) > 400
       )
         continue;
-      g.font = "10px Arial";
+      g.font = "18px Manrope, Arial";
       g.textAlign = "center";
       g.fillStyle = "#eddfbd";
       g.fillText(s.text, s.x, s.y);
@@ -107,7 +107,7 @@ export function regionDetails(r, game) {
     g.fillStyle = "#f2dcad";
     g.textAlign = "center";
     g.save();
-    g.globalAlpha *= 0.12;
+    g.globalAlpha *= 0.6;
     g.fillText(portal.name, portal.x, portal.y - 65);
     g.restore();
     if (
@@ -179,10 +179,6 @@ export function regionMinimap(r, game) {
     sh = 60,
     x = r.viewWidth - 190,
     y = 100;
-  g.fillStyle = "#06131bdd";
-  g.fillRect(x - 8, y - 8, 186, 96);
-  g.strokeStyle = game.region.color + "55";
-  g.strokeRect(x - 8, y - 8, 186, 96);
   for (const s of w.platforms) {
     if (!visibleRoom(w, s)) continue;
     g.fillStyle = s.breakable ? "#dbb879" : game.region.color + "88";
@@ -224,11 +220,11 @@ export function regionMapMarkup(game) {
     all = game.progress.quests?.includes("stranger"),
     hints = hasService(game.progress, "compass");
   const seen = (s) => all || visibleRoom(w, s);
-  return `<div class="forest-map"><svg viewBox="-80 -80 4710 1790" role="img" aria-label="Карта ${game.region.name}; неизвестные комнаты скрыты"><rect x="-80" y="-80" width="4710" height="1790" fill="#06131d"/>${w.rooms
+  return `<div class="forest-map"><svg viewBox="-80 -80 4710 1790" role="img" aria-label="Карта ${game.region.name}; неизвестные комнаты скрыты">${w.rooms
     .filter((r) => all || w.discovered.has(r.id))
     .map(
       (r) =>
-        `<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" fill="#153033" stroke="#3e625b" stroke-width="4"/><text x="${r.x + 20}" y="${r.y + 70}" fill="#e1d6b3" font-size="40">${r.name}</text>`,
+        `<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" fill="none" stroke="#8cbaa7" stroke-width="4"/><text x="${r.x + r.w / 2}" y="${r.y + r.h / 2}" text-anchor="middle" dominant-baseline="middle" fill="#f0e7ca" font-size="64">${r.name}</text>`,
     )
     .join("")}${w.platforms
     .filter(seen)
@@ -246,7 +242,7 @@ export function regionMapMarkup(game) {
     .filter((s) => s.found)
     .map(
       (s) =>
-        `<text x="${s.x + 25}" y="${s.y - 30}" fill="#f485bc" stroke="#06131d" stroke-width="7" paint-order="stroke" font-size="48">${w.region + 1}.${s.id + 1}</text>`,
+        `<text x="${s.x + 25}" y="${s.y - 30}" fill="#f485bc" font-size="48">${w.region + 1}.${s.id + 1}</text>`,
     )
     .join(
       "",

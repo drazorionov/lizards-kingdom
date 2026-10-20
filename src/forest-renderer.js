@@ -76,7 +76,7 @@ export function drawForestDetails(renderer, game) {
   const g = renderer.ctx,
     w = game.world;
   g.save();
-  g.globalAlpha *= 0.12;
+  g.globalAlpha *= 0.6;
   for (const sign of w.signs) {
     if (
       sign.x < game.camera - 150 ||
@@ -84,13 +84,11 @@ export function drawForestDetails(renderer, game) {
       Math.abs(sign.y - game.cameraY - 310) > 400
     )
       continue;
-    g.font = "bold 10px Arial";
+    g.font = "500 20px Manrope, Arial";
     g.textAlign = "center";
-    const width = g.measureText(sign.text).width + 20;
-    g.fillStyle = "#081c23dd";
-    g.fillRect(sign.x - width / 2, sign.y - 16, width, 23);
-    g.strokeStyle = "#688d7877";
-    g.strokeRect(sign.x - width / 2, sign.y - 16, width, 23);
+    g.shadowColor = "#020b14";
+    g.shadowBlur = 5;
+    g.shadowOffsetY = 2;
     g.fillStyle = "#d1d8b4";
     g.fillText(sign.text, sign.x, sign.y);
   }

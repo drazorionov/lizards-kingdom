@@ -5,6 +5,7 @@ const browser = await chromium.launch({
 });
 const context = await browser.newContext({
   viewport: { width: 1194, height: 834 },
+  hasTouch: true,
 });
 await context.route("**/api/progress", (r) =>
   r.fulfill({ json: { configured: false } }),
@@ -31,6 +32,23 @@ for (const [width, height] of [
   [844, 390],
 ]) {
   await page.setViewportSize({ width, height });
+  await page.screenshot({ path: `/tmp/forest-controls-${width}.png` });
+  const ui = await page.evaluate(() => {
+    const style = (selector) =>
+      getComputedStyle(document.querySelector(selector));
+    const toast = document.querySelector(".toast").getBoundingClientRect();
+    return {
+      controls: Number(style(".touch-controls button").opacity),
+      caption: Number(style(".touch-caption").opacity),
+      menu: Number(style(".menu-toggle").opacity),
+      toastBackground: style(".toast").backgroundColor,
+      toastSize: parseFloat(style(".toast").fontSize),
+      toastCenter: toast.left + toast.width / 2,
+    };
+  });
+  assert.ok(ui.controls >= 0.65 && ui.caption >= 0.7 && ui.menu >= 0.7);
+  assert.equal(ui.toastBackground, "rgba(0, 0, 0, 0)");
+  assert.ok(ui.toastSize >= 22 && Math.abs(ui.toastCenter - width / 2) < 1);
   await page.click("#pause");
   await page.click("#map-pause");
   await page.waitForFunction(
@@ -46,9 +64,21 @@ for (const [width, height] of [
       client: map.clientWidth,
       left: p.left - m.left,
       right: p.right - m.left,
+      background: getComputedStyle(map.parentElement).backgroundColor,
+      border: getComputedStyle(map.parentElement).borderTopWidth,
+      filledBackdrop: !!map.querySelector("svg > rect"),
+      boxedLabels: !!map.querySelector("text[stroke]"),
+      centeredLabels: [...map.querySelectorAll("text")].every(
+        (label) => label.getAttribute("text-anchor") === "middle",
+      ),
     };
   });
   assert.ok(bounds.width > bounds.client);
+  assert.equal(bounds.background, "rgba(0, 0, 0, 0)");
+  assert.equal(bounds.border, "0px");
+  assert.ok(
+    !bounds.filledBackdrop && !bounds.boxedLabels && bounds.centeredLabels,
+  );
   assert.ok(
     bounds.left >= 0 && bounds.right <= bounds.client,
     "map opens with the player visible",

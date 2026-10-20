@@ -322,6 +322,7 @@ function showModal(kind, html) {
   $("#pause").inert = true;
   $("#pause").setAttribute("aria-expanded", "true");
   modalKind = kind;
+  $("#modal").dataset.kind = kind;
   $("#reset-progress").classList.toggle("hidden", kind === "reset");
   $("#modal-content").innerHTML = html;
   $("#modal").classList.remove("hidden");

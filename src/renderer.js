@@ -310,10 +310,10 @@ export class Renderer {
           86,
         );
       g.fillStyle = "#d4c4a0";
-      g.font = "10px Georgia";
+      g.font = "16px Georgia";
       g.textAlign = "center";
       g.save();
-      g.globalAlpha *= 0.12;
+      g.globalAlpha *= 0.65;
       g.fillText("СТАРЕЙШИНА", w.elder.x + 16, w.elder.y - 33);
       g.strokeStyle = "#9eaa8b66";
       g.beginPath();
@@ -496,7 +496,7 @@ export class Renderer {
     g.fillStyle = shade;
     g.fillRect(0, 0, view, 170);
     g.save();
-    g.globalAlpha *= 0.1;
+    g.globalAlpha *= 0.85;
     regionMinimap(this, game);
     g.restore();
     this.frameCount++;
@@ -571,11 +571,11 @@ export class Renderer {
     g.bezierCurveTo(x + 27, y - 29, x + 12, y - 13, x, y - 14);
     g.bezierCurveTo(x - 23, y - 16, x - 12, y - 38, x, y - 65);
     g.fill();
-    g.font = "9px Manrope";
+    g.font = "15px Manrope";
     g.textAlign = "center";
     g.fillStyle = "#b9d0c7";
     g.save();
-    g.globalAlpha *= 0.12;
+    g.globalAlpha *= 0.65;
     g.fillText(active ? "ПУТЬ СОХРАНЁН" : "ТЁПЛЫЙ СВЕТ", x, y - 84);
     g.restore();
   }

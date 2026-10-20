@@ -71,15 +71,28 @@ export function drawCavernMinimap(r, game) {
       if (all || w.discovered.has(room.id))
         map.rect(room.x, room.y, room.w, room.h);
     map.clip();
-    map.fillStyle = "#508c75";
-    for (const a of w.caverns) map.fillRect(a.x, a.y, a.w, a.h);
-    map.fillStyle = "#041011";
-    for (const s of w.platforms) if (s.solid) map.fillRect(s.x, s.y, s.w, s.h);
+    map.strokeStyle = "#b5e7ce";
+    map.lineWidth = w.width / (sw * 1.5);
+    map.beginPath();
+    for (const { s, edges } of boundaries(w).faces) {
+      for (const side of ["top", "bottom", "left", "right"]) {
+        for (const [a, b] of edges[side]) {
+          if (side === "top" || side === "bottom") {
+            const y = s.y + (side === "bottom" ? s.h : 0);
+            map.moveTo(s.x + a, y);
+            map.lineTo(s.x + b, y);
+          } else {
+            const x = s.x + (side === "right" ? s.w : 0);
+            map.moveTo(x, s.y + a);
+            map.lineTo(x, s.y + b);
+          }
+        }
+      }
+    }
+    map.stroke();
     cached = { signature, canvas };
     miniatures.set(w, cached);
   }
-  g.fillStyle = "#041011e8";
-  g.fillRect(x - 8, y - 8, sw + 16, sh + 22);
   g.drawImage(cached.canvas, x, y, sw, sh);
   g.fillStyle = "#fff2c9";
   g.beginPath();
@@ -123,13 +136,7 @@ export function cavernMapMarkup(game) {
     .filter((r) => all || w.discovered.has(r.id))
     .map((r) => rect(r))
     .join("")}</clipPath></defs>
-  <rect x="-70" y="-70" width="${w.width + 140}" height="${w.height + 140}" fill="#051112"/>
-  <g clip-path="url(#forest-discovery)"><g fill="#234f43">${w.caverns.map((r) => rect(r)).join("")}</g><g fill="#051112">${w.platforms
-    .filter((s) => s.solid)
-    .map((s) => rect(s))
-    .join(
-      "",
-    )}</g><path d="${contour}" fill="none" stroke="#84bba0" stroke-width="7"/>
+  <g clip-path="url(#forest-discovery)"><path d="${contour}" fill="none" stroke="#a8ddbf" stroke-width="9"/>
   ${w.platforms
     .filter((s) => !s.solid || s.breakable)
     .map((s) => rect(s, `fill="${s.breakable ? "#dfb570" : "#7ea590"}"`))
@@ -138,7 +145,7 @@ export function cavernMapMarkup(game) {
     .filter((r) => all || w.discovered.has(r.id))
     .map(
       (r) =>
-        `<text x="${r.x + 40}" y="${r.y + 80}" fill="#d9d5b5" stroke="#051112" stroke-width="8" paint-order="stroke" font-size="64">${r.name}</text>`,
+        `<text x="${r.x + r.w / 2}" y="${r.y + r.h / 2}" text-anchor="middle" dominant-baseline="middle" fill="#f0e7ca" font-size="80">${r.name}</text>`,
     )
     .join("")}
   ${w.tokens
