@@ -1047,35 +1047,6 @@ canvas {
   text-align: center;
   font-size: 10px !important;
 }
-.hero-inspection {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  margin-top: 16px;
-  font-size: 11px;
-}
-.hero-inspection label {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-}
-.hero-inspection button,
-.hero-inspection select {
-  color: var(--paper);
-  background: #11212e;
-  border: 1px solid #4b5a60;
-  border-radius: 3px;
-  padding: 8px;
-}
-.hero-inspection input {
-  width: 100px;
-  accent-color: var(--gold);
-}
-.hero-inspection output {
-  min-width: 34px;
-}
 /* Cyrillic labels and the larger creature gallery remain readable on iPad. */
 .hero-copy h1 {
   font-size: clamp(40px, 4.4vw, 68px);

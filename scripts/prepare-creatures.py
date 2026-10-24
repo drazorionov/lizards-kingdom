@@ -10,7 +10,7 @@ import json
 ROOT=Path(__file__).resolve().parents[1]
 OUT=ROOT/'public/assets'
 
-def extract(path, count, columns=4):
+def extract(path, count):
     im=Image.open(path).convert('RGBA'); width,height=im.size
     alpha=im.getchannel('A'); mask=bytearray(alpha.point(lambda a:255 if a>40 else 0).tobytes())
     parts=[]
@@ -30,9 +30,9 @@ def extract(path, count, columns=4):
         pending=[part]
         while pending:
             c=pending.pop();l,t,r,b=c['box']
-            axis=0 if r-l>width/columns*1.5 else 1 if b-t>height/(count//columns)*1.5 else None
+            axis=0 if r-l>width/4*1.5 else 1 if b-t>height/(count//4)*1.5 else None
             if axis is None: split.append(c);continue
-            unit=width/columns if axis==0 else height/(count//columns)
+            unit=width/4 if axis==0 else height/(count//4)
             low,high=(l,r) if axis==0 else (t,b)
             boundary=round(((low+high)/2)/unit)*unit
             coords=[(pos%width if axis==0 else pos//width) for pos in c['pixels']]
@@ -51,7 +51,7 @@ def extract(path, count, columns=4):
     parts=parts[:count]
     parts.sort(key=lambda p:(p['box'][1]+p['box'][3])/2)
     ordered=[]
-    for row in range(count//columns): ordered.extend(sorted(parts[row*columns:row*columns+columns],key=lambda p:p['box'][0]))
+    for row in range(count//4): ordered.extend(sorted(parts[row*4:row*4+4],key=lambda p:p['box'][0]))
     tiles=[]
     for p in ordered:
         l,t,r,b=p['box']; box=(max(0,l-3),max(0,t-3),min(width,r+3),min(height,b+3))
@@ -92,6 +92,3 @@ if __name__=='__main__':
         im=Image.open(OUT/f'{key}-atlas.webp')
         im.crop((0,0,384,384)).save(OUT/f'{key}-portrait.webp','WEBP',quality=93,method=6)
     (OUT/'heroes-painted.json').write_text(json.dumps(heroes,indent=2)+'\n')
-    # Reapply the reviewed ten-frame motion sheets after rebuilding legacy poses.
-    import runpy
-    runpy.run_path(str(ROOT/'scripts/prepare-hero-motion.py'), run_name='__main__')

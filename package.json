@@ -8,7 +8,7 @@
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
     "test": "node --test tests/*.test.js",
-    "assets": "python3 scripts/prepare-assets.py && python3 scripts/prepare-heroes.py && python3 scripts/prepare-creatures.py && python3 scripts/prepare-forest.py && python3 scripts/prepare-expansion.py && python3 scripts/prepare-town-assets.py && python3 scripts/prepare-wall-assets.py && python3 scripts/prepare-cavern-assets.py && python3 scripts/prepare-forest-overlays.py && python3 scripts/prepare-save-shrines.py && python3 scripts/prepare-biome-terrain.py && python3 scripts/prepare-biome-caves.py && python3 scripts/prepare-hero-rig.py",
+    "assets": "python3 scripts/prepare-assets.py && python3 scripts/prepare-heroes.py && python3 scripts/prepare-creatures.py && python3 scripts/prepare-forest.py && python3 scripts/prepare-expansion.py && python3 scripts/prepare-town-assets.py && python3 scripts/prepare-wall-assets.py && python3 scripts/prepare-cavern-assets.py && python3 scripts/prepare-forest-overlays.py && python3 scripts/prepare-save-shrines.py && python3 scripts/prepare-biome-terrain.py && python3 scripts/prepare-biome-caves.py",
     "db:migrate": "node --env-file=.env.local scripts/migrate.js"
   },
   "dependencies": {

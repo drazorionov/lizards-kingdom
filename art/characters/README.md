@@ -53,18 +53,3 @@ hits on both sides with a slower cadence than Urmasa's forward dagger attack.
 provenance, but are no longer downloaded by the game. Both heroes can wall-slide
 and wall-jump, with the same physics and stable collision boxes. The gallery also
 previews attacks and wall poses.
-
-## Ten-frame motion update (active)
-
-Both playable heroes now use ten run poses (24–33) and ten combat poses (34–43).
-The old eight-frame gait and four-frame/reused-stance attacks are superseded.
-See [motion-v4/README.md](motion-v4/README.md) for reviewed source artwork,
-registration, rebuilding, and the slow-motion/frame inspection controls.
-
-## Continuous walking rig (active)
-
-Idle and walking now use stable layered artwork with continuously interpolated
-leg joints. Ten foot key poses replace the rapidly changing full-body walking
-images. See [walk-rig-v5/README.md](walk-rig-v5/README.md) for the source parts,
-rendering details, tests, and continuous-motion preview. Combat still uses the
-v4 ten-pose painted sequences.

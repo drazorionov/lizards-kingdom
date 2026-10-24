@@ -6,7 +6,6 @@ import {
   drawHero,
   heroFrameRect,
   HERO_ATLAS,
-  HERO_RUN_STRIDE,
 } from "../src/hero-animation.js";
 const player = () => ({
   x: 10,
@@ -31,7 +30,7 @@ test("standing cycles through all breathing poses without walking", () => {
   }
   assert.deepEqual([...frames].sort(), [0, 1, 2, 3]);
 });
-test("walk uses all ten frames and preserves its phase across a turn", () => {
+test("walk uses all eight frames and preserves its phase across a turn", () => {
   const p = player();
   p.vx = 270;
   const frames = new Set();
@@ -41,13 +40,13 @@ test("walk uses all ten frames and preserves its phase across a turn", () => {
   }
   assert.deepEqual(
     [...frames].sort((a, b) => a - b),
-    [24, 25, 26, 27, 28, 29, 30, 31, 32, 33],
+    [4, 5, 6, 7, 8, 9, 10, 11],
   );
   const phase = p.animation.walkPhase;
   p.vx = -270;
   p.dir = -1;
   updateHeroAnimation(p, 1 / 60);
-  assert.ok(Math.abs(p.animation.walkPhase - phase) < 0.5);
+  assert.ok(Math.abs(p.animation.walkPhase - phase) < 0.3);
 });
 test("airborne movement never uses walking frames; jump follows vertical velocity", () => {
   const p = player();
@@ -89,8 +88,7 @@ test("double jump restarts takeoff, and combat never switches to the old hero ar
   p.attack = 0.21;
   updateHeroAnimation(p, 1 / 60);
   assert.equal(p.animation.state, "attack");
-  assert.equal(p.animation.frame, 34);
-  p.attack = 0;
+  assert.equal(p.animation.frame, 13);
   p.dash = 0.18;
   updateHeroAnimation(p, 1 / 60);
   assert.equal(p.animation.state, "dash");
@@ -132,7 +130,7 @@ test("Quirel uses dedicated staff-sweep, wall-cling, wall-kick and double-jump p
     updateHeroAnimation(p, 0);
     frames.push(p.animation.frame);
   }
-  assert.deepEqual(frames, [34, 36, 39, 41]);
+  assert.deepEqual(frames, [16, 17, 18, 19]);
   p.attack = 0;
   p.grounded = false;
   p.wall = 1;
@@ -152,52 +150,5 @@ test("Quirel uses dedicated staff-sweep, wall-cling, wall-kick and double-jump p
   assert.equal(p.animation.frame, 22);
   p.attack = 0.2;
   updateHeroAnimation(p, 0);
-  assert.equal(p.animation.frame, 37);
-});
-
-for (const hero of [0, 1]) {
-  test(`hero ${hero} plays all ten combat poses on the ground and in the air`, () => {
-    const p = player();
-    p.hero = hero;
-    p.attackDuration = hero === 0 ? 0.32 : 0.21;
-    for (const grounded of [true, false]) {
-      p.grounded = grounded;
-      const frames = new Set();
-      for (let elapsed = 0; elapsed < p.attackDuration; elapsed += 1 / 60) {
-        p.attack = p.attackDuration - elapsed;
-        updateHeroAnimation(p, 1 / 60);
-        frames.add(p.animation.frame);
-      }
-      assert.deepEqual(
-        [...frames],
-        Array.from({ length: 10 }, (_, i) => 34 + i),
-      );
-    }
-    p.attack = p.attackDuration + 1;
-    updateHeroAnimation(p, 0);
-    assert.equal(
-      p.animation.frame,
-      34,
-      "oversized timer cannot select an invalid frame",
-    );
-    p.attack = 0.00001;
-    updateHeroAnimation(p, 0);
-    assert.equal(p.animation.frame, 43, "recovery reaches the final pose");
-  });
-}
-
-test("running phase follows distance, freezes at rest, and survives a direction change", () => {
-  const p = player();
-  p.animation.grounded = true;
-  p.vx = HERO_RUN_STRIDE;
-  updateHeroAnimation(p, 0.25);
-  assert.equal(p.animation.walkPhase, 2.5);
-  p.vx = 0;
-  updateHeroAnimation(p, 0.4);
-  assert.equal(p.animation.walkPhase, 2.5);
-  p.vx = -HERO_RUN_STRIDE;
-  updateHeroAnimation(p, 0.25);
-  assert.equal(p.animation.walkPhase, 5);
-  updateHeroAnimation(p, 0.5);
-  assert.equal(p.animation.walkPhase, 0);
+  assert.equal(p.animation.frame, 23);
 });
