@@ -424,7 +424,6 @@ export class Renderer {
     this.gate(4415 + (w.arenaOffset || 0), 500, t, ready);
     const hero = game.progress.hero === 1 ? "urmasa" : "quirel";
     const atlas = this.assets[`hero-${hero}-painted-atlas`];
-    const alpha = p.invulnerable > 0 && Math.floor(t * 12) % 2 ? 0.48 : 1;
     if (p.dash > 0) {
       for (let i = 1; i < 4; i++)
         drawHero(g, atlas, p, {
@@ -438,7 +437,10 @@ export class Renderer {
       g.ellipse(p.x + p.w / 2, p.y + p.h + 2, 22, 4, 0, 0, TAU);
       g.fill();
     }
-    drawHero(g, atlas, p, { alpha });
+    drawHero(g, atlas, p, {
+      rig: this.assets[`hero-${hero}-walk-rig-v5`],
+      hitTint: p.invulnerable > 0,
+    });
     if (p.attack > 0) {
       g.save();
       g.translate(p.x + 16, p.y + 24);

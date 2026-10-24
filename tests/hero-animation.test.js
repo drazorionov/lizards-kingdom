@@ -6,6 +6,7 @@ import {
   drawHero,
   heroFrameRect,
   HERO_ATLAS,
+  HERO_RUN_STRIDE,
 } from "../src/hero-animation.js";
 const player = () => ({
   x: 10,
@@ -188,13 +189,13 @@ for (const hero of [0, 1]) {
 test("running phase follows distance, freezes at rest, and survives a direction change", () => {
   const p = player();
   p.animation.grounded = true;
-  p.vx = 100;
+  p.vx = HERO_RUN_STRIDE;
   updateHeroAnimation(p, 0.25);
   assert.equal(p.animation.walkPhase, 2.5);
   p.vx = 0;
   updateHeroAnimation(p, 0.4);
   assert.equal(p.animation.walkPhase, 2.5);
-  p.vx = -100;
+  p.vx = -HERO_RUN_STRIDE;
   updateHeroAnimation(p, 0.25);
   assert.equal(p.animation.walkPhase, 5);
   updateHeroAnimation(p, 0.5);

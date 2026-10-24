@@ -73,10 +73,17 @@ async function loadAssets() {
         ...Object.keys(manifest),
         "hero-quirel-painted-atlas",
         "hero-urmasa-painted-atlas",
+        "hero-quirel-walk-rig-v5",
+        "hero-urmasa-walk-rig-v5",
         "elder-atlas",
         ...Array.from({ length: 5 }, (_, i) => `token-type-${i}`),
       ]
-        .filter((k) => !k.startsWith("hero-") || k.endsWith("painted-atlas"))
+        .filter(
+          (k) =>
+            !k.startsWith("hero-") ||
+            k.endsWith("painted-atlas") ||
+            k.endsWith("walk-rig-v5"),
+        )
         .filter(
           (k) =>
             !k.startsWith("enemy-") &&

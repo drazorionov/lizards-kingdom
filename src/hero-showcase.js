@@ -96,6 +96,10 @@ export class HeroShowcase {
         p.animation.frame =
           (this.mode === "walk" ? HERO_RUN_START : HERO_ATTACK_START) +
           this.inspectedFrame;
+        if (this.mode === "walk") {
+          p.animation.walkPhase = this.inspectedFrame;
+          p.animation.walkBlend = 1;
+        }
       }
       ctx.setTransform(2, 0, 0, 2, 0, 0);
       ctx.clearRect(0, 0, 320, 220);
@@ -112,7 +116,12 @@ export class HeroShowcase {
         ctx,
         this.assets[`hero-${i === 0 ? "quirel" : "urmasa"}-painted-atlas`],
         p,
-        { x: 145, y: 200 + p.y, size: 185 },
+        {
+          x: 145,
+          y: 200 + p.y,
+          size: 185,
+          rig: this.assets[`hero-${i === 0 ? "quirel" : "urmasa"}-walk-rig-v5`],
+        },
       );
       canvas.dataset.frame = String(p.animation.frame);
     }

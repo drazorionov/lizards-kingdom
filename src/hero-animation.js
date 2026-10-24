@@ -1,10 +1,11 @@
 import { HERO_MOTION } from "./hero-motion-data.js";
+import { drawWalkRig, WALK_STRIDE } from "./hero-walk-rig.js";
 
 // Legacy idle/jump poses retain their indices; both heroes share new action rows.
 export const HERO_RUN_START = 24;
 export const HERO_ATTACK_START = 34;
 export const HERO_ACTION_FRAMES = 10;
-export const HERO_RUN_STRIDE = 100;
+export const HERO_RUN_STRIDE = WALK_STRIDE;
 export const HERO_ATLAS = Object.freeze({
   cell: 384,
   columns: 4,
@@ -18,6 +19,7 @@ export function createHeroAnimation() {
     state: "fall",
     elapsed: 0,
     walkPhase: 0,
+    walkBlend: 0,
     frame: 15,
     grounded: false,
     landing: 0,
@@ -62,6 +64,10 @@ export function updateHeroAnimation(player, dt) {
     a.state = state;
     a.elapsed = 0;
   } else a.elapsed += dt;
+  // Ease starting/stopping without dissolving or swapping the character image.
+  const targetBlend = state === "walk" ? 1 : 0;
+  a.walkBlend =
+    targetBlend + ((a.walkBlend || 0) - targetBlend) * Math.exp(-dt / 0.08);
   // A stopped character freezes the gait phase; changes of direction do not reset it.
   if (state === "walk")
     a.walkPhase =
@@ -113,9 +119,24 @@ export function drawHero(
     y = player.y + player.h,
     alpha = 1,
     size = HERO_ATLAS.size,
+    rig = null,
+    hitTint = false,
   } = {},
 ) {
   const animation = player.animation || { frame: 0, state: "idle", elapsed: 0 };
+  if (
+    rig &&
+    player.animation &&
+    ["walk", "idle", "land"].includes(animation.state)
+  ) {
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.translate(x, y);
+    ctx.scale((player.dir * size) / HERO_ATLAS.size, size / HERO_ATLAS.size);
+    drawWalkRig(ctx, rig, player, hitTint);
+    ctx.restore();
+    return;
+  }
   const [sx, sy, sw, sh] = heroFrameRect(animation.frame);
   const motion = HERO_MOTION[player.hero === 0 ? "quirel" : "urmasa"];
   const registration =
@@ -130,6 +151,7 @@ export function drawHero(
   ctx.globalAlpha = alpha;
   ctx.translate(x, y);
   ctx.scale(player.dir, 1);
+  if (hitTint) ctx.filter = "brightness(1.14) sepia(0.18) saturate(0.85)";
   // Full-body combat follow-through is painted into the ten distinct poses.
   if (animation.state === "dash") ctx.rotate(0.12);
   ctx.drawImage(

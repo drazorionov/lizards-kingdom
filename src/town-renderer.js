@@ -199,6 +199,7 @@ export function drawTown(r, game) {
     g,
     r.assets[`hero-${p.hero ? "urmasa" : "quirel"}-painted-atlas`],
     p,
+    { rig: r.assets[`hero-${p.hero ? "urmasa" : "quirel"}-walk-rig-v5`] },
   );
   if (near) {
     const x = Math.max(
