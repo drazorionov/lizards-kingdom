@@ -342,9 +342,516 @@
           1246,
           1244
         ]
+      },
+      {
+        "rect": [
+          0,
+          2304,
+          384,
+          384
+        ],
+        "source": "art/characters/motion-v4/quirel-run.png",
+        "sourceBounds": [
+          17,
+          87,
+          377,
+          428
+        ],
+        "hipX": 225,
+        "paddingBounds": [
+          13,
+          28,
+          371,
+          367
+        ],
+        "anchorX": 177.898,
+        "scale": 0.76006
+      },
+      {
+        "rect": [
+          384,
+          2304,
+          384,
+          384
+        ],
+        "source": "art/characters/motion-v4/quirel-run.png",
+        "sourceBounds": [
+          399,
+          86,
+          739,
+          422
+        ],
+        "hipX": 590,
+        "paddingBounds": [
+          23,
+          33,
+          361,
+          367
+        ],
+        "anchorX": 170.898,
+        "scale": 0.76006
+      },
+      {
+        "rect": [
+          768,
+          2304,
+          384,
+          384
+        ],
+        "source": "art/characters/motion-v4/quirel-run.png",
+        "sourceBounds": [
+          756,
+          90,
+          1083,
+          425
+        ],
+        "hipX": 950,
+        "paddingBounds": [
+          29,
+          34,
+          354,
+          367
+        ],
+        "anchorX": 179.898,
+        "scale": 0.76006
+      },
+      {
+        "rect": [
+          1152,
+          2304,
+          384,
+          384
+        ],
+        "source": "art/characters/motion-v4/quirel-run.png",
+        "sourceBounds": [
+          1105,
+          90,
+          1439,
+          426
+        ],
+        "hipX": 1300,
+        "paddingBounds": [
+          26,
+          33,
+          358,
+          367
+        ],
+        "anchorX": 177.898,
+        "scale": 0.76006
+      },
+      {
+        "rect": [
+          0,
+          2688,
+          384,
+          384
+        ],
+        "source": "art/characters/motion-v4/quirel-run.png",
+        "sourceBounds": [
+          1461,
+          93,
+          1767,
+          425
+        ],
+        "hipX": 1650,
+        "paddingBounds": [
+          40,
+          37,
+          344,
+          367
+        ],
+        "anchorX": 185.898,
+        "scale": 0.76006
+      },
+      {
+        "rect": [
+          384,
+          2688,
+          384,
+          384
+        ],
+        "source": "art/characters/motion-v4/quirel-run.png",
+        "sourceBounds": [
+          15,
+          512,
+          367,
+          848
+        ],
+        "hipX": 210,
+        "paddingBounds": [
+          17,
+          33,
+          367,
+          367
+        ],
+        "anchorX": 168.898,
+        "scale": 0.76006
+      },
+      {
+        "rect": [
+          768,
+          2688,
+          384,
+          384
+        ],
+        "source": "art/characters/motion-v4/quirel-run.png",
+        "sourceBounds": [
+          391,
+          516,
+          746,
+          846
+        ],
+        "hipX": 570,
+        "paddingBounds": [
+          15,
+          39,
+          368,
+          367
+        ],
+        "anchorX": 150.898,
+        "scale": 0.76006
+      },
+      {
+        "rect": [
+          1152,
+          2688,
+          384,
+          384
+        ],
+        "source": "art/characters/motion-v4/quirel-run.png",
+        "sourceBounds": [
+          754,
+          513,
+          1084,
+          846
+        ],
+        "hipX": 930,
+        "paddingBounds": [
+          28,
+          36,
+          356,
+          367
+        ],
+        "anchorX": 160.898,
+        "scale": 0.76006
+      },
+      {
+        "rect": [
+          0,
+          3072,
+          384,
+          384
+        ],
+        "source": "art/characters/motion-v4/quirel-run.png",
+        "sourceBounds": [
+          1112,
+          508,
+          1432,
+          846
+        ],
+        "hipX": 1290,
+        "paddingBounds": [
+          33,
+          31,
+          351,
+          367
+        ],
+        "anchorX": 167.898,
+        "scale": 0.76006
+      },
+      {
+        "rect": [
+          384,
+          3072,
+          384,
+          384
+        ],
+        "source": "art/characters/motion-v4/quirel-run.png",
+        "sourceBounds": [
+          1468,
+          514,
+          1767,
+          847
+        ],
+        "hipX": 1640,
+        "paddingBounds": [
+          43,
+          36,
+          340,
+          367
+        ],
+        "anchorX": 171.898,
+        "scale": 0.76006
+      },
+      {
+        "rect": [
+          768,
+          3072,
+          384,
+          384
+        ],
+        "source": "art/characters/motion-v4/quirel-attack.png",
+        "sourceBounds": [
+          56,
+          25,
+          469,
+          296
+        ],
+        "hipX": 250,
+        "paddingBounds": [
+          42,
+          171,
+          342,
+          368
+        ],
+        "anchorX": 157.537,
+        "scale": 1.25223
+      },
+      {
+        "rect": [
+          1152,
+          3072,
+          384,
+          384
+        ],
+        "source": "art/characters/motion-v4/quirel-attack.png",
+        "sourceBounds": [
+          518,
+          47,
+          976,
+          293
+        ],
+        "hipX": 760,
+        "paddingBounds": [
+          25,
+          189,
+          358,
+          368
+        ],
+        "anchorX": 175.446,
+        "scale": 1.25223
+      },
+      {
+        "rect": [
+          0,
+          3456,
+          384,
+          384
+        ],
+        "source": "art/characters/motion-v4/quirel-attack.png",
+        "sourceBounds": [
+          56,
+          298,
+          471,
+          630
+        ],
+        "hipX": 270,
+        "paddingBounds": [
+          41,
+          127,
+          343,
+          368
+        ],
+        "anchorX": 171.082,
+        "scale": 1.25223
+      },
+      {
+        "rect": [
+          384,
+          3456,
+          384,
+          384
+        ],
+        "source": "art/characters/motion-v4/quirel-attack.png",
+        "sourceBounds": [
+          518,
+          303,
+          983,
+          637
+        ],
+        "hipX": 760,
+        "paddingBounds": [
+          23,
+          125,
+          361,
+          368
+        ],
+        "anchorX": 173.446,
+        "scale": 1.25223
+      },
+      {
+        "rect": [
+          768,
+          3456,
+          384,
+          384
+        ],
+        "source": "art/characters/motion-v4/quirel-attack.png",
+        "sourceBounds": [
+          37,
+          629,
+          511,
+          920
+        ],
+        "hipX": 270,
+        "paddingBounds": [
+          19,
+          156,
+          364,
+          368
+        ],
+        "anchorX": 162.9,
+        "scale": 1.25223
+      },
+      {
+        "rect": [
+          1152,
+          3456,
+          384,
+          384
+        ],
+        "source": "art/characters/motion-v4/quirel-attack.png",
+        "sourceBounds": [
+          516,
+          661,
+          1011,
+          917
+        ],
+        "hipX": 760,
+        "paddingBounds": [
+          12,
+          182,
+          372,
+          368
+        ],
+        "anchorX": 163.9,
+        "scale": 1.25223
+      },
+      {
+        "rect": [
+          0,
+          3840,
+          384,
+          384
+        ],
+        "source": "art/characters/motion-v4/quirel-attack.png",
+        "sourceBounds": [
+          46,
+          959,
+          532,
+          1197
+        ],
+        "hipX": 285,
+        "paddingBounds": [
+          15,
+          195,
+          368,
+          368
+        ],
+        "anchorX": 163.264,
+        "scale": 1.25223
+      },
+      {
+        "rect": [
+          384,
+          3840,
+          384,
+          384
+        ],
+        "source": "art/characters/motion-v4/quirel-attack.png",
+        "sourceBounds": [
+          561,
+          926,
+          987,
+          1214
+        ],
+        "hipX": 785,
+        "paddingBounds": [
+          37,
+          159,
+          347,
+          368
+        ],
+        "anchorX": 174.355,
+        "scale": 1.25223
+      },
+      {
+        "rect": [
+          768,
+          3840,
+          384,
+          384
+        ],
+        "source": "art/characters/motion-v4/quirel-attack.png",
+        "sourceBounds": [
+          61,
+          1221,
+          496,
+          1501
+        ],
+        "hipX": 280,
+        "paddingBounds": [
+          34,
+          164,
+          350,
+          368
+        ],
+        "anchorX": 167.718,
+        "scale": 1.25223
+      },
+      {
+        "rect": [
+          1152,
+          3840,
+          384,
+          384
+        ],
+        "source": "art/characters/motion-v4/quirel-attack.png",
+        "sourceBounds": [
+          540,
+          1229,
+          964,
+          1518
+        ],
+        "hipX": 775,
+        "paddingBounds": [
+          38,
+          158,
+          346,
+          368
+        ],
+        "anchorX": 183.355,
+        "scale": 1.25223
       }
     ],
-    "source": "art/characters/quirel-painted-source.png"
+    "source": "art/characters/quirel-painted-source.png",
+    "version": 4,
+    "sequences": {
+      "run": [
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33
+      ],
+      "attack": [
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43
+      ]
+    }
   },
   "urmasa": {
     "atlas": "hero-urmasa-painted-atlas.webp",
@@ -577,8 +1084,587 @@
           1247,
           1210
         ]
+      },
+      {
+        "rect": [
+          0,
+          1536,
+          384,
+          384
+        ],
+        "reserved": true
+      },
+      {
+        "rect": [
+          384,
+          1536,
+          384,
+          384
+        ],
+        "reserved": true
+      },
+      {
+        "rect": [
+          768,
+          1536,
+          384,
+          384
+        ],
+        "reserved": true
+      },
+      {
+        "rect": [
+          1152,
+          1536,
+          384,
+          384
+        ],
+        "reserved": true
+      },
+      {
+        "rect": [
+          0,
+          1920,
+          384,
+          384
+        ],
+        "reserved": true
+      },
+      {
+        "rect": [
+          384,
+          1920,
+          384,
+          384
+        ],
+        "reserved": true
+      },
+      {
+        "rect": [
+          768,
+          1920,
+          384,
+          384
+        ],
+        "reserved": true
+      },
+      {
+        "rect": [
+          1152,
+          1920,
+          384,
+          384
+        ],
+        "reserved": true
+      },
+      {
+        "rect": [
+          0,
+          2304,
+          384,
+          384
+        ],
+        "source": "art/characters/motion-v4/urmasa-run.png",
+        "sourceBounds": [
+          16,
+          86,
+          379,
+          418
+        ],
+        "hipX": 255,
+        "paddingBounds": [
+          13,
+          40,
+          371,
+          367
+        ],
+        "anchorX": 198.72,
+        "scale": 0.91443
+      },
+      {
+        "rect": [
+          384,
+          2304,
+          384,
+          384
+        ],
+        "source": "art/characters/motion-v4/urmasa-run.png",
+        "sourceBounds": [
+          399,
+          87,
+          726,
+          414
+        ],
+        "hipX": 610,
+        "paddingBounds": [
+          31,
+          45,
+          353,
+          367
+        ],
+        "anchorX": 188.951,
+        "scale": 0.91443
+      },
+      {
+        "rect": [
+          768,
+          2304,
+          384,
+          384
+        ],
+        "source": "art/characters/motion-v4/urmasa-run.png",
+        "sourceBounds": [
+          739,
+          90,
+          1056,
+          416
+        ],
+        "hipX": 960,
+        "paddingBounds": [
+          36,
+          46,
+          348,
+          367
+        ],
+        "anchorX": 203.869,
+        "scale": 0.91443
+      },
+      {
+        "rect": [
+          1152,
+          2304,
+          384,
+          384
+        ],
+        "source": "art/characters/motion-v4/urmasa-run.png",
+        "sourceBounds": [
+          1092,
+          89,
+          1427,
+          421
+        ],
+        "hipX": 1320,
+        "paddingBounds": [
+          27,
+          40,
+          357,
+          367
+        ],
+        "anchorX": 201.811,
+        "scale": 0.91443
+      },
+      {
+        "rect": [
+          0,
+          2688,
+          384,
+          384
+        ],
+        "source": "art/characters/motion-v4/urmasa-run.png",
+        "sourceBounds": [
+          1443,
+          87,
+          1771,
+          420
+        ],
+        "hipX": 1660,
+        "paddingBounds": [
+          30,
+          39,
+          353,
+          367
+        ],
+        "anchorX": 193.902,
+        "scale": 0.91443
+      },
+      {
+        "rect": [
+          384,
+          2688,
+          384,
+          384
+        ],
+        "source": "art/characters/motion-v4/urmasa-run.png",
+        "sourceBounds": [
+          17,
+          509,
+          372,
+          835
+        ],
+        "hipX": 245,
+        "paddingBounds": [
+          17,
+          46,
+          367,
+          367
+        ],
+        "anchorX": 191.811,
+        "scale": 0.91443
+      },
+      {
+        "rect": [
+          768,
+          2688,
+          384,
+          384
+        ],
+        "source": "art/characters/motion-v4/urmasa-run.png",
+        "sourceBounds": [
+          404,
+          506,
+          743,
+          835
+        ],
+        "hipX": 600,
+        "paddingBounds": [
+          25,
+          43,
+          359,
+          367
+        ],
+        "anchorX": 168.075,
+        "scale": 0.91443
+      },
+      {
+        "rect": [
+          1152,
+          2688,
+          384,
+          384
+        ],
+        "source": "art/characters/motion-v4/urmasa-run.png",
+        "sourceBounds": [
+          764,
+          509,
+          1082,
+          834
+        ],
+        "hipX": 960,
+        "paddingBounds": [
+          35,
+          47,
+          348,
+          367
+        ],
+        "anchorX": 178.075,
+        "scale": 0.91443
+      },
+      {
+        "rect": [
+          0,
+          3072,
+          384,
+          384
+        ],
+        "source": "art/characters/motion-v4/urmasa-run.png",
+        "sourceBounds": [
+          1089,
+          508,
+          1433,
+          836
+        ],
+        "hipX": 1320,
+        "paddingBounds": [
+          22,
+          44,
+          361,
+          367
+        ],
+        "anchorX": 199.786,
+        "scale": 0.91443
+      },
+      {
+        "rect": [
+          384,
+          3072,
+          384,
+          384
+        ],
+        "source": "art/characters/motion-v4/urmasa-run.png",
+        "sourceBounds": [
+          1452,
+          509,
+          1774,
+          836
+        ],
+        "hipX": 1680,
+        "paddingBounds": [
+          33,
+          45,
+          351,
+          367
+        ],
+        "anchorX": 207.811,
+        "scale": 0.91443
+      },
+      {
+        "rect": [
+          768,
+          3072,
+          384,
+          384
+        ],
+        "source": "art/characters/motion-v4/urmasa-attack.png",
+        "sourceBounds": [
+          46,
+          18,
+          468,
+          327
+        ],
+        "hipX": 285,
+        "paddingBounds": [
+          44,
+          152,
+          340,
+          368
+        ],
+        "anchorX": 177.819,
+        "scale": 1.37011
+      },
+      {
+        "rect": [
+          1152,
+          3072,
+          384,
+          384
+        ],
+        "source": "art/characters/motion-v4/urmasa-attack.png",
+        "sourceBounds": [
+          538,
+          76,
+          939,
+          320
+        ],
+        "hipX": 800,
+        "paddingBounds": [
+          51,
+          197,
+          332,
+          368
+        ],
+        "anchorX": 200.928,
+        "scale": 1.37011
+      },
+      {
+        "rect": [
+          0,
+          3456,
+          384,
+          384
+        ],
+        "source": "art/characters/motion-v4/urmasa-attack.png",
+        "sourceBounds": [
+          34,
+          338,
+          464,
+          631
+        ],
+        "hipX": 290,
+        "paddingBounds": [
+          41,
+          163,
+          342,
+          368
+        ],
+        "anchorX": 186.726,
+        "scale": 1.37011
+      },
+      {
+        "rect": [
+          384,
+          3456,
+          384,
+          384
+        ],
+        "source": "art/characters/motion-v4/urmasa-attack.png",
+        "sourceBounds": [
+          545,
+          317,
+          972,
+          636
+        ],
+        "hipX": 800,
+        "paddingBounds": [
+          42,
+          145,
+          341,
+          368
+        ],
+        "anchorX": 187.025,
+        "scale": 1.37011
+      },
+      {
+        "rect": [
+          768,
+          3456,
+          384,
+          384
+        ],
+        "source": "art/characters/motion-v4/urmasa-attack.png",
+        "sourceBounds": [
+          26,
+          612,
+          540,
+          919
+        ],
+        "hipX": 280,
+        "paddingBounds": [
+          12,
+          153,
+          372,
+          368
+        ],
+        "anchorX": 156.325,
+        "scale": 1.37011
+      },
+      {
+        "rect": [
+          1152,
+          3456,
+          384,
+          384
+        ],
+        "source": "art/characters/motion-v4/urmasa-attack.png",
+        "sourceBounds": [
+          528,
+          666,
+          1018,
+          919
+        ],
+        "hipX": 805,
+        "paddingBounds": [
+          20,
+          191,
+          363,
+          368
+        ],
+        "anchorX": 180.434,
+        "scale": 1.37011
+      },
+      {
+        "rect": [
+          0,
+          3840,
+          384,
+          384
+        ],
+        "source": "art/characters/motion-v4/urmasa-attack.png",
+        "sourceBounds": [
+          60,
+          930,
+          537,
+          1188
+        ],
+        "hipX": 310,
+        "paddingBounds": [
+          25,
+          187,
+          359,
+          368
+        ],
+        "anchorX": 166.523,
+        "scale": 1.37011
+      },
+      {
+        "rect": [
+          384,
+          3840,
+          384,
+          384
+        ],
+        "source": "art/characters/motion-v4/urmasa-attack.png",
+        "sourceBounds": [
+          572,
+          943,
+          974,
+          1189
+        ],
+        "hipX": 820,
+        "paddingBounds": [
+          51,
+          196,
+          333,
+          368
+        ],
+        "anchorX": 191.123,
+        "scale": 1.37011
+      },
+      {
+        "rect": [
+          768,
+          3840,
+          384,
+          384
+        ],
+        "source": "art/characters/motion-v4/urmasa-attack.png",
+        "sourceBounds": [
+          50,
+          1200,
+          485,
+          1502
+        ],
+        "hipX": 290,
+        "paddingBounds": [
+          39,
+          156,
+          344,
+          368
+        ],
+        "anchorX": 173.52,
+        "scale": 1.37011
+      },
+      {
+        "rect": [
+          1152,
+          3840,
+          384,
+          384
+        ],
+        "source": "art/characters/motion-v4/urmasa-attack.png",
+        "sourceBounds": [
+          556,
+          1197,
+          968,
+          1507
+        ],
+        "hipX": 800,
+        "paddingBounds": [
+          47,
+          151,
+          336,
+          368
+        ],
+        "anchorX": 184.321,
+        "scale": 1.37011
       }
     ],
-    "source": "art/characters/urmasa-painted-source.png"
+    "source": "art/characters/urmasa-painted-source.png",
+    "version": 4,
+    "sequences": {
+      "run": [
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33
+      ],
+      "attack": [
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43
+      ]
+    }
   }
 }

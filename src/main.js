@@ -96,7 +96,9 @@ async function loadAssets() {
         )
         .map(async (key) => {
           const im = new Image();
-          im.src = `/assets/${key}.webp`;
+          // The expanded atlas must not reuse a cached pre-v4 frame layout.
+          const version = key.startsWith("hero-") ? "?v=motion-4" : "";
+          im.src = `/assets/${key}.webp${version}`;
           await im.decode();
           assets[key] = im;
         }),
@@ -460,7 +462,7 @@ function acceptStoreValue(value) {
 async function showHeroes() {
   showModal(
     "heroes",
-    `<div class="eyebrow">ДВА СТРАННИКА. ОДНО БОЛЬШОЕ ПРИКЛЮЧЕНИЕ.</div><h2 id="modal-title">Знакомься с героями</h2><div class="hero-gallery"><section><canvas width="480" height="420" aria-label="Анимация Квирел"></canvas><h3>Квирел</h3><span>ЗОЛОТАЯ СТРАННИЦА</span><p>Спокойствие, точность, равновесие. Квирел сражается круговыми ударами посоха с двумя клинками и отталкивается от стен.</p></section><section><canvas width="480" height="420" aria-label="Анимация Урмасы"></canvas><h3>Урмаса</h3><span>АЛАЯ ИСКРА</span><p>Стремительные шаги и парные клинки. Алая искра на пути к новым открытиям.</p></section></div><div class="hero-preview-modes" role="group" aria-label="Движения героев"><button data-motion="idle" aria-pressed="true">Покой</button><button data-motion="walk" aria-pressed="false">Бег</button><button data-motion="jump" aria-pressed="false">Прыжок</button><button data-motion="attack" aria-pressed="false">Атака</button><button data-motion="wall" aria-pressed="false">На стене</button></div><p id="hero-preview-status" class="hero-preview-status">Будим странников…</p>`,
+    `<div class="eyebrow">ДВА СТРАННИКА. ОДНО БОЛЬШОЕ ПРИКЛЮЧЕНИЕ.</div><h2 id="modal-title">Знакомься с героями</h2><div class="hero-gallery"><section><canvas width="640" height="440" aria-label="Анимация Квирел"></canvas><h3>Квирел</h3><span>ЗОЛОТАЯ СТРАННИЦА</span><p>Спокойствие, точность, равновесие. Квирел сражается круговыми ударами посоха с двумя клинками и отталкивается от стен.</p></section><section><canvas width="640" height="440" aria-label="Анимация Урмасы"></canvas><h3>Урмаса</h3><span>АЛАЯ ИСКРА</span><p>Стремительные шаги и парные клинки. Алая искра на пути к новым открытиям.</p></section></div><div class="hero-preview-modes" role="group" aria-label="Движения героев"><button data-motion="idle" aria-pressed="true">Покой</button><button data-motion="walk" aria-pressed="false">Бег</button><button data-motion="jump" aria-pressed="false">Прыжок</button><button data-motion="attack" aria-pressed="false">Атака</button><button data-motion="wall" aria-pressed="false">На стене</button></div><div class="hero-inspection"><label>Скорость <select id="hero-motion-speed"><option value="1">1×</option><option value="0.25">¼×</option></select></label><button id="hero-motion-mirror" aria-pressed="false">В другую сторону</button><label>Кадр <input id="hero-motion-frame" type="range" min="1" max="10" value="1" disabled><output id="hero-motion-frame-label">—</output></label><button id="hero-motion-play">Воспроизвести</button></div><p id="hero-preview-status" class="hero-preview-status">Будим странников…</p>`,
   );
   try {
     const assets = await loadAssets();
@@ -471,10 +473,32 @@ async function showHeroes() {
     );
     $("#hero-preview-status").textContent =
       "Выбери движение, чтобы увидеть героев в действии.";
+    $("#hero-motion-speed").onchange = (e) => {
+      heroShowcase.speed = Number(e.target.value);
+    };
+    $("#hero-motion-mirror").onclick = (e) => {
+      for (const p of heroShowcase.players) p.dir *= -1;
+      e.currentTarget.setAttribute(
+        "aria-pressed",
+        String(heroShowcase.players[0].dir < 0),
+      );
+    };
+    $("#hero-motion-frame").oninput = (e) => {
+      heroShowcase.inspectedFrame = Number(e.target.value) - 1;
+      $("#hero-motion-frame-label").textContent = `${e.target.value}/10`;
+    };
+    $("#hero-motion-play").onclick = () => {
+      heroShowcase.inspectedFrame = null;
+      $("#hero-motion-frame-label").textContent = "—";
+    };
     document.querySelectorAll("[data-motion]").forEach(
       (button) =>
         (button.onclick = () => {
           heroShowcase.setMode(button.dataset.motion);
+          $("#hero-motion-frame").disabled = !["walk", "attack"].includes(
+            button.dataset.motion,
+          );
+          $("#hero-motion-frame-label").textContent = "—";
           document
             .querySelectorAll("[data-motion]")
             .forEach((b) =>

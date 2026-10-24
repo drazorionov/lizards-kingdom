@@ -1,4 +1,10 @@
-// Both heroes use registered 384px cells; Quirel adds combat and wall-kick rows.
+import { HERO_MOTION } from "./hero-motion-data.js";
+
+// Legacy idle/jump poses retain their indices; both heroes share new action rows.
+export const HERO_RUN_START = 24;
+export const HERO_ATTACK_START = 34;
+export const HERO_ACTION_FRAMES = 10;
+export const HERO_RUN_STRIDE = 100;
 export const HERO_ATLAS = Object.freeze({
   cell: 384,
   columns: 4,
@@ -31,10 +37,10 @@ export function updateHeroAnimation(player, dt) {
   a.landing = Math.max(0, a.landing - dt);
   a.takeoff = Math.max(0, a.takeoff - dt);
   const state =
-    player.dash > 0
-      ? "dash"
-      : player.attack > 0
-        ? "attack"
+    player.attack > 0
+      ? "attack"
+      : player.dash > 0
+        ? "dash"
         : player.wall && !player.grounded && player.vy >= 0
           ? "wall"
           : player.wallKick > 0
@@ -58,36 +64,30 @@ export function updateHeroAnimation(player, dt) {
   } else a.elapsed += dt;
   // A stopped character freezes the gait phase; changes of direction do not reset it.
   if (state === "walk")
-    a.walkPhase = (a.walkPhase + (Math.abs(player.vx) * dt) / 23) % 8;
+    a.walkPhase =
+      (a.walkPhase +
+        (Math.abs(player.vx) * dt * HERO_ACTION_FRAMES) / HERO_RUN_STRIDE) %
+      HERO_ACTION_FRAMES;
   a.frame =
     state === "idle"
       ? IDLE[Math.floor(a.elapsed * 5) % IDLE.length]
       : state === "walk"
-        ? 4 + Math.floor(a.walkPhase)
+        ? HERO_RUN_START + Math.floor(a.walkPhase)
         : state === "land" || state === "takeoff"
           ? 12
           : state === "rise" || state === "dash"
             ? 13
             : state === "apex"
               ? 14
-              : state === "attack"
-                ? player.grounded
-                  ? 7
-                  : player.vy < 0
-                    ? 13
-                    : 15
-                : 15;
+              : 15;
+  if (state === "attack") {
+    const duration = player.attackDuration || (player.hero === 0 ? 0.32 : 0.21);
+    const progress = Math.max(0, Math.min(1, 1 - player.attack / duration));
+    a.frame =
+      HERO_ATTACK_START +
+      Math.min(9, Math.floor(progress * HERO_ACTION_FRAMES));
+  }
   if (player.hero === 0) {
-    if (state === "attack")
-      a.frame = player.grounded
-        ? 16 +
-          Math.min(
-            3,
-            Math.floor(
-              (1 - player.attack / (player.attackDuration || 0.32)) * 4,
-            ),
-          )
-        : 23;
     if (state === "wall") a.frame = 20;
     if (state === "wallkick") a.frame = 21;
     if (player.jumps === 2 && state === "rise") a.frame = 22;
@@ -98,8 +98,8 @@ export function updateHeroAnimation(player, dt) {
 }
 export function heroFrameRect(frame) {
   return [
-    (frame % 4) * HERO_ATLAS.cell,
-    Math.floor(frame / 4) * HERO_ATLAS.cell,
+    (frame % HERO_ATLAS.columns) * HERO_ATLAS.cell,
+    Math.floor(frame / HERO_ATLAS.columns) * HERO_ATLAS.cell,
     HERO_ATLAS.cell,
     HERO_ATLAS.cell,
   ];
@@ -117,13 +117,20 @@ export function drawHero(
 ) {
   const animation = player.animation || { frame: 0, state: "idle", elapsed: 0 };
   const [sx, sy, sw, sh] = heroFrameRect(animation.frame);
+  const motion = HERO_MOTION[player.hero === 0 ? "quirel" : "urmasa"];
+  const registration =
+    animation.frame >= HERO_ATTACK_START
+      ? motion.attack[animation.frame - HERO_ATTACK_START]
+      : animation.frame >= HERO_RUN_START
+        ? motion.run[animation.frame - HERO_RUN_START]
+        : null;
+  const drawSize = size * (registration?.scale || 1);
+  const anchorX = registration?.anchorX ?? HERO_ATLAS.anchorX;
   ctx.save();
   ctx.globalAlpha = alpha;
   ctx.translate(x, y);
   ctx.scale(player.dir, 1);
-  // Subtle follow-through uses the same detailed sprite during combat and dash.
-  if (animation.state === "attack" && player.hero !== 0)
-    ctx.rotate(Math.sin((1 - player.attack / 0.21) * Math.PI) * 0.12);
+  // Full-body combat follow-through is painted into the ten distinct poses.
   if (animation.state === "dash") ctx.rotate(0.12);
   ctx.drawImage(
     atlas,
@@ -131,10 +138,10 @@ export function drawHero(
     sy,
     sw,
     sh,
-    -size / 2,
-    -(368 / sh) * size,
-    size,
-    size,
+    -(anchorX / sw) * drawSize,
+    -(HERO_ATLAS.anchorY / sh) * drawSize,
+    drawSize,
+    drawSize,
   );
   ctx.restore();
 }

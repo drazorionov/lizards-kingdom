@@ -2,12 +2,17 @@ import {
   createHeroAnimation,
   updateHeroAnimation,
   drawHero,
+  HERO_RUN_START,
+  HERO_ATTACK_START,
 } from "./hero-animation.js";
 export class HeroShowcase {
   constructor(canvases, assets) {
     this.canvases = canvases;
     this.assets = assets;
     this.mode = "idle";
+    this.speed = 1;
+    this.time = 0;
+    this.inspectedFrame = null;
     this.players = [0, 1].map((hero) => ({
       hero,
       x: 0,
@@ -29,6 +34,8 @@ export class HeroShowcase {
   }
   setMode(mode) {
     this.mode = mode;
+    this.time = 0;
+    this.inspectedFrame = null;
     this.jumpWait = 0.1;
     for (const p of this.players) {
       p.y = 0;
@@ -40,17 +47,24 @@ export class HeroShowcase {
   }
   draw(time) {
     const dt = this.previous
-      ? Math.min((time - this.previous) / 1000, 0.04)
+      ? Math.min((time - this.previous) / 1000, 0.04) * this.speed
       : 0;
     this.previous = time;
+    this.time += dt;
     this.jumpWait -= dt;
     for (let i = 0; i < 2; i++) {
       const p = this.players[i],
         canvas = this.canvases[i],
         ctx = canvas.getContext("2d");
       p.vx = this.mode === "walk" ? 210 : 0;
-      p.attackDuration = 0.32;
-      p.attack = this.mode === "attack" ? 0.32 - ((time / 1000) % 0.8) : 0;
+      p.attackDuration = i === 0 ? 0.32 : 0.21;
+      p.attack =
+        this.mode === "attack"
+          ? Math.max(
+              0,
+              p.attackDuration - (this.time % (p.attackDuration + 0.35)),
+            )
+          : 0;
       p.wall = this.mode === "wall" ? 1 : 0;
       if (this.mode === "wall") {
         p.grounded = false;
@@ -74,13 +88,22 @@ export class HeroShowcase {
         }
       }
       updateHeroAnimation(p, dt);
+      if (
+        this.inspectedFrame !== null &&
+        ["walk", "attack"].includes(this.mode)
+      ) {
+        p.animation.state = this.mode;
+        p.animation.frame =
+          (this.mode === "walk" ? HERO_RUN_START : HERO_ATTACK_START) +
+          this.inspectedFrame;
+      }
       ctx.setTransform(2, 0, 0, 2, 0, 0);
-      ctx.clearRect(0, 0, 240, 210);
+      ctx.clearRect(0, 0, 320, 220);
       const glow = ctx.createRadialGradient(126, 120, 0, 126, 120, 108);
       glow.addColorStop(0, i === 0 ? "#b4872933" : "#9b283333");
       glow.addColorStop(1, "#0c182000");
       ctx.fillStyle = glow;
-      ctx.fillRect(0, 0, 240, 210);
+      ctx.fillRect(0, 0, 320, 220);
       ctx.fillStyle = "#0005";
       ctx.beginPath();
       ctx.ellipse(140, 194, 37, 5, 0, 0, Math.PI * 2);
@@ -89,8 +112,9 @@ export class HeroShowcase {
         ctx,
         this.assets[`hero-${i === 0 ? "quirel" : "urmasa"}-painted-atlas`],
         p,
-        { x: 120, y: 193 + p.y, size: 205 },
+        { x: 145, y: 200 + p.y, size: 185 },
       );
+      canvas.dataset.frame = String(p.animation.frame);
     }
     if (
       this.mode === "jump" &&

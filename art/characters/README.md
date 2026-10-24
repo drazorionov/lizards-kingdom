@@ -53,3 +53,10 @@ hits on both sides with a slower cadence than Urmasa's forward dagger attack.
 provenance, but are no longer downloaded by the game. Both heroes can wall-slide
 and wall-jump, with the same physics and stable collision boxes. The gallery also
 previews attacks and wall poses.
+
+## Ten-frame motion update (active)
+
+Both playable heroes now use ten run poses (24–33) and ten combat poses (34–43).
+The old eight-frame gait and four-frame/reused-stance attacks are superseded.
+See [motion-v4/README.md](motion-v4/README.md) for reviewed source artwork,
+registration, rebuilding, and the slow-motion/frame inspection controls.
