@@ -98,6 +98,11 @@ async function loadAssets() {
           const im = new Image();
           im.src = `/assets/${key}.webp`;
           await im.decode();
+          if (/^hero-(quirel|urmasa)-painted-atlas$/.test(key)) {
+            im.runAtlas = new Image();
+            im.runAtlas.src = `/assets/${key.replace("-painted-atlas", "-run-eight-atlas")}.webp`;
+            await im.runAtlas.decode();
+          }
           assets[key] = im;
         }),
     );

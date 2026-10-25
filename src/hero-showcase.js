@@ -3,6 +3,7 @@ import {
   updateHeroAnimation,
   drawHero,
 } from "./hero-animation.js";
+import { PHYSICS } from "./world.js";
 export class HeroShowcase {
   constructor(canvases, assets) {
     this.canvases = canvases;
@@ -48,7 +49,7 @@ export class HeroShowcase {
       const p = this.players[i],
         canvas = this.canvases[i],
         ctx = canvas.getContext("2d");
-      p.vx = this.mode === "walk" ? 210 : 0;
+      p.vx = this.mode === "walk" ? PHYSICS.speed : 0;
       p.attackDuration = 0.32;
       p.attack = this.mode === "attack" ? 0.32 - ((time / 1000) % 0.8) : 0;
       p.wall = this.mode === "wall" ? 1 : 0;

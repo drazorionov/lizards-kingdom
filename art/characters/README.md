@@ -53,3 +53,17 @@ hits on both sides with a slower cadence than Urmasa's forward dagger attack.
 provenance, but are no longer downloaded by the game. Both heroes can wall-slide
 and wall-jump, with the same physics and stable collision boxes. The gallery also
 previews attacks and wall poses.
+
+## Original-frame running playback
+
+Running still draws one complete painted pose at its original scale,
+using only frames 4–11. Playback eases into the movement speed over 60 ms and
+settles at 12 poses per second at the normal 270 px/s run (five simulation ticks
+per pose). The phase survives stops and turns. Moving landings resume the run
+immediately; stationary landings retain their crouch. The gallery uses the game’s
+run speed. Body proportions, opacity, and foot registration are unchanged.
+
+The [eight-frame leg correction](run-eight-v1/README.md) replaces only the leg
+artwork inside those eight run cells. The original painted atlases remain saved;
+the runtime loads the lossless `hero-*-run-eight-atlas.webp` variants. Upper-body
+pixels and all idle, jump, combat, and wall poses retain their original artwork.

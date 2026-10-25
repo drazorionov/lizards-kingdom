@@ -7,11 +7,15 @@ export const HERO_ATLAS = Object.freeze({
   size: 114,
 });
 const IDLE = [0, 1, 2, 3, 2, 1];
+// At the normal 270 px/s run, each original pose lasts five 60 Hz ticks.
+const RUN_PIXELS_PER_FRAME = 22.5;
+const RUN_EASE_SECONDS = 0.06;
 export function createHeroAnimation() {
   return {
     state: "fall",
     elapsed: 0,
     walkPhase: 0,
+    walkSpeed: 0,
     frame: 15,
     grounded: false,
     landing: 0,
@@ -47,7 +51,7 @@ export function updateHeroAnimation(player, dt) {
                   : player.vy > 100
                     ? "fall"
                     : "apex"
-              : a.landing > 0
+              : a.landing > 0 && Math.abs(player.vx) <= 1
                 ? "land"
                 : Math.abs(player.vx) > 1
                   ? "walk"
@@ -57,13 +61,21 @@ export function updateHeroAnimation(player, dt) {
     a.elapsed = 0;
   } else a.elapsed += dt;
   // A stopped character freezes the gait phase; changes of direction do not reset it.
-  if (state === "walk")
-    a.walkPhase = (a.walkPhase + (Math.abs(player.vx) * dt) / 23) % 8;
+  if (state === "walk") {
+    const target = Math.abs(player.vx);
+    const previous = a.walkSpeed;
+    const ease = 1 - Math.exp(-dt / RUN_EASE_SECONDS);
+    a.walkSpeed += (target - previous) * ease;
+    // Integrate the eased speed so the gallery and game agree at any refresh rate.
+    const distance =
+      target * dt + (previous - target) * RUN_EASE_SECONDS * ease;
+    a.walkPhase = (a.walkPhase + distance / RUN_PIXELS_PER_FRAME) % 8;
+  } else a.walkSpeed = 0;
   a.frame =
     state === "idle"
       ? IDLE[Math.floor(a.elapsed * 5) % IDLE.length]
       : state === "walk"
-        ? 4 + Math.floor(a.walkPhase)
+        ? 4 + (Math.floor(a.walkPhase + 1e-9) % 8)
         : state === "land" || state === "takeoff"
           ? 12
           : state === "rise" || state === "dash"
@@ -126,7 +138,8 @@ export function drawHero(
     ctx.rotate(Math.sin((1 - player.attack / 0.21) * Math.PI) * 0.12);
   if (animation.state === "dash") ctx.rotate(0.12);
   ctx.drawImage(
-    atlas,
+    // Urmasa also uses cell 7 for attacks: keep that original combat artwork.
+    animation.state === "walk" && atlas.runAtlas ? atlas.runAtlas : atlas,
     sx,
     sy,
     sw,
